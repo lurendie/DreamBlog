@@ -27,7 +27,7 @@ impl CommentService {
         for model in models.into_iter() {
             let id = model.id;
             let mut comment = CommentVO::from(model);
-            comment.reply_comments = Some(Self::find_comment_by_id(id, db).await?);
+            comment.reply_comments = Some(Self::find_comment_vo_by_id(id, db).await?);
             comments.push(comment);
         }
         map.insert("list".into(), to_value!(comments));
@@ -46,9 +46,10 @@ impl CommentService {
         let models = page.fetch_page(page_num - 1).await?;
         let mut comments = vec![];
         for model in models.into_iter() {
-            // let id = model.id;
-            let comment = Comment::from(model);
-            //comment.reply_comments = Some(Self::find_comment_by_id(id, db).await?);
+            let id = model.id;
+            let mut comment = Comment::from(model);
+            comment.reply_comments = Some(Self::find_comment_by_id(id, db).await?);
+            comment.reply_comments = Some(vec![]);
             comments.push(comment);
         }
         map.insert(
@@ -72,7 +73,7 @@ impl CommentService {
     pub(crate) async fn find_comment_by_id(
         id: i64,
         db: &DatabaseConnection,
-    ) -> Result<Vec<CommentVO>, DataBaseError> {
+    ) -> Result<Vec<Comment>, DataBaseError> {
         let models = comment::Entity::find()
             .filter(comment::Column::ParentCommentId.eq(id))
             .filter(comment::Column::IsPublished.eq(true))
@@ -84,6 +85,47 @@ impl CommentService {
         for item in models.into_iter() {
             // 使用 Box::pin 来递归调用 get_comments，允许存在递归
             let future = Box::pin(Self::find_comment_by_id(item.id, db));
+            futures.push(future);
+            comments.push(Comment::from(item));
+        }
+        let mut reply_comments = vec![];
+        // 处理子评论
+        for (item, future) in comments.iter_mut().zip(futures) {
+            if let Ok(future) = future.await.as_mut() {
+                // match item.parent_comment_id {
+                //     Some(parent_comment_id) => {
+                //         let parent_comment = comment::Entity::find_by_id(parent_comment_id)
+                //             .one(db)
+                //             .await?;
+                //         // if let Some(parent_comment) = parent_comment {
+                //         //     item.parent_comment_name = Some(parent_comment.nickname);
+                //         // }
+                //     }
+                //     None => {}
+                // }
+
+                reply_comments.push(item.to_owned());
+                reply_comments.append(future);
+            }
+        }
+        Ok(reply_comments)
+    }
+
+    pub(crate) async fn find_comment_vo_by_id(
+        id: i64,
+        db: &DatabaseConnection,
+    ) -> Result<Vec<CommentVO>, DataBaseError> {
+        let models = comment::Entity::find()
+            .filter(comment::Column::ParentCommentId.eq(id))
+            .filter(comment::Column::IsPublished.eq(true))
+            .all(db)
+            .await?;
+
+        let mut futures = Vec::new();
+        let mut comments = vec![];
+        for item in models.into_iter() {
+            // 使用 Box::pin 来递归调用 get_comments，允许存在递归
+            let future = Box::pin(Self::find_comment_vo_by_id(item.id, db));
             futures.push(future);
             comments.push(CommentVO::from(item));
         }

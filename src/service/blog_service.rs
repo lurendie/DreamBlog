@@ -404,12 +404,6 @@ impl BlogService {
         }
     }
 
-    // /**
-    //  * 所有文章总数(包含隐藏) -后台
-    //  */
-    // pub async fn find_blog_count(db: &DatabaseConnection) -> u64 {
-    //     blog::Entity::find().count(db).await.unwrap_or_default()
-    // }
 
     /**
      * 获取所有文章，用于首页展示，每页10条数据，并返回总页数，用于分页展示。 -后台
@@ -739,6 +733,18 @@ impl BlogService {
                 Ok(false)
             }
         }
+    }
+
+    pub(crate) async fn find_blogs_and_title(
+        db: &DatabaseConnection,
+    ) -> Result<Vec<BlogInfo>, DataBaseError> {
+        let mut models = blog::Entity::find().all(db).await?;
+        let mut blog_list = vec![];
+        for model in models.iter_mut() {
+            let blog_info = BlogInfo::from(model.clone());
+            blog_list.push(blog_info);
+        }
+        Ok(blog_list)
     }
 }
 

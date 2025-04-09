@@ -10,7 +10,7 @@ use crate::{
     app_state::AppState,
     middleware::AppClaims,
     model::{ResponseResult, SearchRequest},
-    service::CommentService,
+    service::{BlogService, CommentService},
 };
 
 #[routes]
@@ -22,6 +22,20 @@ pub async fn find_comments(
 ) -> impl Responder {
     let page_num = query.get_page_num();
     match CommentService::find_comments(page_num, app.get_mysql_pool()).await {
+        Ok(comments) => {
+            ResponseResult::ok("请求成功！".to_string(), Some(to_value!(comments))).json()
+        }
+        Err(e) => ResponseResult::error(e.to_string()).json(),
+    }
+}
+
+#[routes]
+#[get("/blogIdAndTitle")]
+pub async fn find_blog_id_and_title(
+    _: Authenticated<AppClaims>,
+    app: Data<AppState>,
+) -> impl Responder {
+    match BlogService::find_blogs_and_title(app.get_mysql_pool()).await {
         Ok(comments) => {
             ResponseResult::ok("请求成功！".to_string(), Some(to_value!(comments))).json()
         }
