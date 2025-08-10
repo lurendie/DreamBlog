@@ -1,0 +1,9 @@
+### blog-api ###
+/target
+Cargo.lock
+/logs
+
+nblog.code-workspace
+Cargo.lock
+/config/jwt-decoding.bin
+/config/jwt-encoding.bin
