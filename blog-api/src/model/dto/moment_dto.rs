@@ -7,6 +7,7 @@ pub struct MomentDTO {
     #[serde(rename(deserialize = "createTime"))]
     pub(crate) create_time: NaiveDateTime,
     pub(crate) likes: i32,
+    #[serde(rename(deserialize = "published"))]
     pub(crate) is_published: bool,
 }
 

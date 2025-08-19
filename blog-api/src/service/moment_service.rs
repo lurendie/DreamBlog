@@ -1,7 +1,7 @@
 use crate::entity::moment;
 use crate::enums::DataBaseError;
-use crate::model::MomentDTO;
 use crate::model::Moment;
+use crate::model::MomentDTO;
 use crate::util::MarkdownParser;
 use rbs::{to_value, value::map::ValueMap};
 use sea_orm::{
@@ -20,7 +20,7 @@ impl MomentService {
         let models = page.fetch_page(page_num - 1).await?;
         let mut list: Vec<Moment> = vec![];
         for mut model in models {
-            let content = MarkdownParser::parser_html(model.content);
+            let content = model.content;
             model.content = content;
             list.push(model.into());
         }
@@ -37,11 +37,14 @@ impl MomentService {
         moment_dto: MomentDTO,
         db: &DatabaseConnection,
     ) -> Result<(), DataBaseError> {
-        let model = moment::Entity::find_by_id(moment_dto.id.unwrap_or_default())
+        let model = moment::Entity::find_by_id(moment_dto.id.unwrap_or(0))
             .one(db)
             .await?;
         match model {
-            Some(model) => {
+            Some(mut model) => {
+                model.content = moment_dto.content;
+                model.likes = Some(moment_dto.likes);
+                model.create_time = moment_dto.create_time;
                 moment::ActiveModel::from(model).update(db).await?;
             }
             None => {

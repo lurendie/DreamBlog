@@ -53,15 +53,3 @@ pub async fn get_connection() -> DatabaseConnection {
         .await
         .expect("Failed to connect to database")
 }
-
-//#[cfg(test)]
-// mod tests {
-
-//     use super::*;
-
-//     #[actix_web::test]
-//     async fn test_get_connection() {
-//         let conn = get_connection().await;
-//         assert!(conn.ping().await.is_ok());
-//     }
-// }

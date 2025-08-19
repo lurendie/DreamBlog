@@ -7,7 +7,7 @@
 use crate::enums::DataBaseError;
 use chrono::Local;
 use serde::{Deserialize, Serialize};
-use std::{fs, panic, sync::LazyLock};
+use std::{env, fs, panic, sync::LazyLock};
 
 //配置文件结构体
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -51,18 +51,18 @@ pub struct ServerConfig {
     pub(crate) token_expires: i64,    //token 过期时间
 }
 pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
-    // let envs = env::var_os("zero_config");
-    // let path = match envs {
-    //     Some(yaml_path) => {
-    //         let mut new = yaml_path.clone();
-    //         new.push("/config.yaml");
-    //         new
-    //     }
-    //     None => OsString::from("./config/config.yaml"),
-    // };
-    match Config::build_config("./config/config.yaml".to_string()) {
+    let args: Vec<String> = env::args().collect();
+    //尝试获取 配置路径 命令行参数 如没有指定配置文件路径则默认路径是./config
+    let config_path = args.get(1).unwrap_or(&"./config".to_string()).to_string();
+    let mut server_config_path = config_path.clone();
+    let mut log_yaml_path = config_path;
+    //加载配置
+    server_config_path.push_str("/server_config.yaml");
+    log_yaml_path.push_str("/log_config.yaml");
+    match Config::build_config(server_config_path.clone()) {
         Ok(mut config) => {
-            config.log = Some(LogConfig::new().init());
+            let log_config = LogConfig::init_path(log_yaml_path).unwrap();
+            config.log = Some(log_config);
             return config;
         }
         Err(e) => {
@@ -77,25 +77,16 @@ impl LogConfig {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn init(self) -> Self {
-        // let envs = env::var_os("zero_config");
-        // match envs {
-        //     Some(yaml_path) => {
-        //         let mut new = yaml_path.clone();
-        //         new.push("/log4rs.yaml");
-        //         let _ = log4rs::init_file(new, Default::default()).unwrap();
-        //     }
-        //     None => {
-        //         let _ = log4rs::init_file("./config/log4rs.yaml", Default::default()).unwrap();
-        //     }
-        // };
-        let _ = log4rs::init_file("./config/log4rs.yaml", Default::default()).unwrap();
-        //let _ = log4rs::init_file("./config/log4rs.yaml", Default::default()).unwrap();
+
+    pub fn init_path(path: String) -> Result<Self, log4rs::config::InitError> {
+        let _ = log4rs::init_file(path, Default::default())
+            .expect("初始化日志配置失败，请检查 log_config.yaml 配置文件是否正确！");
         log::info!("Zero Blog初始化完成, 时间为:[{}]...", Self::get_date_time());
         //修改日志等级ERROR 非ERROR日志不记录
         //log::set_max_level(log::LevelFilter::Error.to_level().unwrap().to_level_filter());
-        self
+        Ok(Self)
     }
+
     pub const FMT_Y_M_D_H_M_S: &str = "%Y-%m-%d %H:%M:%S";
 
     pub fn get_date_time() -> String {
