@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
-use crate::model::SearchRequest;
 use crate::model::ResponseResult;
+use crate::model::SearchRequest;
 use crate::service;
 use actix_web::web::{self, Json, Query};
 use actix_web::{routes, HttpResponse, Responder};
@@ -67,7 +67,7 @@ pub async fn category(
     };
     //如果没有page_num参数，则默认取第一页
     let page: usize = match params.get("pageNum") {
-        Some(page) => page.parse().expect("转换失败"),
+        Some(page) => page.parse().unwrap_or(1),
         None => 1,
     };
     if category_name.is_empty() {

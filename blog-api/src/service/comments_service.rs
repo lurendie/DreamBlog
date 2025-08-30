@@ -4,7 +4,10 @@ use crate::model::{CommentDTO, CommentVO};
 use crate::service::BlogService;
 use rbs::to_value;
 use rbs::value::map::ValueMap;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel,
+    PaginatorTrait, QueryFilter,
+};
 //每页显示5条博客简介
 const PAGE_SIZE: u64 = 5;
 
@@ -40,10 +43,11 @@ impl CommentService {
     //分页评论
     pub(crate) async fn find_comment_dto(
         page_num: u64,
+        page_size: u64,
         db: &DatabaseConnection,
     ) -> Result<ValueMap, DataBaseError> {
         let mut map = ValueMap::new();
-        let page = comment::Entity::find().paginate(db, PAGE_SIZE);
+        let page = comment::Entity::find().paginate(db, page_size);
         let models = page.fetch_page(page_num - 1).await?;
         let mut comments = vec![];
         for model in models.into_iter() {
@@ -175,5 +179,26 @@ impl CommentService {
             .count(db)
             .await?;
         Ok(count)
+    }
+
+    pub async fn add_and_update_comment(
+        comment_dto: CommentDTO,
+        db: &DatabaseConnection,
+    ) -> Result<(), DataBaseError> {
+        let model = comment::Model::from(comment_dto);
+        if model.id > 0 {
+            model.into_active_model().update(db).await?;
+        } else {
+            model.into_active_model().insert(db).await?;
+        }
+        Ok(())
+    }
+
+    pub async fn delete_comment(id: i64, db: &DatabaseConnection) -> Result<u64, DataBaseError> {
+        let count = comment::Entity::delete_many()
+            .filter(comment::Column::Id.eq(id))
+            .exec(db)
+            .await?;
+        Ok(count.rows_affected)
     }
 }
