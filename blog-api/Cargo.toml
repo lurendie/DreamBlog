@@ -28,9 +28,9 @@ log4rs = "1.0"
 mime = "0.3.17"
 rand = "0.8"                                                      #随机数
 rbs = { version = "4.5" }
-redis = { version = "0.25.3", features = ["tokio-comp", "json"] } #redis 异步IO
+#redis = { version = "0.25.3", features = ["tokio-comp", "json"] } #redis 异步IO
 deadpool-redis = { version = "0.14.0", features = ["serde","rt_tokio_1"] }
-actix-jwt-session = "1.0.5"
+actix-jwt-session = {git="https://github.com/lurendie/actix-jwt-session-test",branch="master"}
 regex = "1.11.1"
 comrak = "0.26.0"
 slug = "0.1.5"
