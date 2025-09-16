@@ -55,22 +55,52 @@ pub async fn login(
             let mut map: ValueMap = ValueMap::new();
             //验证是否登录过
             if session.is_authenticated() {
-                let token = session.as_ref().unwrap().encode().clone().unwrap();
-                user.set_password("".to_string());
-                map.insert(to_value!("user"), to_value!(user));
-                map.insert(to_value!("token"), to_value!(token.clone()));
-                map.insert(
-                    to_value!("expires"),
-                    to_value!(CONFIG.get_server_config().token_expires),
-                );
-                let result = ApiResponse::<Value>::success_with_msg(
-                    "请求成功".to_string(),
-                    Some(to_value!(map)),
-                );
-                return HttpResponse::Ok()
-                    .append_header((JWT_HEADER_NAME, token.clone()))
-                    .cookie(actix_web::cookie::Cookie::build(JWT_COOKIE_NAME, token).finish())
-                    .json(result);
+                //获取session
+                let sess = match session.as_ref() {
+                    Some(sess) => sess,
+                    None => {
+                        log::warn!("获取session异常");
+                        return ApiResponse::<Value>::error("登录失败，请重新登录！".to_string())
+                            .json();
+                    }
+                };
+                //获取uuid
+                let uuid = sess.jwt_id.clone();
+                //通过UUID查找是否登录过
+                match store.find_jwt::<AppClaims>(uuid).await {
+                    Ok(_) => {
+                        let token = match sess.encode().clone() {
+                            Ok(token) => token,
+                            Err(e) => {
+                                log::warn!("获取uuid异常:{}", e);
+                                return ApiResponse::<Value>::error(
+                                    "登录失败，请重新登录！".to_string(),
+                                )
+                                .json();
+                            }
+                        };
+                        user.set_password("".to_string());
+                        map.insert(to_value!("user"), to_value!(user));
+                        map.insert(to_value!("token"), to_value!(token.clone()));
+                        map.insert(
+                            to_value!("expires"),
+                            to_value!(CONFIG.get_server_config().token_expires),
+                        );
+                        let result = ApiResponse::<Value>::success_with_msg(
+                            "请求成功".to_string(),
+                            Some(to_value!(map)),
+                        );
+                        return HttpResponse::Ok()
+                            .append_header((JWT_HEADER_NAME, token.clone()))
+                            .cookie(
+                                actix_web::cookie::Cookie::build(JWT_COOKIE_NAME, token).finish(),
+                            )
+                            .json(result);
+                    }
+                    Err(e) => {
+                        log::warn!("find_jwt异常:{}", e);
+                    }
+                };
             }
             //登录
             let uuid = Uuid::new_v4();
