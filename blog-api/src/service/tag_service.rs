@@ -43,7 +43,8 @@ impl TagService {
                 result.push(to_value!(TagDTO::from(model)));
             });
 
-        //保存到Redis
+       if result.len()>0{
+         //保存到Redis
         RedisService::set_value_vec(
             redis_key_constants::TAG_CLOUD_LIST.to_string(),
             &to_value!(&result),
@@ -53,6 +54,7 @@ impl TagService {
             "redis KEY:{} 写入缓存数据成功",
             redis_key_constants::TAG_CLOUD_LIST
         );
+       };
         Ok(result)
     }
 

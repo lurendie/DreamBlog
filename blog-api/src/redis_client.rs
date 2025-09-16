@@ -15,7 +15,7 @@ static REDIS_URL: LazyLock<String> = LazyLock::new(|| {
 });
 
 //Redis客户端
-pub static REDIS_CL_IENT: LazyLock<Pool> = LazyLock::new(|| {
+pub static REDIS_CLIENT: LazyLock<Pool> = LazyLock::new(|| {
     match Config::from_url(REDIS_URL.as_str()).create_pool(Some(Runtime::Tokio1)) {
         Ok(client) => client,
         Err(e) => {
@@ -31,7 +31,7 @@ pub static REDIS_CL_IENT: LazyLock<Pool> = LazyLock::new(|| {
  * 获取redis连接 如没有获取到连接则返回None
  */
 pub async fn get_connection() -> Result<deadpool_redis::Connection, PoolError> {
-    match REDIS_CL_IENT.get().await {
+    match REDIS_CLIENT.get().await {
         Ok(conn) => Ok(conn),
         Err(e) => Err(e),
     }
@@ -41,7 +41,7 @@ pub async fn get_connection() -> Result<deadpool_redis::Connection, PoolError> {
  * 获取redis连接 如5000ms内没有获取到连接则返回None
  */
 pub async fn _timeout_get_connection() -> Result<deadpool_redis::Connection, PoolError> {
-    match REDIS_CL_IENT
+    match REDIS_CLIENT
         .timeout_get(&deadpool_redis::Timeouts::wait_millis(5000))
         .await
     {
@@ -51,7 +51,7 @@ pub async fn _timeout_get_connection() -> Result<deadpool_redis::Connection, Poo
 }
 
 pub async fn get_redis_pool() -> Pool {
-    REDIS_CL_IENT.clone()
+    REDIS_CLIENT.clone()
 }
 
 // //redis 单元测试

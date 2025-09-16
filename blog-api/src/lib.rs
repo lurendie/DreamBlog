@@ -22,4 +22,9 @@ mod middleware;
 
 mod entity;
 
+// 新增模块
+pub mod error;
+pub mod response;
+pub mod common;
+
 pub use app_server::AppServer;

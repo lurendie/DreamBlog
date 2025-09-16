@@ -53,6 +53,7 @@ impl AppServer {
                 )
                 .wrap(VisiLog::default())
                 //.wrap(Logger::default())
+                //.wrap(ErrorHandler::default())
                 .configure(Self::view_router)
                 //admin
                 .configure(Self::admin_router)
@@ -113,7 +114,24 @@ impl AppServer {
                 .service(tag_controller::insert_or_update)
                 .service(tag_controller::delete_by_id)
                 .service(admin::comment_controller::find_comments)
-                .service(admin::comment_controller::find_blog_id_and_title),
+                .service(admin::comment_controller::find_blog_id_and_title)
+                .service(admin::comment_controller::delete_comment)
+                .service(admin::comment_controller::update_comment)
+                .service(admin::account_controller::change_account)
+                .service(admin::friend_controller::get_friend_info)
+                .service(admin::friend_controller::update_friend)
+                .service(admin::friend_controller::delete_friend_by_id)
+                .service(admin::friend_controller::save_friend)
+                .service(admin::schedule_controller::get_job_list)
+                .service(admin::schedule_controller::update_job_status)
+                .service(admin::schedule_controller::delete_job_by_id)
+                .service(admin::schedule_controller::add_job)
+                .service(admin::site_setting_controller::get_site_setting_data)
+                .service(admin::site_setting_controller::update_site_settings)
+                .service(admin::visit_log_controller::get_visit_log_list)
+                .service(admin::visit_log_controller::delete_visit_log_by_id)
+                .service(admin::visitor_controller::get_visitor_list)
+                .service(admin::visitor_controller::delete_visitor),
         );
     }
 }

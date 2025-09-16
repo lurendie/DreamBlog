@@ -8,7 +8,7 @@
 
 use crate::app_state::AppState;
 use crate::config::CONFIG;
-use crate::model::ResponseResult;
+use crate::model::ApiResponse;
 use crate::{middleware::AppClaims, service::UserService};
 use actix_jwt_session::{
     JwtTtl, OffsetDateTime, RefreshTtl, SessionStorage, Uuid, JWT_HEADER_NAME, REFRESH_HEADER_NAME,
@@ -33,10 +33,10 @@ struct SignInPayload {
 #[post("/login")]
 pub async fn login(
     user_form: Json<SignInPayload>,
-    _store: Data<SessionStorage>,
-    _jwt_ttl: Data<JwtTtl>,
-    _refresh_ttl: Data<RefreshTtl>,
-    _session: MaybeAuthenticated<AppClaims>,
+    store: Data<SessionStorage>,
+    jwt_ttl: Data<JwtTtl>,
+    refresh_ttl: Data<RefreshTtl>,
+    session: MaybeAuthenticated<AppClaims>,
     app: Data<AppState>,
 ) -> impl Responder {
     //验证账号 密码是否正确
@@ -49,13 +49,13 @@ pub async fn login(
                 "用户{}登录失败，密码错误或者非Admin账号登录",
                 user_form.username
             );
-            return ResponseResult::<Value>::error("用户名或密码错误！".to_string()).json();
+            return ApiResponse::<Value>::error("用户名或密码错误！".to_string()).json();
         } else {
             //密码正确并且权限正确，登录成功返回token
             let mut map: ValueMap = ValueMap::new();
             //验证是否登录过
-            if _session.is_authenticated() {
-                let token = _session.as_ref().unwrap().encode().clone().unwrap();
+            if session.is_authenticated() {
+                let token = session.as_ref().unwrap().encode().clone().unwrap();
                 user.set_password("".to_string());
                 map.insert(to_value!("user"), to_value!(user));
                 map.insert(to_value!("token"), to_value!(token.clone()));
@@ -63,8 +63,10 @@ pub async fn login(
                     to_value!("expires"),
                     to_value!(CONFIG.get_server_config().token_expires),
                 );
-                let result =
-                    ResponseResult::<Value>::ok("请求成功".to_string(), Some(to_value!(map)));
+                let result = ApiResponse::<Value>::success_with_msg(
+                    "请求成功".to_string(),
+                    Some(to_value!(map)),
+                );
                 return HttpResponse::Ok()
                     .append_header((JWT_HEADER_NAME, token.clone()))
                     .cookie(actix_web::cookie::Cookie::build(JWT_COOKIE_NAME, token).finish())
@@ -76,15 +78,15 @@ pub async fn login(
             let claims = AppClaims {
                 issues_at: OffsetDateTime::now_utc().unix_timestamp() as usize,
                 subject: user.get_username(),
-                expiration_time: _jwt_ttl.0.as_seconds_f64() as u64,
+                expiration_time: jwt_ttl.0.as_seconds_f64() as u64,
                 //audience: Audience::Web,
                 jwt_id: Uuid::parse_str(uuid.to_string().as_str()).unwrap(),
                 account_id: user.get_id() as i32,
                 not_before: 0,
             };
-            let pair = _store
+            let pair = store
                 .clone()
-                .store(claims, *_jwt_ttl.into_inner(), *_refresh_ttl.into_inner())
+                .store(claims, *jwt_ttl.into_inner(), *refresh_ttl.into_inner())
                 .await
                 .unwrap();
 
@@ -95,7 +97,10 @@ pub async fn login(
                 to_value!("expires"),
                 to_value!(CONFIG.get_server_config().token_expires),
             );
-            let result = ResponseResult::<Value>::ok("请求成功".to_string(), Some(to_value!(map)));
+            let result = ApiResponse::<Value>::success_with_msg(
+                "请求成功".to_string(),
+                Some(to_value!(map)),
+            );
             return HttpResponse::Ok()
                 .append_header((JWT_HEADER_NAME, pair.jwt.encode().unwrap()))
                 .append_header((REFRESH_HEADER_NAME, pair.refresh.encode().unwrap()))
@@ -107,5 +112,5 @@ pub async fn login(
         }
     }
     log::error!("用户名{}尝试登录，未找到用户", user_form.username);
-    ResponseResult::<Value>::error("用户名或密码错误！".to_string()).json()
+    ApiResponse::<String>::error("用户名或密码错误！".to_string()).json()
 }

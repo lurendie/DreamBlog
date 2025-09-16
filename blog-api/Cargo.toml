@@ -1,5 +1,5 @@
 [package]
-name = "zero_blog"
+name = "zero_api"
 version = "0.1.0"
 edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -8,7 +8,7 @@ edition = "2021"
 [profile.release]
 opt-level = 3
 debug = false
-split-debuginfo = '...'  # Platform-specific.
+#split-debuginfo = '...'  # Platform-specific.
 debug-assertions = false
 overflow-checks = false
 lto = false
@@ -36,3 +36,4 @@ comrak = "0.26.0"
 slug = "0.1.5"
 thiserror = "2.0.7"
 sea-orm = { version = "1.1.0", features = [ "sqlx-mysql","runtime-tokio-rustls", "macros" ] }
+user-agent-parser = "0.3.6"

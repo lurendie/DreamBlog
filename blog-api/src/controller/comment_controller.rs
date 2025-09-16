@@ -1,11 +1,7 @@
 use crate::app_state::AppState;
-/*
- * @Author: lurendie
- * @Date: 2024-02-24 22:58:03
- * @LastEditors: lurendie
- * @LastEditTime: 2024-04-21 23:26:00
- */
-use crate::model::{ResponseResult, SearchRequest};
+use crate::error::ErrorCode;
+use crate::model::SearchRequest;
+use crate::response::ApiResponse;
 use crate::service::CommentService;
 use actix_web::web::{self, Query};
 use actix_web::{get, Responder};
@@ -18,12 +14,12 @@ pub(crate) async fn get_comments(
     app: web::Data<AppState>,
 ) -> impl Responder {
     if data.is_none() {
-        return ResponseResult::error("获取数据失败!".to_string()).json();
+        return ApiResponse::<String>::error_with_code(ErrorCode::VALIDATION_ERROR, "获取数据失败!".to_string()).json();
     }
 
     let page_request = match data {
         Some(page_request) => page_request,
-        None => return ResponseResult::error("获取数据失败!".to_string()).json(),
+        None => return ApiResponse::<String>::error_with_code(ErrorCode::VALIDATION_ERROR, "获取数据失败!".to_string()).json(),
     };
     let connect = app.get_mysql_pool();
     let list = match CommentService::find_by_id_comments(
@@ -35,7 +31,7 @@ pub(crate) async fn get_comments(
     {
         Ok(list) => list,
         Err(e) => {
-            return ResponseResult::error(e.to_string()).json();
+            return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json();
         }
     };
 
@@ -47,7 +43,7 @@ pub(crate) async fn get_comments(
             data.insert("allComment".into(), to_value!(close_comment));
         }
         Err(e) => {
-            return ResponseResult::error(e.to_string()).json();
+            return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json();
         }
     }
     match CommentService::get_close_count(page_request.get_blog_id(), connect).await {
@@ -55,9 +51,9 @@ pub(crate) async fn get_comments(
             data.insert("closeComment".into(), to_value!(close_comment));
         }
         Err(e) => {
-            return ResponseResult::error(e.to_string()).json();
+            return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json();
         }
     }
 
-    ResponseResult::ok("获取成功!".to_string(), Some(to_value!(data))).json()
+    ApiResponse::success_with_msg("获取成功!".to_string(), Some(to_value!(data))).json()
 }

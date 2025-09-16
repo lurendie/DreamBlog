@@ -1,6 +1,12 @@
+pub mod account_controller;
 pub mod blog_controller;
 pub mod category_controller;
 pub mod comment_controller;
 pub mod dashboard_controller;
+pub mod friend_controller;
 pub mod moment_controller;
+pub mod schedule_controller;
+pub mod site_setting_controller;
 pub mod tag_controller;
+pub mod visit_log_controller;
+pub mod visitor_controller;

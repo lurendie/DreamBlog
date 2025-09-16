@@ -11,7 +11,6 @@ mod favorite;
 mod friend_info;
 mod introduction;
 mod search_request;
-mod response_result;
 mod search_blog;
 mod serise;
 
@@ -28,6 +27,5 @@ pub use favorite::Favorite;
 pub use friend_info::FriendInfo;
 pub use introduction::Introduction;
 pub use search_request::SearchRequest;
-pub use response_result::ResponseResult;
 pub use search_blog::SearchBlog;
 pub use serise::Serise;

@@ -5,7 +5,8 @@
  * @LastEditTime: 2024-05-18 09:58:55
  */
 use crate::app_state::AppState;
-use crate::model::ResponseResult;
+use crate::error::ErrorCode;
+use crate::response::ApiResponse;
 use crate::service::BlogService;
 use actix_web::{get, web, Responder};
 use rbs::to_value;
@@ -21,8 +22,10 @@ pub(crate) async fn archives(app: web::Data<AppState>) -> impl Responder {
             let count = BlogService::find_archives_count(connection).await;
             data.insert(to_value!("blogMap"), to_value!(blog_map));
             data.insert(to_value!("count"), to_value!(count.unwrap_or_default()));
-            ResponseResult::ok("请求成功".to_string(), Some(to_value!(data))).json()
+            ApiResponse::success(Some(to_value!(data))).json()
         }
-        Err(e) => ResponseResult::error(e.to_string()).json(),
+        Err(e) => {
+            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+        }
     }
 }

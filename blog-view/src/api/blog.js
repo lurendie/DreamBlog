@@ -1,6 +1,15 @@
 import axios from '@/plugins/axios'
 
 export function getBlogById(token, id) {
+	if(token ===null || token === undefined || token === '') {
+		return axios({
+		url: 'blog',
+		method: 'GET',
+		params: {
+			id
+		}
+	})
+	}
 	return axios({
 		url: 'blog',
 		method: 'GET',

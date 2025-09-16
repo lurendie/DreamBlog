@@ -1,14 +1,14 @@
 import axios from '@/plugins/axios'
 
 export function getMomentListByPageNum(token, pageNum) {
-	if(token===null||token===""){
+	if(token ===null || token === undefined || token === '') {
 		return axios({
 		url: 'moments',
 		method: 'GET',
 		params: {
 			pageNum
 		}
-	})
+		})
 	}
 	return axios({
 		url: 'moments',

@@ -142,6 +142,16 @@
 </script>
 
 <style>
+	/* 禁用导航栏元素的选中状态 */
+	.ui.fixed.menu, .ui.fixed.menu * {
+		-webkit-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+	}
+	.ui.fixed.menu a:focus, .ui.fixed.menu button:focus {
+		outline: none;
+	}
 	.ui.fixed.menu .container {
 		width: 1400px !important;
 		margin-left: auto !important;

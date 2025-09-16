@@ -32,8 +32,12 @@ pub use moment::Moment;
 //pub use operation_log::OperationLog;
 pub use dto::*;
 pub use friend::Friend;
-
-///pub use schedule_job::ScheduleJob;
-//pub use schedule_job_log::ScheduleJobLog;
-pub use vo::*;
+pub use schedule_job::ScheduleJob;
+pub use schedule_job_log::ScheduleJobLog;
 pub use user::User;
+pub use visit_log::VisitLog;
+pub use visitor::Visitor;
+pub use vo::*;
+pub use site_setting::SiteSetting;
+// 引入新的响应结果类型
+pub use crate::response::ApiResponse;

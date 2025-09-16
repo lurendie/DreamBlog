@@ -15,9 +15,9 @@ use sea_orm::{
 use crate::constant::redis_key_constants;
 use crate::entity::{blog, category};
 use crate::enums::DataBaseError;
-use crate::model::Serise;
 use crate::model::Categorie;
 use crate::model::Category;
+use crate::model::Serise;
 use crate::service::RedisService;
 
 pub struct CategoryService;
@@ -54,16 +54,18 @@ impl CategoryService {
                 result.push(to_value!(Category::from(model)));
             });
 
-        //3.保存Redis
-        RedisService::set_value_vec(
-            redis_key_constants::CATEGORY_NAME_LIST.to_string(),
-            &to_value!(&result),
-        )
-        .await?;
-        log::info!(
-            "redis KEY:{} 写入缓存数据成功",
-            redis_key_constants::CATEGORY_NAME_LIST
-        );
+        if result.len() > 0 {
+            //3.保存Redis
+            RedisService::set_value_vec(
+                redis_key_constants::CATEGORY_NAME_LIST.to_string(),
+                &to_value!(&result),
+            )
+            .await?;
+            log::info!(
+                "redis KEY:{} 写入缓存数据成功",
+                redis_key_constants::CATEGORY_NAME_LIST
+            );
+        }
         Ok(result)
     }
 

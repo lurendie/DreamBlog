@@ -14,14 +14,14 @@ use std::{env, fs, panic, sync::LazyLock};
 pub struct Config {
     server: ServerConfig,
     mysql: MysqlConfig, //Mysql链接
-    redis: ReidsConfig, //Redis
+    redis: RedisConfig, //Redis
     log: Option<LogConfig>,
 }
 /**
  * Redis 连接信息结构体
  */
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
-pub struct ReidsConfig {
+pub struct RedisConfig {
     pub(crate) port: u16,    //端口
     pub(crate) host: String, //IP地址
     pub(crate) db: u16,
@@ -100,7 +100,7 @@ impl Config {
         self.mysql.clone()
     }
 
-    pub fn get_redis_config(&self) -> ReidsConfig {
+    pub fn get_redis_config(&self) -> RedisConfig {
         self.redis.clone()
     }
 

@@ -5,8 +5,8 @@ use crate::service::BlogService;
 use rbs::to_value;
 use rbs::value::map::ValueMap;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel,
-    PaginatorTrait, QueryFilter,
+    ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait, IntoActiveModel,
+    PaginatorTrait, QueryFilter, TransactionTrait,
 };
 //每页显示5条博客简介
 const PAGE_SIZE: u64 = 5;
@@ -181,24 +181,87 @@ impl CommentService {
         Ok(count)
     }
 
-    pub async fn add_and_update_comment(
+    pub async fn update_comment(
         comment_dto: CommentDTO,
         db: &DatabaseConnection,
     ) -> Result<(), DataBaseError> {
-        let model = comment::Model::from(comment_dto);
-        if model.id > 0 {
-            model.into_active_model().update(db).await?;
-        } else {
-            model.into_active_model().insert(db).await?;
+        let option_model = comment::Entity::find_by_id(comment_dto.id).one(db).await?;
+        if let Some(mut model) = option_model {
+            model.avatar = comment_dto.avatar;
+            model.content = comment_dto.content;
+            model.email = comment_dto.email.unwrap_or_default();
+            model.ip = comment_dto.ip;
+            model.nickname = comment_dto.nickname;
+            model.website = comment_dto.website;
+            dbg!(&model);
+            comment::Entity::update(model.into_active_model())
+                .exec(db)
+                .await?;
         }
         Ok(())
     }
 
-    pub async fn delete_comment(id: i64, db: &DatabaseConnection) -> Result<u64, DataBaseError> {
+    /// 在事务内部删除评论的辅助方法
+    async fn delete_comment_in_transaction<'a>(
+        id: i64,
+        conn: &'a DatabaseTransaction,
+    ) -> Result<u64, DbErr> {
+        let mut total_deleted = 0u64;
+
+        // 删除当前评论
         let count = comment::Entity::delete_many()
             .filter(comment::Column::Id.eq(id))
-            .exec(db)
+            .exec(conn)
             .await?;
-        Ok(count.rows_affected)
+        total_deleted += count.rows_affected;
+
+        // 查找所有直接子评论
+        let child_comments = comment::Entity::find()
+            .filter(comment::Column::ParentCommentId.eq(id))
+            .all(conn)
+            .await?;
+
+        // 递归删除每个子评论
+        for child in child_comments {
+            // 创建一个新的异步块，确保它可以被发送到其他线程
+            let child_id = child.id;
+            let child_count = async {
+                // 使用事务的克隆而不是直接引用
+                let tx = conn.begin().await?;
+                let result = Box::pin(Self::delete_comment_in_transaction(child_id, &tx)).await;
+                tx.commit().await?;
+                result
+            }
+            .await?;
+            total_deleted += child_count;
+        }
+
+        Ok(total_deleted)
+    }
+
+    pub async fn delete_comment_recursive(
+        id: i64,
+        db: &DatabaseConnection,
+    ) -> Result<u64, DataBaseError> {
+        // 在一个事务中删除所有评论
+        let result = db
+            .transaction(|conn| {
+                Box::pin(async move {
+                    let mut total_deleted = 0u64;
+
+                    let count = comment::Entity::delete_many()
+                        .filter(comment::Column::Id.eq(id))
+                        .exec(conn)
+                        .await?;
+                    total_deleted += count.rows_affected;
+
+                    // 查找所有直接子评论
+                    let tal = Self::delete_comment_in_transaction(id, conn).await?;
+
+                    Ok(total_deleted + tal)
+                })
+            })
+            .await?;
+        Ok(result)
     }
 }

@@ -2,6 +2,7 @@ use crate::constant::redis_key_constants;
 use crate::constant::site_setting_constants;
 use crate::entity::site_setting;
 use crate::enums::DataBaseError;
+use crate::model::SiteSetting;
 use crate::model::{Badge, Copyright, Favorite, Introduction};
 use crate::service::RedisService;
 use rbs::to_value;
@@ -118,7 +119,40 @@ impl SiteSettingService {
         map.insert("badges".to_string(), to_value!(badges));
         //缓存数据
         RedisService::set_value_map(redis_key_constants::SITE_INFO_MAP.to_string(), &map).await?;
-        log::info!("redis KEY:{} 写入缓存数据成功", redis_key_constants::SITE_INFO_MAP);
+        log::info!(
+            "redis KEY:{} 写入缓存数据成功",
+            redis_key_constants::SITE_INFO_MAP
+        );
+        Ok(map)
+    }
+
+    pub async fn get_site_info(
+        db: &DatabaseConnection,
+    ) -> Result<HashMap<String, Value>, DataBaseError> {
+        //查询数据库
+        let site_setting_list = site_setting::Entity::find().all(db).await?; // 假设这是一个 Vec 或其他可迭代集合
+        let mut map = HashMap::new();
+        let mut site_type = vec![];
+        let mut site_type2 = vec![];
+        let mut site_type3 = vec![];
+        for item in site_setting_list {
+            match item.r#type {
+                Some(1) => {
+                    site_type.push(SiteSetting::from(item));
+                }
+                Some(2) => {
+                    site_type2.push(SiteSetting::from(item));
+                }
+                Some(3) => {
+                    site_type3.push(SiteSetting::from(item));
+                }
+                _ => (),
+            }
+        }
+
+        map.insert("type1".to_string(), to_value!(site_type));
+        map.insert("type2".to_string(), to_value!(site_type2));
+        map.insert("type3".to_string(), to_value!(site_type3));
         Ok(map)
     }
 }

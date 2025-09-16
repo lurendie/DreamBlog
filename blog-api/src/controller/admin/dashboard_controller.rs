@@ -1,6 +1,6 @@
-use crate::app_state::AppState;
+use crate::{app_state::AppState, model::ApiResponse};
+use crate::middleware::AppClaims;
 use crate::service::DashboardService;
-use crate::{middleware::AppClaims, model::ResponseResult};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
 use rbs::{to_value, value::map::ValueMap};
@@ -25,5 +25,5 @@ pub async fn dashboard(_: Authenticated<AppClaims>, app: web::Data<AppState>) ->
     map.insert(to_value!("tag"), to_value!(tag_blog_count_map));
     map.insert(to_value!("visitRecord"), to_value!(visit_record_map));
     map.insert(to_value!("cityVisitor"), to_value!(city_visitor_list));
-    ResponseResult::ok("请求成功!".to_string(), Some(to_value!(map))).json()
+    ApiResponse::success_with_msg("请求成功!".to_string(), Some(to_value!(map))).json()
 }

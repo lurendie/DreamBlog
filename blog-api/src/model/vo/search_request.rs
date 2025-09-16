@@ -63,7 +63,7 @@ impl SearchRequest {
         self.title = title;
     }
 
-    pub fn set_page_num(&mut self, page_num: Option<u64>) {
+    pub fn _set_page_num(&mut self, page_num: Option<u64>) {
         self.page_num = page_num;
     }
 

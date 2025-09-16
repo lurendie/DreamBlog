@@ -127,9 +127,11 @@ impl BlogService {
         let mut rng = rand::thread_rng();
 
         if blog_info_list.len() < RANDOM_BLOG_LIMIT_NUM {
-            for i in 0..(blog_info_list.len() - 1) {
-                ids.push(i);
-                result.push(to_value!(blog_info_list[i].clone()));
+            if blog_info_list.len() > 0 {
+                for i in 0..(blog_info_list.len() - 1) {
+                    ids.push(i);
+                    result.push(to_value!(blog_info_list[i].clone()));
+                }
             }
         } else {
             //随机获取文章ID并且去重
@@ -141,16 +143,18 @@ impl BlogService {
                 }
             }
         }
-        //保存到Redis
-        RedisService::set_value_vec(
-            redis_key_constants::RANDOM_BLOG_LIST.to_string(),
-            &to_value!(&result),
-        )
-        .await?;
-        log::info!(
-            "redis KEY:{} 写入缓存数据成功",
-            redis_key_constants::RANDOM_BLOG_LIST
-        );
+        if result.len() > 0 {
+            //保存到Redis
+            RedisService::set_value_vec(
+                redis_key_constants::RANDOM_BLOG_LIST.to_string(),
+                &to_value!(&result),
+            )
+            .await?;
+            log::info!(
+                "redis KEY:{} 写入缓存数据成功",
+                redis_key_constants::RANDOM_BLOG_LIST
+            );
+        }
         return Ok(result);
     }
 
@@ -192,8 +196,10 @@ impl BlogService {
         let mut result = vec![];
         //如果文章数量小于NEW_BLOG_PAGE_SIZE 则直接返回
         if blog_info_list.len() < NEW_BLOG_PAGE_SIZE {
-            for i in 0..(blog_info_list.len() - 1) {
-                result.push(to_value!(blog_info_list[i].clone()));
+            if blog_info_list.len() > 0 {
+                for i in 0..(blog_info_list.len() - 1) {
+                    result.push(to_value!(blog_info_list[i].clone()));
+                }
             }
         } else {
             for i in 0..NEW_BLOG_PAGE_SIZE {
@@ -201,16 +207,19 @@ impl BlogService {
             }
         }
 
-        //保存到Redis
-        RedisService::set_value_vec(
-            redis_key_constants::NEW_BLOG_LIST.to_string(),
-            &to_value!(&result),
-        )
-        .await?;
+        if result.len() > 0 {
+            //保存到Redis
+            RedisService::set_value_vec(
+                redis_key_constants::NEW_BLOG_LIST.to_string(),
+                &to_value!(&result),
+            )
+            .await?;
         log::info!(
             "redis KEY:{} 写入缓存数据成功",
             redis_key_constants::NEW_BLOG_LIST
         );
+        }
+        
         Ok(result)
     }
 

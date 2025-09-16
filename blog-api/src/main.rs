@@ -1,5 +1,5 @@
 //配置项
-use zero_blog::AppServer;
+use zero_api::AppServer;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

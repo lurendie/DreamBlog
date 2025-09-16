@@ -1,5 +1,5 @@
 use crate::service::AboutService;
-use crate::{app_state::AppState, model::ResponseResult};
+use crate::{app_state::AppState, error::ErrorCode, response::ApiResponse};
 use actix_web::{get, web, Responder};
 use rbs::to_value;
 
@@ -8,8 +8,10 @@ use rbs::to_value;
 pub(crate) async fn about(app: web::Data<AppState>) -> impl Responder {
     match AboutService::get_about(app.get_mysql_pool()).await {
         Ok(value_map) => {
-            ResponseResult::ok("请求成功".to_string(), Some(to_value!(value_map))).json()
+            ApiResponse::success(Some(to_value!(value_map))).json()
         }
-        Err(e) => ResponseResult::error(e.to_string()).json(),
+        Err(e) => {
+            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+        }
     }
 }
