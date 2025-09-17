@@ -2,7 +2,7 @@ use crate::app_state::AppState;
 use crate::common::ParamUtils;
 use crate::error::ErrorCode;
 use crate::model::SearchRequest;
-use crate::response::ApiResponse;
+use crate::model::ApiResponse;
 use crate::service;
 use actix_web::web::{self, Json, Query};
 use actix_web::{routes, Responder};

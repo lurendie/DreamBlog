@@ -13,7 +13,7 @@ use crate::{
     error::ErrorCode,
     middleware::AppClaims,
     model::{CommentDTO, SearchRequest},
-    response::ApiResponse,
+    model::ApiResponse,
     service::{BlogService, CommentService},
 };
 

@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::error::ErrorCode;
-use crate::response::ApiResponse;
+use crate::model::ApiResponse;
 use crate::service::{BlogService, CategoryService, SiteSettingService, TagService};
 use actix_web::{routes, web, Responder};
 use rbs::to_value;

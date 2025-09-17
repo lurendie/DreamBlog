@@ -3,7 +3,7 @@ use crate::error::ErrorCode;
 use crate::middleware::AppClaims;
 use crate::model::MomentDTO;
 use crate::model::SearchRequest;
-use crate::response::ApiResponse;
+use crate::model::ApiResponse;
 use crate::service::MomentService;
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};

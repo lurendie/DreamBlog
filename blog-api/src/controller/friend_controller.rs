@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::error::ErrorCode;
-use crate::response::ApiResponse;
+use crate::model::ApiResponse;
 use crate::service::FriendService;
 use actix_web::{get, web, Responder};
 

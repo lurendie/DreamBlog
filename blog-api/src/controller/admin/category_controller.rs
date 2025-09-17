@@ -4,7 +4,7 @@ use crate::app_state::AppState;
 use crate::error::ErrorCode;
 use crate::model::Category;
 use crate::model::SearchRequest;
-use crate::response::ApiResponse;
+use crate::model::ApiResponse;
 use crate::service::CategoryService;
 use crate::{middleware::AppClaims, service::BlogService};
 use actix_jwt_session::Authenticated;

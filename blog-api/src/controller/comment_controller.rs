@@ -1,7 +1,7 @@
 use crate::app_state::AppState;
 use crate::error::ErrorCode;
 use crate::model::SearchRequest;
-use crate::response::ApiResponse;
+use crate::model::ApiResponse;
 use crate::service::CommentService;
 use actix_web::web::{self, Query};
 use actix_web::{get, Responder};

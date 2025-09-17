@@ -6,7 +6,7 @@
  */
 use crate::app_state::AppState;
 use crate::error::ErrorCode;
-use crate::response::ApiResponse;
+use crate::model::ApiResponse;
 use crate::service::BlogService;
 use actix_web::{get, web, Responder};
 use rbs::to_value;

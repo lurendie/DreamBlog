@@ -19,17 +19,29 @@ impl RedisService {
         //1.获取连接
         let mut connection = redis_client::get_connection().await?;
         //2.判断key是否存在
-        if !connection.exists::<String, bool>(key.clone()).await? {
+        let exists: i32 = connection.exists::<String, i32>(key.clone()).await?;
+        if exists == 0 {
             return Err(DataBaseError::Custom(format!("redis {} 不存在", key)));
         }
 
-        let redis_reuslt = connection
-            .hget::<String, String, String>(key.to_owned(), hash.to_owned())
+        // 检查哈希字段是否存在
+        let field_exists: i32 = connection.hexists::<String, String, i32>(key.clone(), hash.clone()).await?;
+        if field_exists == 0 {
+            return Err(DataBaseError::Custom(format!("redis {} 中不存在字段 {}", key, hash)));
+        }
+
+        let redis_reuslt: Option<String> = connection
+            .hget::<String, String, Option<String>>(key.to_owned(), hash.to_owned())
             .await?;
 
-        //3.redis反序列化
-        let result = serde_json::from_str::<HashMap<String, Value>>(redis_reuslt.as_str())?;
-        Ok(result)
+        match redis_reuslt {
+            Some(result) => {
+                //3.redis反序列化
+                let parsed_result = serde_json::from_str::<HashMap<String, Value>>(result.as_str())?;
+                Ok(parsed_result)
+            }
+            None => Err(DataBaseError::Custom(format!("无法从 redis {} 获取字段 {} 的值", key, hash))),
+        }
     }
 
     /**
@@ -74,10 +86,22 @@ impl RedisService {
     pub async fn get_value_map(key: String) -> Result<HashMap<String, Value>, DataBaseError> {
         //1.获取连接
         let mut connection = redis_client::get_connection().await?;
-        let result = connection.get::<String, String>(key).await?;
-        Ok(serde_json::from_str::<HashMap<String, Value>>(
-            result.as_str(),
-        )?)
+
+        // 检查key是否存在
+        let exists: i32 = connection.exists::<String, i32>(key.clone()).await?;
+        if exists == 0 {
+            return Err(DataBaseError::Custom(format!("redis {} 不存在", key)));
+        }
+
+        let result: Option<String> = connection.get::<String, Option<String>>(key).await?;
+        match result {
+            Some(value) => {
+                Ok(serde_json::from_str::<HashMap<String, Value>>(value.as_str())?)
+            }
+            None => {
+                Err(DataBaseError::Custom(format!("无法从 redis {} 获取值", key)))
+            }
+        }
     }
 
     /**
@@ -111,22 +135,32 @@ impl RedisService {
             //2.获取连接成功
             Ok(mut connection) => {
                 //3.a.判断key是否存在
-                if !connection
-                    .exists::<String, bool>(key.clone())
+                let exists: i32 = connection
+                    .exists::<String, i32>(key.clone())
                     .await
-                    .unwrap_or(false)
-                {
+                    .unwrap_or(0);
+                if exists == 0 {
                     log::info!("redis KEY: {} 没有检索到数据 ", key);
                     return None;
                 }
                 //4.获取数据
-                match connection.get::<String, String>(key.clone()).await {
-                    Ok(result) => {
+                match connection.get::<String, Option<String>>(key.clone()).await {
+                    Ok(Some(result)) => {
                         //redis 反序列化
-                        Some(serde_json::from_str(result.as_str()).unwrap_or_default())
+                        match serde_json::from_str(result.as_str()) {
+                            Ok(value) => Some(value),
+                            Err(e) => {
+                                log::error!("redis {} 反序列化错误：{}", key, e);
+                                None
+                            }
+                        }
+                    }
+                    Ok(None) => {
+                        log::info!("redis KEY: {} 没有数据", key);
+                        None
                     }
                     Err(e) => {
-                        log::error!("redis {} 反序列化错误：{}", key, e);
+                        log::error!("redis {} 获取数据错误：{}", key, e);
                         None
                     }
                 }

@@ -7,8 +7,8 @@
 mod ip2region;
 mod ip_value;
 mod markdown;
-pub mod pagination;
-pub mod param_utils;
+mod pagination;
 
+pub mod param_utils;
 pub use markdown::MarkdownParser;
 pub use param_utils::ParamUtils;

@@ -10,7 +10,6 @@ mod error;
 mod middleware;
 mod model;
 mod redis_client;
-mod response;
 mod service;
 
 pub use app_server::AppServer;
