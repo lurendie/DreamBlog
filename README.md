@@ -5,15 +5,15 @@
 </p>
 <p align="center">
 	<img src="https://img.shields.io/badge/RUST-1.78-orange">
-	<img src="https://img.shields.io/badge/actix_web">
+	<img src="https://img.shields.io/badge/actix-web-4.5.0-brightgreen">
 	<img src="https://img.shields.io/badge/Vue-2.6.11-brightgreen">
-	<img src="https://img.shields.io/badge/sea-orm">
+	<img src="https://img.shields.io/badge/sea-orm-1.1.0-red">
 	<img src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
 ## 简介
 
-Blog 是一个基于 Rust (actix-web) + Vue 的前后端分离博客系统，自用博客，长期维护中。
+ZeroBlog 是一个基于 Rust (actix-web) + Vue 的前后端分离博客系统，自用博客，长期维护中。
 
 本项目是从原 Java 版本的 NBlog 移植而来的 Rust 实现版本，旨在学习和实践 Rust 开发 Web 应用。
 
@@ -21,11 +21,11 @@ Blog 是一个基于 Rust (actix-web) + Vue 的前后端分离博客系统，自
 
 ## 后端技术栈
 
-1. 核心框架：[actix-web](https://crates.io/crates/actix-web) - 高性能的 Rust Web 框架
+1. 核心框架：[actix-web](https://github.com/actix/actix-web) - 高性能的 Rust Web 框架
 2. ORM 框架：[sea-orm](https://github.com/SeaQL/sea-orm) - 异步 ORM 框架
 3. 数据库：MySQL
 4. NoSQL 缓存：[Redis](https://github.com/redis/redis)
-5. 认证与授权：[actix-jwt-session](https://crates.io/crates/actix-jwt-session)
+5. 认证与授权：[actix-jwt-session](https://github.com/orhanbalci/actix-jwt-session)
 6. Markdown 解析：[comrak](https://github.com/kivikakk/comrak) - CommonMark 规范解析器
 7. 日志系统：[log4rs](https://github.com/estk/log4rs)
 8. 序列化/反序列化：[serde](https://github.com/serde-rs/serde), [serde_json](https://github.com/serde-rs/json)
@@ -56,7 +56,7 @@ UI 框架为 [Element UI](https://github.com/ElemeFE/element)
 ## 开发环境
 
 1. `git clone` 项目
-2. 创建 MySQL 数据库 `blog`，并执行 `sql` 文件初始化表数据
+2. 创建 MySQL 数据库 `zero_blog`，并执行 `sql` 文件初始化表数据
 3. 安装 Redis 并启动
 4. 修改配置文件 `config.yaml` 确认 MySQL 和 Redis 数据库用户密码
 5. `cargo run` 启动后端服务
