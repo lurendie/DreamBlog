@@ -7,11 +7,11 @@
 			<router-link to="/home" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='home'}">
 				<i class="home icon"></i>首页
 			</router-link>
-			<el-dropdown trigger="click" @command="categoryRoute">
-				<span class="el-dropdown-link item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='category'}">
+			<el-dropdown trigger="click" @command="categoryRoute" @visible-change="handleDropdownVisibleChange" :hide-on-click="true">
+				<span class="el-dropdown-link item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='category'}" @click.stop>
 					<i class="idea icon"></i>分类<i class="caret down icon"></i>
 				</span>
-				<el-dropdown-menu slot="dropdown">
+				<el-dropdown-menu slot="dropdown" class="category-dropdown">
 					<el-dropdown-item :command="category.name" v-for="(category,index) in categoryList" :key="index">{{ category.name }}</el-dropdown-item>
 				</el-dropdown-menu>
 			</el-dropdown>
@@ -102,8 +102,19 @@
 			toggle() {
 				this.mobileHide = !this.mobileHide
 			},
+			handleDropdownVisibleChange(visible) {
+				// 当下拉菜单显示时，阻止导航栏收起
+				if (visible && this.clientSize.clientWidth <= 768) {
+					// 阻止事件冒泡，避免导航栏收起
+					event.stopPropagation();
+				}
+			},
 			categoryRoute(name) {
 				this.$router.push(`/category/${name}`)
+				// 移动端选择后关闭导航栏
+				if (this.clientSize.clientWidth <= 768) {
+					this.mobileHide = true;
+				}
 			},
 			debounceQuery(queryString, callback) {
 				this.timer && clearTimeout(this.timer)
@@ -241,5 +252,33 @@
 		text-overflow: ellipsis;
 		font-size: 12px;
 		color: rgba(0, 0, 0, .70);
+	}
+
+	/* 移动端分类下拉菜单样式 */
+	.category-dropdown {
+		z-index: 3000 !important;
+	}
+
+	@media screen and (max-width: 768px) {
+		.category-dropdown {
+			position: fixed !important;
+			top: auto !important;
+			left: 0 !important;
+			right: 0 !important;
+			width: 100% !important;
+			max-width: 100% !important;
+			border-radius: 0 !important;
+			margin: 0 !important;
+			box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.3) !important;
+		}
+
+		.el-dropdown-menu__item {
+			padding: 12px 15px !important;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+		}
+
+		.el-dropdown-menu__item:last-child {
+			border-bottom: none !important;
+		}
 	}
 </style>
