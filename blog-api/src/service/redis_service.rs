@@ -25,9 +25,14 @@ impl RedisService {
         }
 
         // 检查哈希字段是否存在
-        let field_exists: i32 = connection.hexists::<String, String, i32>(key.clone(), hash.clone()).await?;
+        let field_exists: i32 = connection
+            .hexists::<String, String, i32>(key.clone(), hash.clone())
+            .await?;
         if field_exists == 0 {
-            return Err(DataBaseError::Custom(format!("redis {} 中不存在字段 {}", key, hash)));
+            return Err(DataBaseError::Custom(format!(
+                "redis {} 中不存在字段 {}",
+                key, hash
+            )));
         }
 
         let redis_reuslt: Option<String> = connection
@@ -37,10 +42,14 @@ impl RedisService {
         match redis_reuslt {
             Some(result) => {
                 //3.redis反序列化
-                let parsed_result = serde_json::from_str::<HashMap<String, Value>>(result.as_str())?;
+                let parsed_result =
+                    serde_json::from_str::<HashMap<String, Value>>(result.as_str())?;
                 Ok(parsed_result)
             }
-            None => Err(DataBaseError::Custom(format!("无法从 redis {} 获取字段 {} 的值", key, hash))),
+            None => Err(DataBaseError::Custom(format!(
+                "无法从 redis {} 获取字段 {} 的值",
+                key, hash
+            ))),
         }
     }
 
@@ -93,14 +102,17 @@ impl RedisService {
             return Err(DataBaseError::Custom(format!("redis {} 不存在", key)));
         }
 
-        let result: Option<String> = connection.get::<String, Option<String>>(key).await?;
+        let result: Option<String> = connection
+            .get::<String, Option<String>>(key.clone())
+            .await?;
         match result {
-            Some(value) => {
-                Ok(serde_json::from_str::<HashMap<String, Value>>(value.as_str())?)
-            }
-            None => {
-                Err(DataBaseError::Custom(format!("无法从 redis {} 获取值", key)))
-            }
+            Some(value) => Ok(serde_json::from_str::<HashMap<String, Value>>(
+                value.as_str(),
+            )?),
+            None => Err(DataBaseError::Custom(format!(
+                "无法从 redis {} 获取值",
+                key
+            ))),
         }
     }
 
