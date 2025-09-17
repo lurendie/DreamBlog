@@ -12,7 +12,7 @@ use sea_orm::{
     ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, ModelTrait, PaginatorTrait,
 };
 
-use crate::constant::redis_key_constants;
+use crate::constant::RedisKeyConstant;
 use crate::entity::{blog, category};
 use crate::enums::DataBaseError;
 use crate::model::Categorie;
@@ -29,13 +29,13 @@ impl CategoryService {
     pub async fn get_list(db: &DatabaseConnection) -> Result<Vec<Value>, DataBaseError> {
         //1.查询Redis
         let result =
-            RedisService::get_value_vec(redis_key_constants::CATEGORY_NAME_LIST.to_string()).await;
+            RedisService::get_value_vec(RedisKeyConstant::CATEGORY_NAME_LIST.to_string()).await;
         if let Some(result) = result {
             let arr = match result {
                 Value::Array(arr) => {
                     log::info!(
                         "reids KEY:{} 获取缓存数据成功",
-                        redis_key_constants::CATEGORY_NAME_LIST.to_string()
+                        RedisKeyConstant::CATEGORY_NAME_LIST.to_string()
                     );
                     arr
                 }
@@ -57,13 +57,13 @@ impl CategoryService {
         if result.len() > 0 {
             //3.保存Redis
             RedisService::set_value_vec(
-                redis_key_constants::CATEGORY_NAME_LIST.to_string(),
+                RedisKeyConstant::CATEGORY_NAME_LIST.to_string(),
                 &to_value!(&result),
             )
             .await?;
             log::info!(
-                "redis KEY:{} 写入缓存数据成功",
-                redis_key_constants::CATEGORY_NAME_LIST
+                "redis KEY:{} 缓存数据成功",
+                RedisKeyConstant::CATEGORY_NAME_LIST
             );
         }
         Ok(result)

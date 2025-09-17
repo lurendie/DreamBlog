@@ -17,7 +17,7 @@ pub struct PaginationParams {
 
 impl PaginationParams {
     /// 创建新的分页参数
-    pub fn new(page: u64, page_size: u64) -> Self {
+    pub fn _new(page: u64, page_size: u64) -> Self {
         Self {
             page: page.max(1),
             page_size: page_size.max(1).min(100), // 限制最大每页100条
@@ -25,7 +25,7 @@ impl PaginationParams {
     }
 
     /// 获取偏移量
-    pub fn offset(&self) -> u64 {
+    pub fn _offset(&self) -> u64 {
         (self.page - 1) * self.page_size
     }
 }
@@ -47,7 +47,7 @@ pub struct Pagination<T> {
 
 impl<T> Pagination<T> {
     /// 创建新的分页结果
-    pub fn new(items: Vec<T>, page: u64, page_size: u64, total: u64) -> Self {
+    pub fn _new(items: Vec<T>, page: u64, page_size: u64, total: u64) -> Self {
         let total_pages = if total == 0 {
             0
         } else {
@@ -64,18 +64,18 @@ impl<T> Pagination<T> {
     }
 
     /// 是否有上一页
-    pub fn has_prev(&self) -> bool {
+    pub fn _has_prev(&self) -> bool {
         self.page > 1
     }
 
     /// 是否有下一页
-    pub fn has_next(&self) -> bool {
+    pub fn _has_next(&self) -> bool {
         self.page < self.total_pages
     }
 
     /// 上一页页码
-    pub fn prev_page(&self) -> Option<u64> {
-        if self.has_prev() {
+    pub fn _prev_page(&self) -> Option<u64> {
+        if self._has_prev() {
             Some(self.page - 1)
         } else {
             None
@@ -83,8 +83,8 @@ impl<T> Pagination<T> {
     }
 
     /// 下一页页码
-    pub fn next_page(&self) -> Option<u64> {
-        if self.has_next() {
+    pub fn _next_page(&self) -> Option<u64> {
+        if self._has_next() {
             Some(self.page + 1)
         } else {
             None

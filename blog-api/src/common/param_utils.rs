@@ -13,7 +13,7 @@ pub struct ParamUtils;
 
 impl ParamUtils {
     /// 从Query中提取参数
-    pub fn extract_query_params<T>(query: Query<T>) -> T 
+    pub fn _extract_query_params<T>(query: Query<T>) -> T 
     where
         T: serde::de::DeserializeOwned + Clone,
     {
@@ -35,7 +35,7 @@ impl ParamUtils {
     }
 
     /// 从HashMap中获取正整数参数
-    pub fn get_positive_i64_param(params: &HashMap<String, String>, key: &str) -> Result<i64, AppError> {
+    pub fn _get_positive_i64_param(params: &HashMap<String, String>, key: &str) -> Result<i64, AppError> {
         let value = Self::get_i64_param(params, key)?;
         if value <= 0 {
             return Err(AppError::Validation(format!("参数 {} 必须是正整数", key)));
@@ -44,7 +44,7 @@ impl ParamUtils {
     }
 
     /// 从HashMap中获取布尔参数
-    pub fn get_bool_param(params: &HashMap<String, String>, key: &str) -> Result<bool, AppError> {
+    pub fn _get_bool_param(params: &HashMap<String, String>, key: &str) -> Result<bool, AppError> {
         let value = Self::get_string_param(params, key)?;
         match value.to_lowercase().as_str() {
             "true" | "1" | "yes" | "on" => Ok(true),
@@ -54,7 +54,7 @@ impl ParamUtils {
     }
 
     /// 检查参数是否存在
-    pub fn check_param_exists(params: &HashMap<String, String>, key: &str) -> Result<(), AppError> {
+    pub fn _check_param_exists(params: &HashMap<String, String>, key: &str) -> Result<(), AppError> {
         if !params.contains_key(key) {
             return Err(AppError::Validation(format!("缺少必要参数: {}", key)));
         }

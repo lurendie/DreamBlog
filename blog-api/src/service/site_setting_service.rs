@@ -1,5 +1,5 @@
-use crate::constant::redis_key_constants;
-use crate::constant::site_setting_constants;
+use crate::constant::RedisKeyConstant;
+use crate::constant::SiteSettingConstant;
 use crate::entity::site_setting;
 use crate::enums::DataBaseError;
 use crate::model::SiteSetting;
@@ -19,11 +19,11 @@ impl SiteSettingService {
     ) -> Result<HashMap<String, Value>, DataBaseError> {
         //查询缓存
         let cache_result =
-            RedisService::get_value_map(redis_key_constants::SITE_INFO_MAP.to_string()).await;
+            RedisService::get_value_map(RedisKeyConstant::SITE_INFO_MAP.to_string()).await;
         if let Ok(cache_result) = cache_result {
             log::info!(
                 "reids KEY:{} 获取缓存数据成功",
-                redis_key_constants::SITE_INFO_MAP
+                RedisKeyConstant::SITE_INFO_MAP
             );
             return Ok(cache_result);
         }
@@ -41,7 +41,7 @@ impl SiteSettingService {
                 Some(1) => {
                     match v.name_en {
                         Some(name_en) => {
-                            if name_en.contains(site_setting_constants::COPYRIGHT) {
+                            if name_en.contains(SiteSettingConstant::COPYRIGHT) {
                                 let copyright: Copyright =
                                     serde_json::from_str(v.value.unwrap_or_default().as_str())?;
                                 site_info.insert(name_en, to_value!(copyright));
@@ -58,34 +58,34 @@ impl SiteSettingService {
                 //类型2
                 Some(2) => match v.name_en {
                     Some(name_en) => match name_en.as_str() {
-                        site_setting_constants::AVATAR => {
+                        SiteSettingConstant::AVATAR => {
                             introduction.avatar = v.value.unwrap_or_default()
                         }
-                        site_setting_constants::NAME => {
+                        SiteSettingConstant::NAME => {
                             introduction.name = v.value.unwrap_or_default()
                         }
-                        site_setting_constants::GITHUB => {
+                        SiteSettingConstant::GITHUB => {
                             introduction.github = v.value.unwrap_or_default()
                         }
-                        site_setting_constants::TELEGRAM => {
+                        SiteSettingConstant::TELEGRAM => {
                             introduction.telegram = v.value.unwrap_or_default()
                         }
-                        site_setting_constants::QQ => introduction.qq = v.value.unwrap_or_default(),
-                        site_setting_constants::BILIBILI => {
+                        SiteSettingConstant::QQ => introduction.qq = v.value.unwrap_or_default(),
+                        SiteSettingConstant::BILIBILI => {
                             introduction.bilibili = v.value.unwrap_or_default()
                         }
-                        site_setting_constants::NETEASE => {
+                        SiteSettingConstant::NETEASE => {
                             introduction.netease = v.value.unwrap_or_default()
                         }
-                        site_setting_constants::EMAIL => {
+                        SiteSettingConstant::EMAIL => {
                             introduction.email = v.value.unwrap_or_default()
                         }
-                        site_setting_constants::FAVORITE => {
+                        SiteSettingConstant::FAVORITE => {
                             let favorite =
                                 serde_json::from_str(v.value.unwrap_or_default().as_str())?;
                             favorites.push(favorite);
                         }
-                        site_setting_constants::ROLL_TEXT => {
+                        SiteSettingConstant::ROLL_TEXT => {
                             let arr = v
                                 .value
                                 .unwrap_or_default()
@@ -118,11 +118,8 @@ impl SiteSettingService {
         map.insert("siteInfo".to_string(), to_value!(site_info));
         map.insert("badges".to_string(), to_value!(badges));
         //缓存数据
-        RedisService::set_value_map(redis_key_constants::SITE_INFO_MAP.to_string(), &map).await?;
-        log::info!(
-            "redis KEY:{} 写入缓存数据成功",
-            redis_key_constants::SITE_INFO_MAP
-        );
+        RedisService::set_value_map(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await?;
+        log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::SITE_INFO_MAP);
         Ok(map)
     }
 

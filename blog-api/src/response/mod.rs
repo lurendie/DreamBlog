@@ -6,4 +6,4 @@
  */
 pub mod response_result;
 
-pub use response_result::{ApiResponse, ApiResponseBuilder};
+pub use response_result::ApiResponse;

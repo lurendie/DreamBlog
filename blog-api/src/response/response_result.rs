@@ -21,6 +21,7 @@ pub struct ApiResponse<T> {
 }
 
 /// API响应构建器
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiResponseBuilder<T> {
     code: u16,
     msg: String,
@@ -29,7 +30,7 @@ pub struct ApiResponseBuilder<T> {
 
 impl<T> ApiResponseBuilder<T> {
     /// 创建新的响应构建器
-    pub fn new() -> Self {
+    pub fn _new() -> Self {
         Self {
             code: crate::error::ErrorCode::SUCCESS,
             msg: "成功".to_string(),
@@ -38,25 +39,25 @@ impl<T> ApiResponseBuilder<T> {
     }
 
     /// 设置状态码
-    pub fn code(mut self, code: u16) -> Self {
+    pub fn _code(mut self, code: u16) -> Self {
         self.code = code;
         self
     }
 
     /// 设置消息
-    pub fn msg(mut self, msg: String) -> Self {
+    pub fn _msg(mut self, msg: String) -> Self {
         self.msg = msg;
         self
     }
 
     /// 设置数据
-    pub fn data(mut self, data: Option<T>) -> Self {
+    pub fn _data(mut self, data: Option<T>) -> Self {
         self.data = data;
         self
     }
 
     /// 构建响应
-    pub fn build(self) -> ApiResponse<T> {
+    pub fn _build(self) -> ApiResponse<T> {
         ApiResponse {
             code: self.code,
             msg: self.msg,
@@ -142,17 +143,17 @@ impl Responder for AppError {
 /// 为Result<T, AppError>实现便捷方法
 pub trait ApiResponseExt<T, E> {
     /// 成功时返回数据，失败时返回错误响应
-    fn api_response(self) -> Result<T, AppError>;
+    fn _api_response(self) -> Result<T, AppError>;
     /// 成功时返回数据，失败时返回错误响应（带自定义消息）
-    fn api_response_with_msg(self, msg: String) -> Result<T, AppError>;
+    fn _api_response_with_msg(self, msg: String) -> Result<T, AppError>;
 }
 
 impl<T, E: std::fmt::Display> ApiResponseExt<T, E> for Result<T, E> {
-    fn api_response(self) -> Result<T, AppError> {
+    fn _api_response(self) -> Result<T, AppError> {
         self.map_err(|e| AppError::Custom(e.to_string()))
     }
 
-    fn api_response_with_msg(self, msg: String) -> Result<T, AppError> {
+    fn _api_response_with_msg(self, msg: String) -> Result<T, AppError> {
         self.map_err(|_| AppError::Custom(msg))
     }
 }

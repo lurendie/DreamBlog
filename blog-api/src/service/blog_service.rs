@@ -1,17 +1,17 @@
-use crate::constant::blog_info_constants::{self, NEW_BLOG_PAGE_SIZE, RANDOM_BLOG_LIMIT_NUM};
-use crate::constant::redis_key_constants;
+use crate::constant::BlogInfoConstant;
+use crate::constant::RedisKeyConstant;
 use crate::entity::{
     blog::{self},
     blog_tag, category, tag,
 };
 
+use crate::common::MarkdownParser;
 use crate::enums::{DataBaseError, TypeValue};
 use crate::model::{
     BlogArchive, BlogDetail, BlogInfo, BlogVO, BlogVisibility, SearchBlog, SearchRequest,
 };
 use crate::model::{BlogDTO, BlogIdAndTitle};
 use crate::service::RedisService;
-use crate::util::MarkdownParser;
 use chrono::{Datelike, NaiveDate};
 use rand::Rng;
 use rbs::to_value;
@@ -35,7 +35,7 @@ impl BlogService {
     ) -> Result<HashMap<String, Value>, DataBaseError> {
         //1.查询redis缓存
         let redis_cache = RedisService::get_hash_key(
-            redis_key_constants::HOME_BLOG_INFO_LIST.to_string(),
+            RedisKeyConstant::HOME_BLOG_INFO_LIST.to_string(),
             page_num.to_string(),
         )
         .await;
@@ -43,7 +43,7 @@ impl BlogService {
         if let Ok(redis_cache) = redis_cache {
             log::info!(
                 "reids KEY:{} 当前页：{} 获取缓存数据成功",
-                redis_key_constants::HOME_BLOG_INFO_LIST,
+                RedisKeyConstant::HOME_BLOG_INFO_LIST,
                 page_num
             );
             return Ok(redis_cache);
@@ -54,7 +54,7 @@ impl BlogService {
         let page = blog::Entity::find()
             .filter(blog::Column::IsPublished.eq(true))
             .order_by_desc(blog::Column::CreateTime)
-            .paginate(db, blog_info_constants::PAGE_SIZE);
+            .paginate(db, BlogInfoConstant::PAGE_SIZE);
         let list = match page.fetch_page(page_num - 1).await {
             Ok(list) => list,
             Err(e) => {
@@ -77,15 +77,15 @@ impl BlogService {
         //4.如果数据库查询不是Null 存放到Redis中
         if !blog_info_list.is_empty() {
             let _ = RedisService::set_hash_key(
-                redis_key_constants::HOME_BLOG_INFO_LIST.to_string(),
+                RedisKeyConstant::HOME_BLOG_INFO_LIST.to_string(),
                 page_num.to_string(),
                 &map,
             )
             .await?;
         }
         log::info!(
-            "redis KEY:{} 写入缓存数据成功",
-            redis_key_constants::HOME_BLOG_INFO_LIST
+            "redis KEY:{} 缓存数据成功",
+            RedisKeyConstant::HOME_BLOG_INFO_LIST
         );
         Ok(map)
     }
@@ -95,13 +95,13 @@ impl BlogService {
     pub async fn find_list_random(db: &DatabaseConnection) -> Result<Vec<Value>, DataBaseError> {
         //1.查询Redis 缓存数据
         let redis_cache =
-            RedisService::get_value_vec(redis_key_constants::RANDOM_BLOG_LIST.to_string()).await;
+            RedisService::get_value_vec(RedisKeyConstant::RANDOM_BLOG_LIST.to_string()).await;
         if let Some(redis_cache) = redis_cache {
             let arr = match redis_cache {
                 Value::Array(arr) => {
                     log::info!(
                         "reids KEY:{} 获取缓存数据成功",
-                        redis_key_constants::RANDOM_BLOG_LIST.to_string()
+                        RedisKeyConstant::RANDOM_BLOG_LIST.to_string()
                     );
                     arr
                 }
@@ -126,7 +126,7 @@ impl BlogService {
         let mut result = vec![];
         let mut rng = rand::thread_rng();
 
-        if blog_info_list.len() < RANDOM_BLOG_LIMIT_NUM {
+        if blog_info_list.len() < BlogInfoConstant::RANDOM_BLOG_LIMIT_NUM {
             if blog_info_list.len() > 0 {
                 for i in 0..(blog_info_list.len() - 1) {
                     ids.push(i);
@@ -135,7 +135,7 @@ impl BlogService {
             }
         } else {
             //随机获取文章ID并且去重
-            while ids.len() < RANDOM_BLOG_LIMIT_NUM {
+            while ids.len() < BlogInfoConstant::RANDOM_BLOG_LIMIT_NUM {
                 let index = rng.gen_range(0..(blog_info_list.len() - 1));
                 if !ids.contains(&index) {
                     ids.push(index);
@@ -146,13 +146,13 @@ impl BlogService {
         if result.len() > 0 {
             //保存到Redis
             RedisService::set_value_vec(
-                redis_key_constants::RANDOM_BLOG_LIST.to_string(),
+                RedisKeyConstant::RANDOM_BLOG_LIST.to_string(),
                 &to_value!(&result),
             )
             .await?;
             log::info!(
-                "redis KEY:{} 写入缓存数据成功",
-                redis_key_constants::RANDOM_BLOG_LIST
+                "redis KEY:{} 缓存数据成功",
+                RedisKeyConstant::RANDOM_BLOG_LIST
             );
         }
         return Ok(result);
@@ -164,13 +164,13 @@ impl BlogService {
     pub async fn find_list_new(db: &DatabaseConnection) -> Result<Vec<Value>, DataBaseError> {
         //1.查询Redis 缓存数据
         let redis_cache =
-            RedisService::get_value_vec(redis_key_constants::NEW_BLOG_LIST.to_string()).await;
+            RedisService::get_value_vec(RedisKeyConstant::NEW_BLOG_LIST.to_string()).await;
         if let Some(redis_cache) = redis_cache {
             let arr = match redis_cache {
                 Value::Array(arr) => {
                     log::info!(
                         "reids KEY:{} 获取缓存数据成功",
-                        redis_key_constants::NEW_BLOG_LIST.to_string()
+                        RedisKeyConstant::NEW_BLOG_LIST.to_string()
                     );
                     arr
                 }
@@ -195,14 +195,14 @@ impl BlogService {
         BlogService::bloginfo_handle(&mut blog_info_list, db).await;
         let mut result = vec![];
         //如果文章数量小于NEW_BLOG_PAGE_SIZE 则直接返回
-        if blog_info_list.len() < NEW_BLOG_PAGE_SIZE {
+        if blog_info_list.len() < BlogInfoConstant::NEW_BLOG_PAGE_SIZE {
             if blog_info_list.len() > 0 {
                 for i in 0..(blog_info_list.len() - 1) {
                     result.push(to_value!(blog_info_list[i].clone()));
                 }
             }
         } else {
-            for i in 0..NEW_BLOG_PAGE_SIZE {
+            for i in 0..BlogInfoConstant::NEW_BLOG_PAGE_SIZE {
                 result.push(to_value!(blog_info_list[i].clone()));
             }
         }
@@ -210,16 +210,13 @@ impl BlogService {
         if result.len() > 0 {
             //保存到Redis
             RedisService::set_value_vec(
-                redis_key_constants::NEW_BLOG_LIST.to_string(),
+                RedisKeyConstant::NEW_BLOG_LIST.to_string(),
                 &to_value!(&result),
             )
             .await?;
-        log::info!(
-            "redis KEY:{} 写入缓存数据成功",
-            redis_key_constants::NEW_BLOG_LIST
-        );
+            log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::NEW_BLOG_LIST);
         }
-        
+
         Ok(result)
     }
 
@@ -246,7 +243,7 @@ impl BlogService {
             .find_related(blog::Entity)
             .filter(blog::Column::IsPublished.eq(true))
             .order_by_desc(blog::Column::CreateTime)
-            .paginate(db, blog_info_constants::PAGE_SIZE);
+            .paginate(db, BlogInfoConstant::PAGE_SIZE);
         let blog_models = page
             .fetch_page(page_num as u64 - 1)
             .await
@@ -301,7 +298,7 @@ impl BlogService {
             .find_related(blog::Entity)
             .filter(blog::Column::IsPublished.eq(true))
             .order_by_desc(blog::Column::CreateTime)
-            .paginate(db, blog_info_constants::PAGE_SIZE);
+            .paginate(db, BlogInfoConstant::PAGE_SIZE);
         let blog_models = page
             .fetch_page(page_num as u64 - 1)
             .await
@@ -775,7 +772,7 @@ impl BlogService {
 
 #[cfg(test)]
 mod tests {
-    use crate::{constant::blog_info_constants::RANDOM_BLOG_LIMIT_NUM, service::BlogService};
+    use crate::{constant::BlogInfoConstant, service::BlogService};
     use chrono::Local;
     use rand::Rng;
     // use sea_orm::{DbBackend, EntityTrait, FromQueryResult, Statement};
@@ -810,10 +807,10 @@ mod tests {
         let mut rng = rand::thread_rng();
         let mut result = vec![];
         //随机获取文章ID并且去重
-        if list.len() < RANDOM_BLOG_LIMIT_NUM {
+        if list.len() < BlogInfoConstant::RANDOM_BLOG_LIMIT_NUM {
             //如果元素数量小于RANDOM_BLOG_LIMIT_NUM 则不处理
         } else {
-            while ids.len() < RANDOM_BLOG_LIMIT_NUM {
+            while ids.len() < BlogInfoConstant::RANDOM_BLOG_LIMIT_NUM {
                 let index = rng.gen_range(0..(list.len() - 1));
                 if !ids.contains(&index) {
                     println!("已添加: {}", index);

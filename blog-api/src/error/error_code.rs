@@ -18,7 +18,7 @@ impl ErrorCode {
     pub const UNAUTHORIZED: u16 = 401;
 
     /// 禁止访问
-    pub const FORBIDDEN: u16 = 403;
+    pub const _FORBIDDEN: u16 = 403;
 
     /// 资源未找到
     pub const NOT_FOUND: u16 = 404;

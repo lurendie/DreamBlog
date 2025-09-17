@@ -90,6 +90,7 @@ pub async fn login(
                             "请求成功".to_string(),
                             Some(to_value!(map)),
                         );
+                        log::info!("用户:{}已登录过,无需重复登录", user_form.username);
                         return HttpResponse::Ok()
                             .append_header((JWT_HEADER_NAME, token.clone()))
                             .cookie(
@@ -103,6 +104,7 @@ pub async fn login(
                 };
             }
             //登录
+            log::info!("用户:{}登录成功", user_form.username);
             let uuid = Uuid::new_v4();
             //创建认证数据
             let claims = AppClaims {
@@ -141,6 +143,6 @@ pub async fn login(
                 .json(result);
         }
     }
-    log::error!("用户名{}尝试登录，未找到用户", user_form.username);
+    log::warn!("用户名{}尝试登录，未找到用户", user_form.username);
     ApiResponse::<String>::error("用户名或密码错误！".to_string()).json()
 }

@@ -74,9 +74,9 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
 #[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct LogConfig;
 impl LogConfig {
-    pub fn new() -> Self {
-        Self::default()
-    }
+    // pub fn new() -> Self {
+    //     Self::default()
+    // }
 
     pub fn init_path(path: String) -> Result<Self, log4rs::config::InitError> {
         let _ = log4rs::init_file(path, Default::default())

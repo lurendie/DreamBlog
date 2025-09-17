@@ -6,7 +6,7 @@ use sea_orm::{
     PaginatorTrait, QueryFilter,
 };
 
-use crate::constant::redis_key_constants;
+use crate::constant::RedisKeyConstant;
 use crate::entity::{blog, blog_tag, tag};
 use crate::enums::DataBaseError;
 use crate::model::Serise;
@@ -19,13 +19,13 @@ impl TagService {
         let mut result = vec![];
         //1.查询redis缓存
         let redis_cache =
-            RedisService::get_value_vec(redis_key_constants::TAG_CLOUD_LIST.to_string()).await;
+            RedisService::get_value_vec(RedisKeyConstant::TAG_CLOUD_LIST.to_string()).await;
         if let Some(redis_cache) = redis_cache {
             let arr = match redis_cache {
                 Value::Array(arr) => {
                     log::info!(
                         "reids KEY:{} 获取缓存数据成功",
-                        redis_key_constants::TAG_CLOUD_LIST.to_string()
+                        RedisKeyConstant::TAG_CLOUD_LIST.to_string()
                     );
                     arr
                 }
@@ -43,18 +43,18 @@ impl TagService {
                 result.push(to_value!(TagDTO::from(model)));
             });
 
-       if result.len()>0{
-         //保存到Redis
-        RedisService::set_value_vec(
-            redis_key_constants::TAG_CLOUD_LIST.to_string(),
-            &to_value!(&result),
-        )
-        .await?;
-        log::info!(
-            "redis KEY:{} 写入缓存数据成功",
-            redis_key_constants::TAG_CLOUD_LIST
-        );
-       };
+        if result.len() > 0 {
+            //保存到Redis
+            RedisService::set_value_vec(
+                RedisKeyConstant::TAG_CLOUD_LIST.to_string(),
+                &to_value!(&result),
+            )
+            .await?;
+            log::info!(
+                "redis KEY:{} 缓存数据成功",
+                RedisKeyConstant::TAG_CLOUD_LIST
+            );
+        };
         Ok(result)
     }
 

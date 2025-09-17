@@ -1,30 +1,16 @@
-//配置项
-pub mod config;
-//models
-mod model;
-// 应用
-pub mod app_server;
-//常量
-mod constant;
-//路由控制
-mod controller;
-//枚举
-mod enums;
-//服务
-mod service;
-//工具
-mod util;
-//redis
-mod redis_client;
-//中间件
+mod app_server;
 mod app_state;
-mod middleware;
-
+mod common;
+mod config;
+mod constant;
+mod controller;
 mod entity;
-
-// 新增模块
-pub mod error;
-pub mod response;
-pub mod common;
+mod enums;
+mod error;
+mod middleware;
+mod model;
+mod redis_client;
+mod response;
+mod service;
 
 pub use app_server::AppServer;

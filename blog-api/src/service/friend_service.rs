@@ -1,13 +1,13 @@
+use crate::common::MarkdownParser;
+use crate::entity::friend;
 use crate::entity::site_setting;
 use crate::enums::DataBaseError;
 use crate::model::FriendInfo;
-use crate::util::MarkdownParser;
 use rbs::{to_value, value::map::ValueMap};
 use sea_orm::ColumnTrait;
 use sea_orm::DatabaseConnection;
 use sea_orm::EntityTrait;
 use sea_orm::QueryFilter;
-use crate::entity::friend;
 
 pub struct FriendService;
 
@@ -36,8 +36,11 @@ impl FriendService {
                 }
             }
         });
-        let models =friend::Entity::find().filter(friend::Column::IsPublished.eq(true)).all(db).await?;
-        let mut friend_list =vec![];
+        let models = friend::Entity::find()
+            .filter(friend::Column::IsPublished.eq(true))
+            .all(db)
+            .await?;
+        let mut friend_list = vec![];
         for model in models {
             friend_list.push(FriendInfo::from(model));
         }
