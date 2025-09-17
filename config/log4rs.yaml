@@ -1,0 +1,38 @@
+# log4rs.yaml
+refresh_rate: 30 seconds
+appenders:
+  stdout:
+    kind: console
+    encoder:
+      pattern: "{d} - {m}{n}\n"
+  rolling:
+    kind: rolling_file
+    path: "logs/log.log"
+    encoder:
+      pattern: "{d} - {m}{n}\n"
+    policy:
+      kind: compound
+      trigger:
+        kind: size
+        limit: 10485760 # 10 MB in bytes
+      roller:
+        kind: fixed_window
+        pattern: "logs/log.{}.log"
+        base: 1
+        count: 7
+
+root:
+  level: info
+  appenders:
+    - rolling
+    - stdout
+
+loggers:
+  app::backend::db:
+    level: info
+  app::requests:
+    level: info
+    appenders:
+    - rolling
+    - stdout
+    additive: false    

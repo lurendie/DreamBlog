@@ -1,0 +1,25 @@
+name: RUST CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Rust
+      run: rustup install stable
+    - name: Build
+      run: cargo build --release
+    - name: Run tests
+      run: cargo test --release
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: my-artifact
+        path: target/release
