@@ -6,7 +6,7 @@ use crate::service::MomentService;
 use actix_web::web::Path;
 use actix_web::{routes, web};
 use actix_web::{web::Query, Responder};
-use rbs::to_value;
+use rbs::value;
 
 //动态
 #[routes]
@@ -27,7 +27,7 @@ pub(crate) async fn moments(
     )
     .await
     {
-        Ok(data) => ApiResponse::success(Some(to_value!(data))).json(),
+        Ok(data) => ApiResponse::success(Some(value!(data))).json(),
         Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
 }

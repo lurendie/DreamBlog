@@ -3,7 +3,7 @@ use crate::service::SiteSettingService;
 use crate::{app_state::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
-use rbs::to_value;
+use rbs::value;
 
 #[routes]
 #[get("/siteSettings")]
@@ -13,7 +13,7 @@ pub async fn get_site_setting_data(
 ) -> impl Responder {
     match SiteSettingService::get_site_info(app.get_mysql_pool()).await {
         Ok(data) => {
-            ApiResponse::success_with_msg("获取站点设置成功".to_string(), Some(to_value!(data)))
+            ApiResponse::success_with_msg("获取站点设置成功".to_string(), Some( value!(data)))
                 .json()
         }
         Err(e) => ApiResponse::<String>::error(format!("获取站点设置失败: {}", e)).json(),
@@ -42,7 +42,7 @@ pub async fn get_web_title_suffix(
     // 由于服务层没有提供专门获取标题后缀的方法，这里先返回一个占位响应
     ApiResponse::success_with_msg(
         "获取网站标题后缀成功".to_string(),
-        Some(to_value!(" - ZeroBlog")),
+        Some( value!(" - ZeroBlog")),
     )
     .json()
 }

@@ -16,7 +16,7 @@ use actix_web::{
     Responder,
 };
 use rbs::value::map::ValueMap;
-use rbs::{to_value, Value};
+use rbs::{value, Value};
 
 #[routes] // 定义路由
 #[get("/blogs")] // 定义GET请求的路由
@@ -30,9 +30,9 @@ pub async fn blogs(
     let mut map = ValueMap::new(); // 创建一个ValueMap类型的变量
     let page = BlogService::find_all_page(query.0, connect).await; // 调用BlogService的get_blog_all_page方法，传入query.0，获取博客分页数据
     let categories = CategoryService::find_categories(connect).await; // 调用CategoryService的get_categories方法，获取分类数据
-    map.insert(to_value!("blogs"), to_value!(page)); // 将博客分页数据插入到map中
-    map.insert(to_value!("categories"), to_value!(categories)); // 将分类数据插入到map中
-    ApiResponse::success(Some(to_value!(map))).json()
+    map.insert(value!("blogs"), value!(page)); // 将博客分页数据插入到map中
+    map.insert(value!("categories"), value!(categories)); // 将分类数据插入到map中
+    ApiResponse::success(Some(value!(map))).json()
     // 返回一个包含map的JSON响应
 }
 
@@ -96,9 +96,9 @@ pub async fn category_and_tag(app: web::Data<AppState>) -> impl Responder {
         Ok(category_list) => category_list,
         Err(e) => return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
     };
-    map.insert("categories".to_string(), to_value!(category_list));
-    map.insert("tags".to_string(), to_value!(tag_list));
-    ApiResponse::success(Some(to_value!(map))).json()
+    map.insert("categories".to_string(), value!(category_list));
+    map.insert("tags".to_string(), value!(tag_list));
+    ApiResponse::success(Some(value!(map))).json()
 }
 
 /**
@@ -120,7 +120,7 @@ pub async fn blog(
     }
     let blog = BlogService::find_by_id(id, app.get_mysql_pool()).await;
     match blog {
-        Ok(blog) => ApiResponse::success_with_msg("请求成功!".to_string(), Some(to_value!(blog))).json(),
+        Ok(blog) => ApiResponse::success_with_msg("请求成功!".to_string(), Some(value!(blog))).json(),
         Err(e) => ApiResponse::<String>::error(e.to_string()).json(),
     }
 }

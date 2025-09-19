@@ -3,7 +3,7 @@ use crate::error::ErrorCode;
 use crate::model::ApiResponse;
 use crate::service::{BlogService, CategoryService, SiteSettingService, TagService};
 use actix_web::{routes, web, Responder};
-use rbs::to_value;
+use rbs::value;
 use rbs::Value;
 use std::collections::HashMap;
 
@@ -47,12 +47,12 @@ pub async fn site(app: web::Data<AppState>) -> impl Responder {
     };
     
     // 组合数据
-    map.insert("newBlogList".to_string(), to_value!(new_list));
-    map.insert("categoryList".to_string(), to_value!(category_list));
-    map.insert("tagList".to_string(), to_value!(tag_list));
-    map.insert("randomBlogList".to_string(), to_value!(random_list));
+    map.insert("newBlogList".to_string(), value!(new_list));
+    map.insert("categoryList".to_string(), value!(category_list));
+    map.insert("tagList".to_string(), value!(tag_list));
+    map.insert("randomBlogList".to_string(), value!(random_list));
     
-    ApiResponse::success(Some(to_value!(map))).json()
+    ApiResponse::success(Some(value!(map))).json()
 }
 
 pub async fn default() -> impl Responder {

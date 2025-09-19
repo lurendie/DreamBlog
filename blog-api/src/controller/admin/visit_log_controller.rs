@@ -6,7 +6,7 @@ use crate::model::VisitLog;
 use crate::{app_state::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
-use rbs::to_value;
+use rbs::value;
 use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder};
 use serde::Deserialize;
 
@@ -65,11 +65,11 @@ pub async fn get_visit_log_list(
             log_models.into_iter().for_each(|item| {
                 logs.push(VisitLog::from(item));
             });
-            result.insert("total".to_string(), to_value!(total));
-            result.insert("records".to_string(), to_value!(logs));
+            result.insert("total".to_string(),  value!(total));
+            result.insert("records".to_string(),  value!(logs));
             ApiResponse::success_with_msg(
                 "获取访问日志列表成功".to_string(),
-                Some(to_value!(result)),
+                Some( value!(result)),
             )
             .json()
         }

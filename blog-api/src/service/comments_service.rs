@@ -2,7 +2,7 @@ use crate::entity::comment;
 use crate::enums::DataBaseError;
 use crate::model::{CommentDTO, CommentVO};
 use crate::service::BlogService;
-use rbs::to_value;
+use rbs::value;
 use rbs::value::map::ValueMap;
 use sea_orm::{
     ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait, IntoActiveModel,
@@ -34,7 +34,7 @@ impl CommentService {
             comment.reply_comments = Some(Self::find_comment_vo_by_id(id, db).await?);
             comments.push(comment);
         }
-        map.insert("list".into(), to_value!(comments));
+        map.insert("list".into(), value!(comments));
         map.insert("totalPage".into(), rbs::Value::U64(page.num_pages().await?));
 
         Ok(map)
@@ -59,19 +59,19 @@ impl CommentService {
             comments.push(comment);
         }
         map.insert(
-            to_value!("pageNum"),
-            to_value!(page.num_pages().await.unwrap_or_default()),
+            value!("pageNum"),
+            value!(page.num_pages().await.unwrap_or_default()),
         );
-        map.insert(to_value!("pageSize"), to_value!(PAGE_SIZE));
+        map.insert(value!("pageSize"), value!(PAGE_SIZE));
         map.insert(
-            to_value!("pages"),
-            to_value!(page.num_pages().await.unwrap_or_default()),
+            value!("pages"),
+            value!(page.num_pages().await.unwrap_or_default()),
         );
         map.insert(
-            to_value!("total"),
-            to_value!(page.num_items().await.unwrap_or_default()),
+            value!("total"),
+            value!(page.num_items().await.unwrap_or_default()),
         );
-        map.insert("list".into(), to_value!(comments));
+        map.insert("list".into(), value!(comments));
 
         Ok(map)
     }

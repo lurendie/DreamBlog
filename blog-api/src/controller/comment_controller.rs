@@ -5,7 +5,7 @@ use crate::model::ApiResponse;
 use crate::service::CommentService;
 use actix_web::web::{self, Query};
 use actix_web::{get, Responder};
-use rbs::to_value;
+use rbs::value;
 use rbs::value::map::ValueMap;
 
 #[get("/comments")]
@@ -36,11 +36,11 @@ pub(crate) async fn get_comments(
     };
 
     let mut data = ValueMap::new();
-    data.insert("comments".into(), to_value!(list));
+    data.insert("comments".into(), value!(list));
 
     match CommentService::get_all_count(page_request.get_blog_id(), connect).await {
         Ok(close_comment) => {
-            data.insert("allComment".into(), to_value!(close_comment));
+            data.insert("allComment".into(), value!(close_comment));
         }
         Err(e) => {
             return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json();
@@ -48,12 +48,12 @@ pub(crate) async fn get_comments(
     }
     match CommentService::get_close_count(page_request.get_blog_id(), connect).await {
         Ok(close_comment) => {
-            data.insert("closeComment".into(), to_value!(close_comment));
+            data.insert("closeComment".into(), value!(close_comment));
         }
         Err(e) => {
             return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json();
         }
     }
 
-    ApiResponse::success_with_msg("获取成功!".to_string(), Some(to_value!(data))).json()
+    ApiResponse::success_with_msg("获取成功!".to_string(), Some(value!(data))).json()
 }

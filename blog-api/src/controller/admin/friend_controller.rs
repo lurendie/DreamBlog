@@ -8,7 +8,7 @@ use crate::{app_state::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
 use chrono::Utc;
-use rbs::to_value;
+use rbs::value;
 use sea_orm::{ActiveModelTrait, ActiveValue::NotSet, ColumnTrait, EntityTrait, QueryFilter, Set};
 use sea_orm::{PaginatorTrait, QueryOrder, QuerySelect};
 use serde::Deserialize;
@@ -68,11 +68,11 @@ pub async fn get_friends_by_query(
                 friends.push(Friend::from(item));
             });
             let mut result = HashMap::new();
-            result.insert("total".to_string(), to_value!(total));
-            result.insert("records".to_string(), to_value!(friends));
+            result.insert("total".to_string(),  value!(total));
+            result.insert("records".to_string(),  value!(friends));
             ApiResponse::<String>::success_with_msg(
                 "获取友链列表成功".to_string(),
-                Some(to_value!(result).to_string()),
+                Some( value!(result).to_string()),
             )
             .json()
         }
@@ -209,7 +209,7 @@ pub async fn get_friend_info(
     match FriendService::get_friend(app.get_mysql_pool()).await {
         Ok(data) => ApiResponse::<String>::success_with_msg(
             "获取友链信息成功".to_string(),
-            Some(to_value!(data).to_string()),
+            Some( value!(data).to_string()),
         )
         .json(),
         Err(e) => ApiResponse::<String>::error(format!("获取友链信息失败: {}", e)).json(),

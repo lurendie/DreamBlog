@@ -3,7 +3,7 @@ use crate::entity::moment;
 use crate::enums::DataBaseError;
 use crate::model::Moment;
 use crate::model::MomentDTO;
-use rbs::{to_value, value::map::ValueMap};
+use rbs::{value, value::map::ValueMap};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
 };
@@ -25,11 +25,11 @@ impl MomentService {
             list.push(model.into());
         }
         let mut value_map = ValueMap::new();
-        value_map.insert(to_value!("pageNum"), to_value!(page_num));
-        value_map.insert(to_value!("pageSize"), to_value!(page_size));
-        value_map.insert(to_value!("pages"), to_value!(page.num_pages().await?));
-        value_map.insert(to_value!("total"), to_value!(page.num_items().await?));
-        value_map.insert(to_value!("list"), to_value!(list));
+        value_map.insert(value!("pageNum"), value!(page_num));
+        value_map.insert(value!("pageSize"), value!(page_size));
+        value_map.insert(value!("pages"), value!(page.num_pages().await?));
+        value_map.insert(value!("total"), value!(page.num_items().await?));
+        value_map.insert(value!("list"), value!(list));
         Ok(value_map)
     }
     //创建动态
@@ -73,11 +73,11 @@ impl MomentService {
             list.push(model.into());
         }
         let mut value_map = ValueMap::new();
-        value_map.insert(to_value!("pageNum"), to_value!(page_num));
-        value_map.insert(to_value!("pageSize"), to_value!(page_size));
-        value_map.insert(to_value!("pages"), to_value!(page.num_pages().await?));
-        value_map.insert(to_value!("total"), to_value!(page.num_items().await?));
-        value_map.insert(to_value!("list"), to_value!(list));
+        value_map.insert(value!("pageNum"), value!(page_num));
+        value_map.insert(value!("pageSize"), value!(page_size));
+        value_map.insert(value!("pages"), value!(page.num_pages().await?));
+        value_map.insert(value!("total"), value!(page.num_items().await?));
+        value_map.insert(value!("list"), value!(list));
         Ok(value_map)
     }
 

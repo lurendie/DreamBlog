@@ -14,7 +14,7 @@ use crate::model::{BlogDTO, BlogIdAndTitle};
 use crate::service::RedisService;
 use chrono::{Datelike, NaiveDate};
 use rand::Rng;
-use rbs::to_value;
+use rbs::value;
 use rbs::value::map::ValueMap;
 use rbs::Value;
 use sea_orm::{
@@ -69,10 +69,10 @@ impl BlogService {
 
         BlogService::bloginfo_handle(&mut blog_info_list, db).await;
 
-        map.insert("list".to_string(), to_value!(&blog_info_list));
+        map.insert("list".to_string(), value!(&blog_info_list));
         map.insert(
             "totalPage".to_string(),
-            to_value!(page.num_pages().await.expect("分页错误")),
+            value!(page.num_pages().await.expect("分页错误")),
         );
         //4.如果数据库查询不是Null 存放到Redis中
         if !blog_info_list.is_empty() {
@@ -130,7 +130,7 @@ impl BlogService {
             if blog_info_list.len() > 0 {
                 for i in 0..(blog_info_list.len() - 1) {
                     ids.push(i);
-                    result.push(to_value!(blog_info_list[i].clone()));
+                    result.push(value!(blog_info_list[i].clone()));
                 }
             }
         } else {
@@ -139,7 +139,7 @@ impl BlogService {
                 let index = rng.gen_range(0..(blog_info_list.len() - 1));
                 if !ids.contains(&index) {
                     ids.push(index);
-                    result.push(to_value!(blog_info_list[index].clone()));
+                    result.push(value!(blog_info_list[index].clone()));
                 }
             }
         }
@@ -147,7 +147,7 @@ impl BlogService {
             //保存到Redis
             RedisService::set_value_vec(
                 RedisKeyConstant::RANDOM_BLOG_LIST.to_string(),
-                &to_value!(&result),
+                &value!(&result),
             )
             .await?;
             log::info!(
@@ -198,12 +198,12 @@ impl BlogService {
         if blog_info_list.len() < BlogInfoConstant::NEW_BLOG_PAGE_SIZE {
             if blog_info_list.len() > 0 {
                 for i in 0..(blog_info_list.len() - 1) {
-                    result.push(to_value!(blog_info_list[i].clone()));
+                    result.push(value!(blog_info_list[i].clone()));
                 }
             }
         } else {
             for i in 0..BlogInfoConstant::NEW_BLOG_PAGE_SIZE {
-                result.push(to_value!(blog_info_list[i].clone()));
+                result.push(value!(blog_info_list[i].clone()));
             }
         }
 
@@ -211,7 +211,7 @@ impl BlogService {
             //保存到Redis
             RedisService::set_value_vec(
                 RedisKeyConstant::NEW_BLOG_LIST.to_string(),
-                &to_value!(&result),
+                &value!(&result),
             )
             .await?;
             log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::NEW_BLOG_LIST);
@@ -253,10 +253,10 @@ impl BlogService {
             blog_info_list.push(BlogInfo::from(item));
         }
         BlogService::bloginfo_handle(&mut blog_info_list, db).await;
-        map.insert("list".to_string(), to_value!(blog_info_list));
+        map.insert("list".to_string(), value!(blog_info_list));
         map.insert(
             "totalPage".to_string(),
-            to_value!(page.num_pages().await.unwrap_or_default()),
+            value!(page.num_pages().await.unwrap_or_default()),
         );
         map
     }
@@ -309,10 +309,10 @@ impl BlogService {
             blog_info_list.push(BlogInfo::from(item));
         }
         BlogService::bloginfo_handle(&mut blog_info_list, db).await;
-        map.insert("list".to_string(), to_value!(blog_info_list));
+        map.insert("list".to_string(), value!(blog_info_list));
         map.insert(
             "totalPage".to_string(),
-            to_value!(page.num_pages().await.unwrap_or_default()),
+            value!(page.num_pages().await.unwrap_or_default()),
         );
         map
     }
@@ -362,7 +362,7 @@ impl BlogService {
                     model.privacy = Some(true);
                 }
             }
-            map.insert(to_value!(key), to_value!(blogs));
+            map.insert(value!(key), value!(blogs));
         }
         Ok(map)
     }
@@ -443,19 +443,19 @@ impl BlogService {
         }
 
         map.insert(
-            to_value!("pageNum"),
-            to_value!(page.num_pages().await.unwrap_or_default()),
+            value!("pageNum"),
+            value!(page.num_pages().await.unwrap_or_default()),
         );
-        map.insert(to_value!("pageSize"), to_value!(search.get_page_size()));
+        map.insert(value!("pageSize"), value!(search.get_page_size()));
         map.insert(
-            to_value!("pages"),
-            to_value!(page.num_pages().await.unwrap_or_default()),
+            value!("pages"),
+            value!(page.num_pages().await.unwrap_or_default()),
         );
         map.insert(
-            to_value!("total"),
-            to_value!(page.num_items().await.unwrap_or_default()),
+            value!("total"),
+            value!(page.num_items().await.unwrap_or_default()),
         );
-        map.insert(to_value!("list"), to_value!(blog_list));
+        map.insert(value!("list"), value!(blog_list));
         map
     }
 

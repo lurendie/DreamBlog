@@ -6,7 +6,7 @@ use crate::model::Visitor;
 use crate::{app_state::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
-use rbs::to_value;
+use rbs::value;
 use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder};
 use serde::Deserialize;
 
@@ -61,9 +61,9 @@ pub async fn get_visitor_list(
             visitor_models.into_iter().for_each(|item| {
                 visitors.push(Visitor::from(item));
             });
-            result.insert("total".to_string(), to_value!(total));
-            result.insert("records".to_string(), to_value!(visitors));
-            ApiResponse::success_with_msg("获取访客列表成功".to_string(), Some(to_value!(result)))
+            result.insert("total".to_string(),  value!(total));
+            result.insert("records".to_string(),  value!(visitors));
+            ApiResponse::success_with_msg("获取访客列表成功".to_string(), Some( value!(result)))
                 .json()
         }
         Err(e) => ApiResponse::<String>::error(format!("获取访客列表失败: {}", e)).json(),

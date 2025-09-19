@@ -5,7 +5,7 @@ use crate::enums::DataBaseError;
 use crate::model::SiteSetting;
 use crate::model::{Badge, Copyright, Favorite, Introduction};
 use crate::service::RedisService;
-use rbs::to_value;
+use rbs::value;
 use rbs::Value;
 use sea_orm::DatabaseConnection;
 use sea_orm::EntityTrait;
@@ -44,7 +44,7 @@ impl SiteSettingService {
                             if name_en.contains(SiteSettingConstant::COPYRIGHT) {
                                 let copyright: Copyright =
                                     serde_json::from_str(v.value.unwrap_or_default().as_str())?;
-                                site_info.insert(name_en, to_value!(copyright));
+                                site_info.insert(name_en, value!(copyright));
                             } else {
                                 site_info
                                     .insert(name_en, Value::String(v.value.unwrap_or_default()));
@@ -114,9 +114,9 @@ impl SiteSettingService {
             //类型3
         }
         introduction.favorites = favorites;
-        map.insert("introduction".to_string(), to_value!(introduction));
-        map.insert("siteInfo".to_string(), to_value!(site_info));
-        map.insert("badges".to_string(), to_value!(badges));
+        map.insert("introduction".to_string(), value!(introduction));
+        map.insert("siteInfo".to_string(), value!(site_info));
+        map.insert("badges".to_string(), value!(badges));
         //缓存数据
         RedisService::set_value_map(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await?;
         log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::SITE_INFO_MAP);
@@ -147,9 +147,9 @@ impl SiteSettingService {
             }
         }
 
-        map.insert("type1".to_string(), to_value!(site_type));
-        map.insert("type2".to_string(), to_value!(site_type2));
-        map.insert("type3".to_string(), to_value!(site_type3));
+        map.insert("type1".to_string(), value!(site_type));
+        map.insert("type2".to_string(), value!(site_type2));
+        map.insert("type3".to_string(), value!(site_type3));
         Ok(map)
     }
 }

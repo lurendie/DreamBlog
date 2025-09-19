@@ -10,7 +10,7 @@ use crate::{
 };
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
-use rbs::to_value;
+use rbs::value;
 
 #[routes]
 #[get("/tags")]
@@ -34,7 +34,7 @@ pub async fn get_all_tags(
     )
     .await;
     match tags_result {
-        Ok(value_map) => ApiResponse::success(Some(to_value!(value_map))).json(),
+        Ok(value_map) => ApiResponse::success(Some( value!(value_map))).json(),
         Err(e) => {
             ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
         }

@@ -6,7 +6,7 @@ use actix_web::{
     web::{self, Data},
     Responder,
 };
-use rbs::to_value;
+use rbs::value;
 
 use crate::{
     app_state::AppState,
@@ -28,7 +28,7 @@ pub async fn find_comments(
     let page_size = query.get_page_size();
     match CommentService::find_comment_dto(page_num, page_size, app.get_mysql_pool()).await {
         Ok(comments) => {
-            ApiResponse::success_with_msg("请求成功！".to_string(), Some(to_value!(comments)))
+            ApiResponse::success_with_msg("请求成功！".to_string(), Some(value!(comments)))
                 .json()
         }
         Err(e) => ApiResponse::<String>::error(e.to_string()).json(),
@@ -42,7 +42,7 @@ pub async fn find_blog_id_and_title(
     app: Data<AppState>,
 ) -> impl Responder {
     match BlogService::find_blogs_and_title(app.get_mysql_pool()).await {
-        Ok(comments) => ApiResponse::success(Some(to_value!(comments))).json(),
+        Ok(comments) => ApiResponse::success(Some(value!(comments))).json(),
         Err(e) => {
             ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
         }

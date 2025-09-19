@@ -1,5 +1,5 @@
 use rbs::value::map::ValueMap;
-use rbs::{to_value, Value};
+use rbs::{value, Value};
 use sea_orm::ActiveValue::NotSet;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, ModelTrait,
@@ -40,14 +40,14 @@ impl TagService {
             .unwrap_or_default()
             .into_iter()
             .for_each(|model| {
-                result.push(to_value!(TagDTO::from(model)));
+                result.push(value!(TagDTO::from(model)));
             });
 
         if result.len() > 0 {
             //保存到Redis
             RedisService::set_value_vec(
                 RedisKeyConstant::TAG_CLOUD_LIST.to_string(),
-                &to_value!(&result),
+                &value!(&result),
             )
             .await?;
             log::info!(
@@ -66,7 +66,7 @@ impl TagService {
         match tag::Entity::find().all(db).await {
             Ok(items) => {
                 for item in items {
-                    legend.push(to_value!(&item.tag_name));
+                    legend.push(value!(&item.tag_name));
 
                     let count = match item.find_related(blog::Entity).count(db).await {
                         Ok(count) => count,
@@ -83,8 +83,8 @@ impl TagService {
                 log::error!("查询标签失败:{}", e);
             }
         }
-        map.insert(to_value!("legend"), to_value!(legend));
-        map.insert(to_value!("series"), to_value!(series));
+        map.insert(value!("legend"), value!(legend));
+        map.insert(value!("series"), value!(series));
         map
     }
 
@@ -120,11 +120,11 @@ impl TagService {
             list.push(model.into());
         }
         let mut map: ValueMap = ValueMap::new();
-        map.insert(to_value!("pageNum"), to_value!(page_num));
-        map.insert(to_value!("pageSize"), to_value!(page_size));
-        map.insert(to_value!("pages"), to_value!(page.num_pages().await?));
-        map.insert(to_value!("total"), to_value!(page.num_items().await?));
-        map.insert(to_value!("list"), to_value!(list));
+        map.insert(value!("pageNum"), value!(page_num));
+        map.insert(value!("pageSize"), value!(page_size));
+        map.insert(value!("pages"), value!(page.num_pages().await?));
+        map.insert(value!("total"), value!(page.num_items().await?));
+        map.insert(value!("list"), value!(list));
         Ok(map)
     }
 

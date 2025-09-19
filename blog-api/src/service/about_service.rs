@@ -1,7 +1,7 @@
 use crate::entity::about;
 use crate::enums::DataBaseError;
 use crate::common::MarkdownParser;
-use rbs::to_value;
+use rbs::value;
 use rbs::value::map::ValueMap;
 use sea_orm::{DatabaseConnection, EntityTrait};
 
@@ -21,9 +21,9 @@ impl AboutService {
                 let value = item.value.unwrap_or_default();
                 if name.contains("content") {
                     let content = MarkdownParser::parser_html(value);
-                    map.insert(to_value!(name), to_value!(content));
+                    map.insert(value!(name), value!(content));
                 } else {
-                    map.insert(to_value!(name), to_value!(value));
+                    map.insert(value!(name), value!(value));
                 }
             });
         Ok(map)

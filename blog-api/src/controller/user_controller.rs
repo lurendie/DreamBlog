@@ -20,7 +20,7 @@ use actix_web::{
     HttpResponse, Responder,
 };
 use rbs::value::map::ValueMap;
-use rbs::{to_value, Value};
+use rbs::{value, Value};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -80,15 +80,15 @@ pub async fn login(
                             }
                         };
                         user.set_password("".to_string());
-                        map.insert(to_value!("user"), to_value!(user));
-                        map.insert(to_value!("token"), to_value!(token.clone()));
+                        map.insert(value!("user"), value!(user));
+                        map.insert(value!("token"), value!(token.clone()));
                         map.insert(
-                            to_value!("expires"),
-                            to_value!(CONFIG.get_server_config().token_expires),
+                            value!("expires"),
+                            value!(CONFIG.get_server_config().token_expires),
                         );
                         let result = ApiResponse::<Value>::success_with_msg(
                             "请求成功".to_string(),
-                            Some(to_value!(map)),
+                            Some(value!(map)),
                         );
                         log::info!("用户:{}已登录过,无需重复登录", user_form.username);
                         return HttpResponse::Ok()
@@ -123,15 +123,15 @@ pub async fn login(
                 .unwrap();
 
             user.set_password("".to_string());
-            map.insert(to_value!("user"), to_value!(user));
-            map.insert(to_value!("token"), to_value!(pair.jwt.encode().unwrap()));
+            map.insert(value!("user"), value!(user));
+            map.insert(value!("token"), value!(pair.jwt.encode().unwrap()));
             map.insert(
-                to_value!("expires"),
-                to_value!(CONFIG.get_server_config().token_expires),
+                value!("expires"),
+                value!(CONFIG.get_server_config().token_expires),
             );
             let result = ApiResponse::<Value>::success_with_msg(
                 "请求成功".to_string(),
-                Some(to_value!(map)),
+                Some(value!(map)),
             );
             return HttpResponse::Ok()
                 .append_header((JWT_HEADER_NAME, pair.jwt.encode().unwrap()))

@@ -7,7 +7,7 @@ use crate::model::ApiResponse;
 use crate::service::MomentService;
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
-use rbs::to_value;
+use rbs::value;
 use std::collections::HashMap;
 
 /**
@@ -48,7 +48,7 @@ pub async fn moments(
     .await
     {
         Ok(value_map) => {
-            ApiResponse::success(Some(to_value!(value_map))).json()
+            ApiResponse::success(Some( value!(value_map))).json()
         } // 返回一个包含map的JSON响应;
         Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
@@ -91,7 +91,7 @@ pub async fn get_moment_by_id(
     }
     let moment = MomentService::get_moment_by_id(id, app.get_mysql_pool()).await;
     match moment {
-        Ok(m) => ApiResponse::success(Some(to_value!(m))).json(),
+        Ok(m) => ApiResponse::success(Some( value!(m))).json(),
         Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
 }

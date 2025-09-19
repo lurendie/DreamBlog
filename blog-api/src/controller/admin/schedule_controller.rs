@@ -9,7 +9,7 @@ use crate::{app_state::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
 use chrono::Utc;
-use rbs::to_value;
+use rbs::value;
 use rbs::Value;
 use sea_orm::{
     ActiveModelTrait, ActiveValue::NotSet, ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter,
@@ -86,11 +86,11 @@ pub async fn get_job_list(
             job_models.into_iter().for_each(|item| {
                 jobs.push(ScheduleJob::from(item));
             });
-            result.insert("total".to_string(), to_value!(total));
-            result.insert("records".to_string(), to_value!(jobs));
+            result.insert("total".to_string(), value!(total));
+            result.insert("records".to_string(), value!(jobs));
             ApiResponse::<Value>::success_with_msg(
                 "获取定时任务列表成功".to_string(),
-                Some(to_value!(result)),
+                Some(value!(result)),
             )
             .json()
         }
@@ -274,11 +274,11 @@ pub async fn get_job_log_list(
             log_models.into_iter().for_each(|item| {
                 logs.push(ScheduleJobLog::from(item));
             });
-            result.insert("total".to_string(), to_value!(total));
-            result.insert("records".to_string(), to_value!(logs));
+            result.insert("total".to_string(), value!(total));
+            result.insert("records".to_string(), value!(logs));
             ApiResponse::<Value>::success_with_msg(
                 "获取定时任务日志列表成功".to_string(),
-                Some(to_value!(result)),
+                Some(value!(result)),
             )
             .json()
         }

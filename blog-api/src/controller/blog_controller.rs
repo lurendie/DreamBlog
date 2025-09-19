@@ -6,7 +6,7 @@ use crate::model::ApiResponse;
 use crate::service;
 use actix_web::web::{self, Json, Query};
 use actix_web::{routes, Responder};
-use rbs::to_value;
+use rbs::value;
 use service::BlogService;
 use std::collections::HashMap;
 
@@ -20,7 +20,7 @@ pub async fn blogs(params: Query<SearchRequest>, app: web::Data<AppState>) -> im
     let db_conn = app.get_mysql_pool();
 
     match BlogService::find_list_by_page(page_num, db_conn).await {
-        Ok(page) => ApiResponse::success(Some(to_value!(page))).json(),
+        Ok(page) => ApiResponse::success(Some(value!(page))).json(),
         Err(e) => {
             ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
         }
@@ -43,7 +43,7 @@ pub async fn blog(
 
     let blog = BlogService::find_id_detail(id, app.get_mysql_pool()).await;
     match blog {
-        Some(blog) => ApiResponse::success(Some(to_value!(blog))).json(),
+        Some(blog) => ApiResponse::success(Some(value!(blog))).json(),
         None => {
             ApiResponse::<String>::error_with_code(ErrorCode::NOT_FOUND, "博客不存在".to_string())
                 .json()
@@ -77,7 +77,7 @@ pub async fn category(
     let page =
         BlogService::find_by_categorya_name(category_name, page_num as usize, app.get_mysql_pool())
             .await;
-    ApiResponse::success(Some(to_value!(page))).json()
+    ApiResponse::success(Some(value!(page))).json()
 }
 
 #[routes]
@@ -105,7 +105,7 @@ pub async fn tag(
 
     let page =
         BlogService::find_by_tag_name(tag_name, page_num as usize, app.get_mysql_pool()).await;
-    ApiResponse::success(Some(to_value!(page))).json()
+    ApiResponse::success(Some(value!(page))).json()
 }
 
 /**
@@ -140,7 +140,7 @@ pub async fn check_blog_password(
 
     let password = data.get_password();
     if blog_info.password.clone().unwrap_or_default() == password {
-        ApiResponse::success_with_msg("验证成功,密码正确!".to_string(), Some(to_value!(blog_info)))
+        ApiResponse::success_with_msg("验证成功,密码正确!".to_string(), Some(value!(blog_info)))
             .json()
     } else {
         ApiResponse::<String>::error_with_code(ErrorCode::VALIDATION_ERROR, "密码错误".to_string())
@@ -164,7 +164,7 @@ pub async fn search_blog(
 
     //查找title内容的文章
     match BlogService::search_content(blog_title, app.get_mysql_pool()).await {
-        Ok(result) => ApiResponse::success(Some(to_value!(result))).json(),
+        Ok(result) => ApiResponse::success(Some(value!(result))).json(),
         Err(e) => {
             ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
         }

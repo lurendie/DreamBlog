@@ -9,7 +9,7 @@ use crate::service::CategoryService;
 use crate::{middleware::AppClaims, service::BlogService};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
-use rbs::to_value;
+use rbs::value;
 
 /**
  * 获取分类列表
@@ -35,7 +35,7 @@ pub async fn categories(
     )
     .await
     {
-        Ok(data) => ApiResponse::success(Some(to_value!(data))).json(),
+        Ok(data) => ApiResponse::success(Some(value!(data))).json(),
         Err(e) => {
             ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
         }
