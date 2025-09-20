@@ -1,5 +1,5 @@
 use crate::entity::about;
-use crate::enums::DataBaseError;
+use crate::error::DataBaseError;
 use crate::common::MarkdownParser;
 use rbs::value;
 use rbs::value::map::ValueMap;

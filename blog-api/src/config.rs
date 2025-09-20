@@ -4,7 +4,7 @@
  * @LastEditors: lurendie
  * @LastEditTime: 2024-05-17 12:18:04
  */
-use crate::enums::DataBaseError;
+use crate::error::DataBaseError;
 use chrono::Local;
 use serde::{Deserialize, Serialize};
 use std::{env, fs, panic, sync::LazyLock};

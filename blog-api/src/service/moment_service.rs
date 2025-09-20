@@ -1,6 +1,6 @@
 use crate::common::MarkdownParser;
 use crate::entity::moment;
-use crate::enums::DataBaseError;
+use crate::error::DataBaseError;
 use crate::model::Moment;
 use crate::model::MomentDTO;
 use rbs::{value, value::map::ValueMap};

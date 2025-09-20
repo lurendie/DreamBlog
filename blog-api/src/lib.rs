@@ -5,7 +5,6 @@ mod config;
 mod constant;
 mod controller;
 mod entity;
-mod enums;
 mod error;
 mod middleware;
 mod model;

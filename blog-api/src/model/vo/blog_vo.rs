@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
-use crate::{enums::TypeValue, model::category::Category};
+use crate::{common::TypeValue, model::category::Category};
 
 //Blog
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

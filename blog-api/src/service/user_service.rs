@@ -1,7 +1,7 @@
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 use crate::entity::user;
-use crate::enums::DataBaseError;
+use crate::error::DataBaseError;
 use crate::model::User;
 
 pub struct UserService;

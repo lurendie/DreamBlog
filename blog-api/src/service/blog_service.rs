@@ -6,7 +6,8 @@ use crate::entity::{
 };
 
 use crate::common::MarkdownParser;
-use crate::enums::{DataBaseError, TypeValue};
+use crate::common::TypeValue;
+use crate::error::DataBaseError;
 use crate::model::{
     BlogArchive, BlogDetail, BlogInfo, BlogVO, BlogVisibility, SearchBlog, SearchRequest,
 };

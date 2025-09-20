@@ -4,8 +4,8 @@
  * @LastEditors: lurendie
  * @LastEditTime: 2024-05-15 19:14:37
  */
-use crate::enums::DataBaseError;
 use crate::error::error_code::ErrorCode;
+use crate::error::DataBaseError;
 use thiserror::Error;
 
 /// 应用错误类型

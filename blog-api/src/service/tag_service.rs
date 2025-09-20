@@ -8,7 +8,7 @@ use sea_orm::{
 
 use crate::constant::RedisKeyConstant;
 use crate::entity::{blog, blog_tag, tag};
-use crate::enums::DataBaseError;
+use crate::error::DataBaseError;
 use crate::model::Serise;
 use crate::model::TagDTO;
 

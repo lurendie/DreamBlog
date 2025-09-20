@@ -8,8 +8,9 @@ mod ip_region;
 mod ip_value;
 mod markdown;
 mod pagination;
-
 pub mod param_utils;
+mod type_value;
 pub use ip_region::IpRegion;
 pub use markdown::MarkdownParser;
 pub use param_utils::ParamUtils;
+pub use type_value::TypeValue;

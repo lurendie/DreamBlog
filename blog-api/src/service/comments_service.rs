@@ -1,5 +1,5 @@
 use crate::entity::comment;
-use crate::enums::DataBaseError;
+use crate::error::DataBaseError;
 use crate::model::{CommentDTO, CommentVO};
 use crate::service::BlogService;
 use rbs::value;

@@ -1,7 +1,7 @@
 use crate::common::MarkdownParser;
 use crate::entity::friend;
 use crate::entity::site_setting;
-use crate::enums::DataBaseError;
+use crate::error::DataBaseError;
 use crate::model::FriendInfo;
 use rbs::{value, value::map::ValueMap};
 use sea_orm::ColumnTrait;

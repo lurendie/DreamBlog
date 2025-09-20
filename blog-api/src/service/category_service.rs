@@ -14,7 +14,7 @@ use sea_orm::{
 
 use crate::constant::RedisKeyConstant;
 use crate::entity::{blog, category};
-use crate::enums::DataBaseError;
+use crate::error::DataBaseError;
 use crate::model::Categorie;
 use crate::model::Category;
 use crate::model::Serise;

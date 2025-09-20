@@ -1,7 +1,7 @@
 use crate::constant::RedisKeyConstant;
 use crate::constant::SiteSettingConstant;
 use crate::entity::site_setting;
-use crate::enums::DataBaseError;
+use crate::error::DataBaseError;
 use crate::model::SiteSetting;
 use crate::model::{Badge, Copyright, Favorite, Introduction};
 use crate::service::RedisService;
