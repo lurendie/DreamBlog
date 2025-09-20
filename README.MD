@@ -4,10 +4,8 @@
 	</a>
 </p>
 <p align="center">
-	<img src="https://img.shields.io/badge/RUST-1.78-orange">
-	<img src="https://img.shields.io/badge/actix-web-4.5.0-brightgreen">
+	<img src="https://img.shields.io/badge/RUST-1.85-orange">
 	<img src="https://img.shields.io/badge/Vue-2.6.11-brightgreen">
-	<img src="https://img.shields.io/badge/sea-orm-1.1.0-red">
 	<img src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
