@@ -54,7 +54,7 @@ UI 框架为 [Element UI](https://github.com/ElemeFE/element)
 ## 开发环境
 
 1. `git clone` 项目
-2. 创建 MySQL 数据库 `zero_blog`，并执行 `sql` 文件初始化表数据
+2. 创建 MySQL 数据库 `blog_api`，并执行 `sql` 文件初始化表数据
 3. 安装 Redis 并启动
 4. 修改配置文件 `config.yaml` 确认 MySQL 和 Redis 数据库用户密码
 5. `cargo run` 启动后端服务
