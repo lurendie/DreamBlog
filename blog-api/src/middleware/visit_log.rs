@@ -5,25 +5,26 @@
  * @LastEditTime: 2024-05-15 19:10:17
 
 */
-use std::{
-    future::{ready, Future, Ready},
-    pin::Pin,
-    str::FromStr,
-    sync::LazyLock,
-};
-
 use crate::app_state::AppState;
+use crate::common::IpRegion;
 use crate::entity::visit_log;
 use actix_jwt_session::Uuid;
-use actix_web;
+use actix_web::{self, web::Data};
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     http::header::{HeaderName, HeaderValue},
     Error,
 };
 use chrono::Local;
+
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
+use std::{
+    future::{ready, Future, Ready},
+    pin::Pin,
+    str::FromStr,
+    sync::LazyLock,
+};
 use user_agent_parser::UserAgentParser;
 // 全局UserAgent解析器
 static USER_AGENT_PARSER: LazyLock<UserAgentParser> = LazyLock::new(|| {
@@ -99,7 +100,8 @@ where
             .to_string();
         let ip = get_real_client_ip(&req);
         let params = req.query_string().to_string();
-        let app_state = req.app_data::<AppState>().cloned();
+
+        let app_state = req.app_data::<Data<AppState>>().cloned();
 
         let fut = self.service.call(req);
 
@@ -111,10 +113,11 @@ where
             let mut res: ServiceResponse<B> = fut.await?;
 
             // 如果不是admin路径，记录访问日志
-            if !(res.request().uri().path().to_string().contains("admin")) {
+            if !(res.request().uri().path().to_string().contains("admin"))
+                && !(res.request().method().to_string() == "OPTIONS")
+            {
                 let uuid = Uuid::new_v4();
                 let uuid_str = uuid.to_string();
-
                 //1.检测访客标识码是否存在
                 let req_headers = res.request().headers();
                 let identification = req_headers.get("Identification");
@@ -135,7 +138,6 @@ where
                     );
                     uuid_str
                 };
-
                 // 解析用户代理
                 let browser = match USER_AGENT_PARSER.parse_engine(&user_agent).name {
                     Some(name) => name.to_string(),
@@ -144,7 +146,6 @@ where
                         "未知browser".to_string()
                     }
                 };
-
                 let os = match USER_AGENT_PARSER.parse_os(&user_agent).name {
                     Some(name) => name.to_string(),
                     None => {
@@ -166,7 +167,9 @@ where
                         method: Set(method),
                         param: Set(params),
                         ip: Set(Some(ip.clone())),
-                        ip_source: Set(Some("request".to_string())),
+                        ip_source: Set(Some(
+                            IpRegion::search_by_ip::<&str>(&ip).unwrap_or_default(),
+                        )),
                         os: Set(Some(os)),
                         browser: Set(Some(browser)),
                         times: Set(times),
@@ -178,7 +181,7 @@ where
                         log::error!("保存访问日志失败: {}", e);
                     };
                 } else {
-                    log::error!("获取app_state失败");
+                    log::warn!("获取AppState对象异常,保存访问日志异常!");
                 }
             }
             Ok(res)
