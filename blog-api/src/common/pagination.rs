@@ -34,7 +34,7 @@ impl PaginationParams {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pagination<T> {
     /// 当前页码
-    pub page: u64,
+    pub page_num: u64,
     /// 每页大小
     pub page_size: u64,
     /// 总记录数
@@ -42,12 +42,12 @@ pub struct Pagination<T> {
     /// 总页数
     pub total_pages: u64,
     /// 数据列表
-    pub items: Vec<T>,
+    pub list: Vec<T>,
 }
 
 impl<T> Pagination<T> {
     /// 创建新的分页结果
-    pub fn _new(items: Vec<T>, page: u64, page_size: u64, total: u64) -> Self {
+    pub fn _new(list: Vec<T>, page_num: u64, page_size: u64, total: u64) -> Self {
         let total_pages = if total == 0 {
             0
         } else {
@@ -55,28 +55,28 @@ impl<T> Pagination<T> {
         };
 
         Self {
-            page,
+            page_num,
             page_size,
             total,
             total_pages,
-            items,
+            list,
         }
     }
 
     /// 是否有上一页
     pub fn _has_prev(&self) -> bool {
-        self.page > 1
+        self.page_num > 1
     }
 
     /// 是否有下一页
     pub fn _has_next(&self) -> bool {
-        self.page < self.total_pages
+        self.page_num < self.total_pages
     }
 
     /// 上一页页码
     pub fn _prev_page(&self) -> Option<u64> {
         if self._has_prev() {
-            Some(self.page - 1)
+            Some(self.page_num - 1)
         } else {
             None
         }
@@ -85,7 +85,7 @@ impl<T> Pagination<T> {
     /// 下一页页码
     pub fn _next_page(&self) -> Option<u64> {
         if self._has_next() {
-            Some(self.page + 1)
+            Some(self.page_num + 1)
         } else {
             None
         }
