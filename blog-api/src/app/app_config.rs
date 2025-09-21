@@ -11,7 +11,7 @@ use std::{env, fs, panic, sync::LazyLock};
 
 //配置文件结构体
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
-pub struct Config {
+pub struct AppConfig {
     server: ServerConfig,
     mysql: MysqlConfig, //Mysql链接
     redis: RedisConfig, //Redis
@@ -50,7 +50,7 @@ pub struct ServerConfig {
     pub(crate) front_adderss: String, //前端页面地址
     pub(crate) token_expires: i64,    //token 过期时间
 }
-pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
+pub static CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {
     let args: Vec<String> = env::args().collect();
     //尝试获取 配置路径 命令行参数 如没有指定配置文件路径则默认路径是./config
     let config_path = args.get(1).unwrap_or(&"./config".to_string()).to_string();
@@ -59,7 +59,7 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     //加载配置
     server_config_path.push_str("/server_config.yaml");
     log_yaml_path.push_str("/log_config.yaml");
-    match Config::build_config(server_config_path.clone()) {
+    match AppConfig::build_config(server_config_path.clone()) {
         Ok(mut config) => {
             let log_config = LogConfig::init_path(log_yaml_path).unwrap();
             config.log = Some(log_config);
@@ -95,7 +95,7 @@ impl LogConfig {
     }
 }
 
-impl Config {
+impl AppConfig {
     pub fn get_mysql_config(&self) -> MysqlConfig {
         self.mysql.clone()
     }
@@ -108,7 +108,7 @@ impl Config {
         self.server.clone()
     }
 
-    fn build_config(path: String) -> Result<Config, DataBaseError> {
+    fn build_config(path: String) -> Result<AppConfig, DataBaseError> {
         let yaml_str = match fs::read_to_string(path.clone()) {
             Ok(str) => str,
             Err(_) => {
@@ -118,13 +118,13 @@ impl Config {
                 )));
             }
         };
-        Ok(serde_yaml::from_str::<Config>(&yaml_str)?)
+        Ok(serde_yaml::from_str::<AppConfig>(&yaml_str)?)
     }
 }
 
 /**
  * 获取配置信息
  */
-pub fn _get_app_config() -> Config {
+pub fn _get_app_config() -> AppConfig {
     CONFIG.clone()
 }

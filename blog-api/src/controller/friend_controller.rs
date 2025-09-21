@@ -1,4 +1,4 @@
-use crate::app_state::AppState;
+use crate::app::AppState;
 use crate::error::ErrorCode;
 use crate::model::ApiResponse;
 use crate::service::FriendService;

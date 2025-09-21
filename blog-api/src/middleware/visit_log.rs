@@ -5,7 +5,7 @@
  * @LastEditTime: 2024-05-15 19:10:17
 
 */
-use crate::app_state::AppState;
+use crate::app::AppState;
 use crate::common::IpRegion;
 use crate::entity::visit_log;
 use actix_jwt_session::Uuid;

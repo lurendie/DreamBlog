@@ -3,15 +3,15 @@
  * @Date: 2024-03-26 00:08:12
  * @LastEditors: lurendie
  */
-use crate::app_state::{self, AppState};
-use crate::config::CONFIG;
+use super::app_state::{self, AppState};
+use super::app_config::CONFIG;
 use crate::controller::admin::tag_controller;
 use crate::controller::{
     about_controller, admin, archive_controller, blog_controller, comment_controller,
     friend_controller, index_controller, moment_controller, user_controller,
 };
 use crate::middleware::{AppClaims, VisiLog};
-use crate::redis_client;
+use super::RedisClient;
 use actix_jwt_session::{Duration, Extractors, JwtTtl, RefreshTtl, UseJwt, JWT_HEADER_NAME};
 //use actix_web::middleware::Logger;
 use actix_web::web::Data;
@@ -39,7 +39,7 @@ impl AppServer {
             //,
             // CONFIG.clone(),
         );
-        let redis_pool = redis_client::get_redis_pool().await;
+        let redis_pool = RedisClient::get_redis_pool().await;
         let app_data = Data::new(app_state.clone());
         HttpServer::new(move || {
             //创建App

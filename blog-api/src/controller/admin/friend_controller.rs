@@ -4,7 +4,7 @@ use crate::entity::friend;
 use crate::middleware::AppClaims;
 use crate::model::Friend;
 use crate::service::FriendService;
-use crate::{app_state::AppState, model::ApiResponse};
+use crate::{app::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
 use chrono::Utc;

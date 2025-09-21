@@ -1,4 +1,4 @@
-use crate::config::CONFIG;
+use super::app_config::CONFIG;
 use deadpool_redis::{Config, Pool, PoolError, Runtime};
 use std::sync::LazyLock;
 
@@ -27,7 +27,9 @@ pub static REDIS_CLIENT: LazyLock<Pool> = LazyLock::new(|| {
     // log::info!("redis客户端初始化完成！");
 });
 
-/**
+pub struct RedisClient;
+impl RedisClient {
+    /**
  * 获取redis连接 如没有获取到连接则返回None
  */
 pub async fn get_connection() -> Result<deadpool_redis::Connection, PoolError> {
@@ -52,6 +54,7 @@ pub async fn _timeout_get_connection() -> Result<deadpool_redis::Connection, Poo
 
 pub async fn get_redis_pool() -> Pool {
     REDIS_CLIENT.clone()
+}
 }
 
 // //redis 单元测试

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::app_state::AppState;
+use crate::app::AppState;
 use crate::error::ErrorCode;
 use crate::model::Category;
 use crate::model::SearchRequest;

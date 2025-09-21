@@ -1,7 +1,7 @@
 use crate::entity::user;
 use crate::middleware::AppClaims;
 use crate::service::UserService;
-use crate::{app_state::AppState, model::ApiResponse};
+use crate::{app::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
 use chrono::Utc;

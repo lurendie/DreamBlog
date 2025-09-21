@@ -1,4 +1,4 @@
-use crate::config::CONFIG;
+use super::app_config::CONFIG;
 //use deadpool_redis::Pool;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 

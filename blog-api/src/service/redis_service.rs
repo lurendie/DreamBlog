@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::config::CONFIG;
+use crate::app::CONFIG;
 use crate::error::DataBaseError;
-use crate::redis_client;
+use crate::app::RedisClient;
 use deadpool_redis::redis::AsyncCommands;
 use rbs::Value;
 
@@ -17,7 +17,7 @@ impl RedisService {
         hash: String,
     ) -> Result<HashMap<String, Value>, DataBaseError> {
         //1.获取连接
-        let mut connection = redis_client::get_connection().await?;
+        let mut connection = RedisClient::get_connection().await?;
         //2.判断key是否存在
         let exists: i32 = connection.exists::<String, i32>(key.clone()).await?;
         if exists == 0 {
@@ -63,7 +63,7 @@ impl RedisService {
     ) -> Result<(), DataBaseError> {
         //redis序列化
         let value_str = serde_json::to_string(&value).unwrap_or_default();
-        let mut connection = redis_client::get_connection().await?;
+        let mut connection = RedisClient::get_connection().await?;
 
         let _ = connection
             .hset::<String, String, String, String>(key.clone(), hash, value_str)
@@ -81,7 +81,7 @@ impl RedisService {
         //1.序列化
         let value_str = serde_json::to_string(&value).unwrap_or_default();
         //2.获取连接
-        let mut connection = redis_client::get_connection().await?;
+        let mut connection = RedisClient::get_connection().await?;
         connection
             .set::<String, String, String>(key.clone(), value_str)
             .await?;
@@ -94,7 +94,7 @@ impl RedisService {
      */
     pub async fn get_value_map(key: String) -> Result<HashMap<String, Value>, DataBaseError> {
         //1.获取连接
-        let mut connection = redis_client::get_connection().await?;
+        let mut connection = RedisClient::get_connection().await?;
 
         // 检查key是否存在
         let exists: i32 = connection.exists::<String, i32>(key.clone()).await?;
@@ -130,7 +130,7 @@ impl RedisService {
         //1.序列化
         let value_str = serde_json::to_string(value)?;
         //2.获取连接
-        let mut con = redis_client::get_connection().await?;
+        let mut con = RedisClient::get_connection().await?;
         con.set::<String, String, String>(key.clone(), value_str)
             .await?;
         //5.设置过期时间
@@ -143,7 +143,7 @@ impl RedisService {
      */
     pub async fn get_value_vec(key: String) -> Option<Value> {
         //1.获取连接
-        match redis_client::get_connection().await {
+        match RedisClient::get_connection().await {
             //2.获取连接成功
             Ok(mut connection) => {
                 //3.a.判断key是否存在
@@ -190,7 +190,7 @@ impl RedisService {
      */
     pub async fn set_expire(key: String) -> Result<(), DataBaseError> {
         //获取连接
-        let mut connection = redis_client::get_connection().await?;
+        let mut connection = RedisClient::get_connection().await?;
         connection
             .expire::<String, i64>(key, CONFIG.get_redis_config().ttl)
             .await?;

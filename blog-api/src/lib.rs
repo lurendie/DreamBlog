@@ -1,14 +1,11 @@
-mod app_server;
-mod app_state;
+mod app;
 mod common;
-mod config;
 mod constant;
 mod controller;
 mod entity;
 mod error;
 mod middleware;
 mod model;
-mod redis_client;
 mod service;
 
-pub use app_server::AppServer;
+pub use app::AppServer;

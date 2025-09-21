@@ -6,8 +6,8 @@
  *
  */
 
-use crate::app_state::AppState;
-use crate::config::CONFIG;
+use crate::app::AppState;
+use crate::app::CONFIG;
 use crate::model::ApiResponse;
 use crate::{middleware::AppClaims, service::UserService};
 use actix_jwt_session::{

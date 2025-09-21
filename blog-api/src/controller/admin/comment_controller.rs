@@ -9,7 +9,7 @@ use actix_web::{
 use rbs::value;
 
 use crate::{
-    app_state::AppState,
+    app::AppState,
     error::ErrorCode,
     middleware::AppClaims,
     model::{CommentDTO, SearchRequest},

@@ -1,4 +1,4 @@
-use crate::app_state::AppState;
+use crate::app::AppState;
 use crate::common::ParamUtils;
 use crate::error::ErrorCode;
 use crate::model::SearchRequest;

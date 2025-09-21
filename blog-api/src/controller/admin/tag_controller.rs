@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    app_state::AppState,
+    app::AppState,
     error::ErrorCode,
     middleware::AppClaims,
     model::ApiResponse,

@@ -1,5 +1,5 @@
 use crate::service::AboutService;
-use crate::{app_state::AppState, error::ErrorCode, model::ApiResponse};
+use crate::{app::AppState, error::ErrorCode, model::ApiResponse};
 use actix_web::{get, web, Responder};
 use rbs::value;
 

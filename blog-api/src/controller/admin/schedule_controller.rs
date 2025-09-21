@@ -5,7 +5,7 @@ use crate::entity::schedule_job_log;
 use crate::middleware::AppClaims;
 use crate::model::ScheduleJob;
 use crate::model::ScheduleJobLog;
-use crate::{app_state::AppState, model::ApiResponse};
+use crate::{app::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web, Responder};
 use chrono::Utc;
