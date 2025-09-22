@@ -1,8 +1,10 @@
 use crate::app::AppState;
-use crate::error::ErrorCode;
-use crate::model::SearchRequest;
+use crate::error::WebErrorCode;
 use crate::model::ApiResponse;
+use crate::model::CommentDTO;
+use crate::model::SearchRequest;
 use crate::service::CommentService;
+use actix_web::routes;
 use actix_web::web::{self, Query};
 use actix_web::{get, Responder};
 use rbs::value;
@@ -14,12 +16,22 @@ pub(crate) async fn get_comments(
     app: web::Data<AppState>,
 ) -> impl Responder {
     if data.is_none() {
-        return ApiResponse::<String>::error_with_code(ErrorCode::VALIDATION_ERROR, "获取数据失败!".to_string()).json();
+        return ApiResponse::<String>::error_with_code(
+            WebErrorCode::VALIDATION_ERROR,
+            "获取数据失败!".to_string(),
+        )
+        .json();
     }
 
     let page_request = match data {
         Some(page_request) => page_request,
-        None => return ApiResponse::<String>::error_with_code(ErrorCode::VALIDATION_ERROR, "获取数据失败!".to_string()).json(),
+        None => {
+            return ApiResponse::<String>::error_with_code(
+                WebErrorCode::VALIDATION_ERROR,
+                "获取数据失败!".to_string(),
+            )
+            .json()
+        }
     };
     let connect = app.get_mysql_pool();
     let list = match CommentService::find_by_id_comments(
@@ -31,7 +43,11 @@ pub(crate) async fn get_comments(
     {
         Ok(list) => list,
         Err(e) => {
-            return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json();
+            return ApiResponse::<String>::error_with_code(
+                WebErrorCode::DATABASE_ERROR,
+                e.to_string(),
+            )
+            .json();
         }
     };
 
@@ -43,7 +59,11 @@ pub(crate) async fn get_comments(
             data.insert("allComment".into(), value!(close_comment));
         }
         Err(e) => {
-            return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json();
+            return ApiResponse::<String>::error_with_code(
+                WebErrorCode::DATABASE_ERROR,
+                e.to_string(),
+            )
+            .json();
         }
     }
     match CommentService::get_close_count(page_request.get_blog_id(), connect).await {
@@ -51,9 +71,31 @@ pub(crate) async fn get_comments(
             data.insert("closeComment".into(), value!(close_comment));
         }
         Err(e) => {
-            return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json();
+            return ApiResponse::<String>::error_with_code(
+                WebErrorCode::DATABASE_ERROR,
+                e.to_string(),
+            )
+            .json();
         }
     }
 
     ApiResponse::success_with_msg("获取成功!".to_string(), Some(value!(data))).json()
+}
+
+#[routes]
+#[post("/comment")]
+pub async fn save_comment(
+    state: web::Data<AppState>,
+    comment_dto: web::Json<CommentDTO>,
+) -> impl Responder {
+    match CommentService::save_comment(comment_dto.0, &state.mysql_connection).await {
+        Ok(_) => return ApiResponse::<String>::success(None).json(),
+        Err(e) => {
+            return ApiResponse::<String>::error_with_code(
+                WebErrorCode::DATABASE_ERROR,
+                e.to_string(),
+            )
+            .json()
+        }
+    }
 }

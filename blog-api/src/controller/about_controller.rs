@@ -1,5 +1,5 @@
 use crate::service::AboutService;
-use crate::{app::AppState, error::ErrorCode, model::ApiResponse};
+use crate::{app::AppState, error::WebErrorCode, model::ApiResponse};
 use actix_web::{get, web, Responder};
 use rbs::value;
 
@@ -11,7 +11,7 @@ pub(crate) async fn about(app: web::Data<AppState>) -> impl Responder {
             ApiResponse::success(Some(value!(value_map))).json()
         }
         Err(e) => {
-            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
         }
     }
 }

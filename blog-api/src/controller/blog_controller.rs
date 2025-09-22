@@ -1,6 +1,6 @@
 use crate::app::AppState;
 use crate::common::ParamUtils;
-use crate::error::ErrorCode;
+use crate::error::WebErrorCode;
 use crate::model::SearchRequest;
 use crate::model::ApiResponse;
 use crate::service;
@@ -22,7 +22,7 @@ pub async fn blogs(params: Query<SearchRequest>, app: web::Data<AppState>) -> im
     match BlogService::find_list_by_page(page_num, db_conn).await {
         Ok(page) => ApiResponse::success(Some(value!(page))).json(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
         }
     }
 }
@@ -45,7 +45,7 @@ pub async fn blog(
     match blog {
         Some(blog) => ApiResponse::success(Some(value!(blog))).json(),
         None => {
-            ApiResponse::<String>::error_with_code(ErrorCode::NOT_FOUND, "博客不存在".to_string())
+            ApiResponse::<String>::error_with_code(WebErrorCode::NOT_FOUND, "博客不存在".to_string())
                 .json()
         }
     }
@@ -121,7 +121,7 @@ pub async fn check_blog_password(
 
     if blog_id <= 0 {
         return ApiResponse::<String>::error_with_code(
-            ErrorCode::VALIDATION_ERROR,
+            WebErrorCode::VALIDATION_ERROR,
             "博客ID必须大于0".to_string(),
         )
         .json();
@@ -131,7 +131,7 @@ pub async fn check_blog_password(
         Some(info) => info,
         None => {
             return ApiResponse::<String>::error_with_code(
-                ErrorCode::NOT_FOUND,
+                WebErrorCode::NOT_FOUND,
                 "博客不存在".to_string(),
             )
             .json()
@@ -143,7 +143,7 @@ pub async fn check_blog_password(
         ApiResponse::success_with_msg("验证成功,密码正确!".to_string(), Some(value!(blog_info)))
             .json()
     } else {
-        ApiResponse::<String>::error_with_code(ErrorCode::VALIDATION_ERROR, "密码错误".to_string())
+        ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "密码错误".to_string())
             .json()
     }
 }
@@ -166,7 +166,7 @@ pub async fn search_blog(
     match BlogService::search_content(blog_title, app.get_mysql_pool()).await {
         Ok(result) => ApiResponse::success(Some(value!(result))).json(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
         }
     }
 }

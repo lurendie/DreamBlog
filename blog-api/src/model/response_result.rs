@@ -4,7 +4,7 @@
  * @LastEditors: lurendie
  * @LastEditTime: 2024-05-15 19:14:37
  */
-use crate::error::AppError;
+use crate::error::WebError;
 use actix_web::{HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
@@ -32,7 +32,7 @@ impl<T> ApiResponseBuilder<T> {
     /// 创建新的响应构建器
     pub fn _new() -> Self {
         Self {
-            code: crate::error::ErrorCode::SUCCESS,
+            code: crate::error::WebErrorCode::SUCCESS,
             msg: "成功".to_string(),
             data: None,
         }
@@ -70,7 +70,7 @@ impl<T: Serialize> ApiResponse<T> {
     /// 成功响应
     pub fn success(data: Option<T>) -> Self {
         Self {
-            code: crate::error::ErrorCode::SUCCESS,
+            code: crate::error::WebErrorCode::SUCCESS,
             msg: "成功".to_string(),
             data,
         }
@@ -79,7 +79,7 @@ impl<T: Serialize> ApiResponse<T> {
     /// 成功响应（带自定义消息）
     pub fn success_with_msg(msg: String, data: Option<T>) -> Self {
         Self {
-            code: crate::error::ErrorCode::SUCCESS,
+            code: crate::error::WebErrorCode::SUCCESS,
             msg,
             data,
         }
@@ -88,7 +88,7 @@ impl<T: Serialize> ApiResponse<T> {
     /// 错误响应
     pub fn error(msg: String) -> Self {
         Self {
-            code: crate::error::ErrorCode::INTERNAL_ERROR,
+            code: crate::error::WebErrorCode::INTERNAL_ERROR,
             msg,
             data: None,
         }
@@ -104,7 +104,7 @@ impl<T: Serialize> ApiResponse<T> {
     }
 
     /// 从错误创建响应
-    pub fn from_error(error: &AppError) -> Self {
+    pub fn from_error(error: &WebError) -> Self {
         Self {
             code: error.error_code(),
             msg: error.message().to_string(),
@@ -123,7 +123,7 @@ impl<T: Serialize> ApiResponse<T> {
 impl<T> Default for ApiResponse<T> {
     fn default() -> Self {
         Self {
-            code: crate::error::ErrorCode::SUCCESS,
+            code: crate::error::WebErrorCode::SUCCESS,
             msg: "成功".to_string(),
             data: None,
         }
@@ -131,7 +131,7 @@ impl<T> Default for ApiResponse<T> {
 }
 
 /// 为AppError实现Responder，使其可以直接用于控制器
-impl Responder for AppError {
+impl Responder for WebError {
     type Body = actix_web::body::BoxBody;
 
     fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
@@ -143,17 +143,17 @@ impl Responder for AppError {
 /// 为Result<T, AppError>实现便捷方法
 pub trait ApiResponseExt<T, E> {
     /// 成功时返回数据，失败时返回错误响应
-    fn _api_response(self) -> Result<T, AppError>;
+    fn _api_response(self) -> Result<T, WebError>;
     /// 成功时返回数据，失败时返回错误响应（带自定义消息）
-    fn _api_response_with_msg(self, msg: String) -> Result<T, AppError>;
+    fn _api_response_with_msg(self, msg: String) -> Result<T, WebError>;
 }
 
 impl<T, E: std::fmt::Display> ApiResponseExt<T, E> for Result<T, E> {
-    fn _api_response(self) -> Result<T, AppError> {
-        self.map_err(|e| AppError::Custom(e.to_string()))
+    fn _api_response(self) -> Result<T, WebError> {
+        self.map_err(|e| WebError::Custom(e.to_string()))
     }
 
-    fn _api_response_with_msg(self, msg: String) -> Result<T, AppError> {
-        self.map_err(|_| AppError::Custom(msg))
+    fn _api_response_with_msg(self, msg: String) -> Result<T, WebError> {
+        self.map_err(|_| WebError::Custom(msg))
     }
 }

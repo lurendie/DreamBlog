@@ -5,8 +5,8 @@ use crate::service::BlogService;
 use rbs::value;
 use rbs::value::map::ValueMap;
 use sea_orm::{
-    ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait, IntoActiveModel,
-    PaginatorTrait, QueryFilter, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
+    IntoActiveModel, PaginatorTrait, QueryFilter, TransactionTrait,
 };
 //每页显示5条博客简介
 const PAGE_SIZE: u64 = 5;
@@ -181,7 +181,7 @@ impl CommentService {
         Ok(count)
     }
 
-    pub async fn update_comment(
+    pub async fn save_comment(
         comment_dto: CommentDTO,
         db: &DatabaseConnection,
     ) -> Result<(), DataBaseError> {
@@ -194,9 +194,10 @@ impl CommentService {
             model.nickname = comment_dto.nickname;
             model.website = comment_dto.website;
             dbg!(&model);
-            comment::Entity::update(model.into_active_model())
-                .exec(db)
-                .await?;
+            model.into_active_model().update(db).await?;
+        } else {
+            let model = comment::Model::from(comment_dto);
+            model.into_active_model().insert(db).await?;
         }
         Ok(())
     }

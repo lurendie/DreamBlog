@@ -10,10 +10,10 @@ use rbs::value;
 
 use crate::{
     app::AppState,
-    error::ErrorCode,
+    error::WebErrorCode,
     middleware::AppClaims,
-    model::{CommentDTO, SearchRequest},
     model::ApiResponse,
+    model::{CommentDTO, SearchRequest},
     service::{BlogService, CommentService},
 };
 
@@ -28,8 +28,7 @@ pub async fn find_comments(
     let page_size = query.get_page_size();
     match CommentService::find_comment_dto(page_num, page_size, app.get_mysql_pool()).await {
         Ok(comments) => {
-            ApiResponse::success_with_msg("请求成功！".to_string(), Some(value!(comments)))
-                .json()
+            ApiResponse::success_with_msg("请求成功！".to_string(), Some(value!(comments))).json()
         }
         Err(e) => ApiResponse::<String>::error(e.to_string()).json(),
     }
@@ -44,7 +43,8 @@ pub async fn find_blog_id_and_title(
     match BlogService::find_blogs_and_title(app.get_mysql_pool()).await {
         Ok(comments) => ApiResponse::success(Some(value!(comments))).json(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string())
+                .json()
         }
     }
 }
@@ -57,10 +57,11 @@ pub async fn update_comment(
     app: Data<AppState>,
     comment: web::Json<CommentDTO>,
 ) -> impl Responder {
-    match CommentService::update_comment(comment.into_inner(), app.get_mysql_pool()).await {
+    match CommentService::save_comment(comment.into_inner(), app.get_mysql_pool()).await {
         Ok(_) => ApiResponse::<String>::success_with_msg("更新成功！".to_string(), None).json(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string())
+                .json()
         }
     }
 }
@@ -77,7 +78,8 @@ pub async fn delete_comment(
     match CommentService::delete_comment_recursive(id, app.get_mysql_pool()).await {
         Ok(_) => ApiResponse::<String>::success_with_msg("删除成功！".to_string(), None).json(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string())
+                .json()
         }
     }
 }

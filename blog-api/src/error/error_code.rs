@@ -5,9 +5,9 @@
  * @LastEditTime: 2024-05-15 19:14:37
  */
 /// 错误码常量定义
-pub struct ErrorCode;
+pub struct WebErrorCode;
 
-impl ErrorCode {
+impl WebErrorCode {
     /// 成功
     pub const SUCCESS: u16 = 200;
 
@@ -31,9 +31,6 @@ impl ErrorCode {
 
     /// JWT错误
     pub const JWT_ERROR: u16 = 502;
-
-    /// Redis错误
-    pub const REDIS_ERROR: u16 = 503;
 
     /// 数据库错误
     pub const DATABASE_ERROR: u16 = 504;

@@ -3,15 +3,15 @@
  * @Date: 2024-03-26 00:08:12
  * @LastEditors: lurendie
  */
-use super::app_state::{self, AppState};
 use super::app_config::CONFIG;
+use super::app_state::{self, AppState};
+use super::RedisClient;
 use crate::controller::admin::tag_controller;
 use crate::controller::{
     about_controller, admin, archive_controller, blog_controller, comment_controller,
     friend_controller, index_controller, moment_controller, user_controller,
 };
 use crate::middleware::{AppClaims, VisiLog};
-use super::RedisClient;
 use actix_jwt_session::{Duration, Extractors, JwtTtl, RefreshTtl, UseJwt, JWT_HEADER_NAME};
 //use actix_web::middleware::Logger;
 use actix_web::web::Data;
@@ -81,7 +81,8 @@ impl AppServer {
             .service(blog_controller::check_blog_password)
             .service(user_controller::login)
             .service(blog_controller::search_blog)
-            .service(moment_controller::moment_like);
+            .service(moment_controller::moment_like)
+            .service(comment_controller::save_comment);
     }
 
     /**

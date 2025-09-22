@@ -38,7 +38,7 @@ impl From<CommentDTO> for Model {
             content: dto.content,
             avatar: dto.avatar,
             is_published: dto.published.unwrap_or_default(),
-            create_time: Some(dto.create_time.unwrap_or_default()),
+            create_time: Some(dto.create_time),
             ip: dto.ip,
             is_notice: dto.is_notice.unwrap_or_default(),
             page: dto.page.unwrap_or_default(),

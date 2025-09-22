@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::error::ErrorCode;
+use crate::error::WebErrorCode;
 use crate::model::SearchRequest;
 use crate::model::ApiResponse;
 use crate::service::MomentService;
@@ -17,7 +17,7 @@ pub(crate) async fn moments(
 ) -> impl Responder {
     //查询所有moments
     if query.0.get_page_num() == 0 {
-        return ApiResponse::<String>::error_with_code(ErrorCode::VALIDATION_ERROR, "参数有误！".to_string()).json();
+        return ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "参数有误！".to_string()).json();
     }
     query.0.set_page_size(Some(5));
     match MomentService::get_public_moments(
@@ -28,7 +28,7 @@ pub(crate) async fn moments(
     .await
     {
         Ok(data) => ApiResponse::success(Some(value!(data))).json(),
-        Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
+        Err(e) => ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
 }
 
@@ -37,10 +37,10 @@ pub(crate) async fn moments(
 pub async fn moment_like(id: Path<i64>, app: web::Data<AppState>) -> impl Responder {
     let id = id.into_inner();
     if id <= 0 {
-        return ApiResponse::<String>::error_with_code(ErrorCode::VALIDATION_ERROR, "参数有误!".to_string()).json();
+        return ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "参数有误!".to_string()).json();
     }
     match MomentService::moment_like(id, app.get_mysql_pool()).await {
         Ok(_) => ApiResponse::<String>::success_with_msg("点赞成功".to_string(),None).json(),
-        Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
+        Err(e) => ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
 }

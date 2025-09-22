@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::error::ErrorCode;
+use crate::error::WebErrorCode;
 use crate::model::ApiResponse;
 use crate::service::FriendService;
 use actix_web::{get, web, Responder};
@@ -12,7 +12,7 @@ pub(crate) async fn get_friend(app: web::Data<AppState>) -> impl Responder {
             ApiResponse::success(Some(friend)).json()
         }
         Err(e) => {
-            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
         }
     }
 }

@@ -4,15 +4,17 @@ use serde::{Deserialize, Serialize};
 //评论
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CommentDTO {
+    #[serde(default = "Default::default")]
     pub(crate) id: i64,
+    #[serde(default = "Default::default")]
     pub(crate) nickname: String,
+    #[serde(default = "Default::default")]
     pub(crate) avatar: String,
-
     pub(crate) published: Option<bool>,
     pub(crate) email: Option<String>,
     pub(crate) ip: Option<String>,
-    #[serde(rename(serialize = "createTime"))]
-    pub(crate) create_time: Option<NaiveDateTime>,
+    #[serde(rename(serialize = "createTime"), default = "Default::default")]
+    pub(crate) create_time: NaiveDateTime,
     #[serde(rename(serialize = "notice"))]
     pub is_notice: Option<bool>,
     pub page: Option<i8>,
@@ -32,7 +34,7 @@ impl From<comment::Model> for CommentDTO {
             published: Some(model.is_admin_comment),
             email: Some(model.email),
             ip: Some(model.ip.unwrap_or_default()),
-            create_time: Some(model.create_time.unwrap_or(Local::now().naive_local())),
+            create_time: model.create_time.unwrap_or(Local::now().naive_local()),
             is_notice: Some(model.is_notice),
             page: Some(model.page),
             website: model.website,

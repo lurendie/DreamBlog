@@ -5,7 +5,7 @@
  * @LastEditTime: 2024-05-18 09:58:55
  */
 use crate::app::AppState;
-use crate::error::ErrorCode;
+use crate::error::WebErrorCode;
 use crate::model::ApiResponse;
 use crate::service::BlogService;
 use actix_web::{get, web, Responder};
@@ -25,7 +25,7 @@ pub(crate) async fn archives(app: web::Data<AppState>) -> impl Responder {
             ApiResponse::success(Some(value!(data))).json()
         }
         Err(e) => {
-            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
         }
     }
 }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::app::AppState;
-use crate::error::ErrorCode;
+use crate::error::WebErrorCode;
 use crate::model::{ApiResponse, BlogVO};
 use crate::service::{BlogService, CategoryService, TagService};
 use crate::{
@@ -51,7 +51,7 @@ pub async fn visibility(
     query.set_id(id as i64);
     match BlogService::update_visibility(&query, app.get_mysql_pool()).await {
         Ok(_) => ApiResponse::<String>::success_with_msg("更新成功".to_string(), None).json(),
-        Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
+        Err(e) => ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
 }
 
@@ -64,7 +64,7 @@ pub async fn top(
 ) -> impl Responder {
     match BlogService::update_visibility(&query, app.get_mysql_pool()).await {
         Ok(_) => ApiResponse::<String>::success_with_msg("更新成功".to_string(), None).json(),
-        Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
+        Err(e) => ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
 }
 
@@ -77,7 +77,7 @@ pub async fn recommend(
 ) -> impl Responder {
     match BlogService::update_visibility(&query, app.get_mysql_pool()).await {
         Ok(_) => ApiResponse::<String>::success_with_msg("更新成功".to_string(), None).json(),
-        Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
+        Err(e) => ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
 }
 /**
@@ -90,11 +90,11 @@ pub async fn category_and_tag(app: web::Data<AppState>) -> impl Responder {
     let connect = app.get_mysql_pool();
     let tag_list = match TagService::get_tags(connect).await {
         Ok(tag_list) => tag_list,
-        Err(e) => return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
+        Err(e) => return ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json(),
     };
     let category_list = match CategoryService::get_list(connect).await {
         Ok(category_list) => category_list,
-        Err(e) => return ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
+        Err(e) => return ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json(),
     };
     map.insert("categories".to_string(), value!(category_list));
     map.insert("tags".to_string(), value!(tag_list));
@@ -137,7 +137,7 @@ pub async fn update_blog(
 ) -> impl Responder {
     match BlogService::update_blog(query.into_inner(), app.get_mysql_pool()).await {
         Ok(_) => ApiResponse::<String>::success_with_msg("更新成功".to_string(), None).json(),
-        Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
+        Err(e) => ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
 }
 /**
@@ -152,7 +152,7 @@ pub async fn create_blog(
 ) -> impl Responder {
     match BlogService::update_blog(query.into_inner(), app.get_mysql_pool()).await {
         Ok(_) => ApiResponse::<String>::success_with_msg("创建成功".to_string(), None).json(),
-        Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
+        Err(e) => ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
 }
 
@@ -172,10 +172,10 @@ pub async fn delete_blog(
         None => 0,
     };
     if id <= 0 {
-        return ApiResponse::<String>::error_with_code(ErrorCode::VALIDATION_ERROR, "参数错误".to_string()).json();
+        return ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "参数错误".to_string()).json();
     }
     match BlogService::delete_by_id(id, app.get_mysql_pool()).await {
         Ok(_) => ApiResponse::<String>::success_with_msg("删除成功".to_string(), None).json(),
-        Err(e) => ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json(),
+        Err(e) => ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json(),
     }
 }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::app::AppState;
-use crate::error::ErrorCode;
+use crate::error::WebErrorCode;
 use crate::model::Category;
 use crate::model::SearchRequest;
 use crate::model::ApiResponse;
@@ -23,7 +23,7 @@ pub async fn categories(
 ) -> impl Responder {
     if params.get_page_num() <= 0 || params.get_page_size() <= 0 {
         return ApiResponse::<String>::error_with_code(
-            ErrorCode::VALIDATION_ERROR,
+            WebErrorCode::VALIDATION_ERROR,
             "参数有误!".to_string(),
         )
         .json();
@@ -37,7 +37,7 @@ pub async fn categories(
     {
         Ok(data) => ApiResponse::success(Some(value!(data))).json(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
         }
     }
 }
@@ -55,7 +55,7 @@ pub async fn update_category(
     //参数校验
     if form.get_name().is_empty() {
         return ApiResponse::<String>::error_with_code(
-            ErrorCode::VALIDATION_ERROR,
+            WebErrorCode::VALIDATION_ERROR,
             "参数有误!".to_string(),
         )
         .json();
@@ -92,7 +92,7 @@ pub async fn delete_category(
         Some(id) => {
             if *id == 0 {
                 return ApiResponse::<String>::error_with_code(
-                    ErrorCode::VALIDATION_ERROR,
+                    WebErrorCode::VALIDATION_ERROR,
                     "参数有误!".to_string(),
                 )
                 .json();
@@ -101,7 +101,7 @@ pub async fn delete_category(
         }
         None => {
             return ApiResponse::<String>::error_with_code(
-                ErrorCode::VALIDATION_ERROR,
+                WebErrorCode::VALIDATION_ERROR,
                 "参数有误!".to_string(),
             )
             .json()
@@ -112,7 +112,7 @@ pub async fn delete_category(
     match BlogService::check_category_exist_blog(id, connection).await {
         Ok(true) => {
             return ApiResponse::<String>::error_with_code(
-                ErrorCode::BUSINESS_ERROR,
+                WebErrorCode::BUSINESS_ERROR,
                 "分类下存在文章,不能删除!".to_string(),
             )
             .json()
@@ -123,13 +123,13 @@ pub async fn delete_category(
                 Ok(_) => ApiResponse::<String>::success_with_msg("删除分类成功!".to_string(), None)
                     .json(),
                 Err(e) => {
-                    ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string())
+                    ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string())
                         .json()
                 }
             }
         }
         Err(e) => {
-            ApiResponse::<String>::error_with_code(ErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
         }
     }
 }
