@@ -66,8 +66,8 @@ impl RedisService {
         let value_str = serde_json::to_string(&value).unwrap_or_default();
         let mut connection = RedisClient::get_connection().await?;
 
-        let _ = connection
-            .hset::<String, String, String, String>(key.clone(), hash, value_str)
+        connection
+            .hset::<String, String, String, i64>(key.clone(), hash, value_str)
             .await?;
         RedisService::set_expire(key).await?;
         Ok(())
@@ -81,7 +81,7 @@ impl RedisService {
         //2.获取连接
         let mut connection = RedisClient::get_connection().await?;
         connection
-            .set::<String, String, String>(key.clone(), value_str)
+            .set::<String, String, i64>(key.clone(), value_str)
             .await?;
         RedisService::set_expire(key).await?;
         Ok(())
@@ -127,7 +127,7 @@ impl RedisService {
         let value_str = serde_json::to_string(value)?;
         //2.获取连接
         let mut con = RedisClient::get_connection().await?;
-        con.set::<String, String, String>(key.clone(), value_str)
+        con.set::<String, String, i64>(key.clone(), value_str)
             .await?;
         //5.设置过期时间
         RedisService::set_expire(key).await?;
@@ -187,9 +187,13 @@ impl RedisService {
     pub async fn set_expire(key: String) -> Result<(), DataBaseError> {
         //获取连接
         let mut connection = RedisClient::get_connection().await?;
-        connection
-            .expire::<String, i64>(key, CONFIG.get_redis_config().ttl)
-            .await?;
+        match connection
+            .expire::<String, i64>(key.clone(), CONFIG.get_redis_config().ttl)
+            .await
+        {
+            Ok(_) => log::info!("redis key: {} 设置过期时间成功", key),
+            Err(e) => log::error!("redis key: {} 设置过期时间失败:{}", key, e),
+        };
         Ok(())
     }
 }

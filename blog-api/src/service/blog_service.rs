@@ -323,6 +323,10 @@ impl BlogService {
         let redis_cache =
             RedisService::get_value_map(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string()).await;
         if let Ok(redis_cache) = redis_cache {
+            log::info!(
+                "获取 KEY:{} 缓存数据成功",
+                RedisKeyConstant::ARCHIVE_BLOG_MAP
+            );
             return Ok(redis_cache);
         }
         //获取所有文章的日期
