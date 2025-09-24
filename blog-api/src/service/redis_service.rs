@@ -81,7 +81,7 @@ impl RedisService {
         //2.获取连接
         let mut connection = RedisClient::get_connection().await?;
         connection
-            .set::<String, String, i64>(key.clone(), value_str)
+            .set::<String, String, String>(key.clone(), value_str)
             .await?;
         RedisService::set_expire(key).await?;
         Ok(())
@@ -127,7 +127,7 @@ impl RedisService {
         let value_str = serde_json::to_string(value)?;
         //2.获取连接
         let mut con = RedisClient::get_connection().await?;
-        con.set::<String, String, i64>(key.clone(), value_str)
+        con.set::<String, String, String>(key.clone(), value_str)
             .await?;
         //5.设置过期时间
         RedisService::set_expire(key).await?;
