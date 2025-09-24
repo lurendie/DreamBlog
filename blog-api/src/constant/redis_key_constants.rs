@@ -37,7 +37,7 @@ impl RedisKeyConstant {
     // /**
     //  * 博客归档key
     //  */
-    //pub const ARCHIVE_BLOG_MAP: &str = "archiveBlogMap";
+    pub const ARCHIVE_BLOG_MAP: &str = "archiveBlogMap";
     // /**
     //  * 博客访问量key
     //  */

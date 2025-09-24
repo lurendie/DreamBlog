@@ -320,6 +320,11 @@ impl BlogService {
 
     //获取归档文章
     pub(crate) async fn find_archives(db: &DatabaseConnection) -> Result<ValueMap, DataBaseError> {
+        let redis_cache =
+            RedisService::get_value_map(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string()).await;
+        if let Ok(redis_cache) = redis_cache {
+            return Ok(redis_cache);
+        }
         //获取所有文章的日期
         let mut map: ValueMap = ValueMap::new();
         let mut dates = ValueMap::new();
@@ -364,6 +369,16 @@ impl BlogService {
                 }
             }
             map.insert(value!(key), value!(blogs));
+        }
+
+        if map.len() > 0 {
+            //保存到Redis
+            RedisService::set_value_map(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string(), &map)
+                .await?;
+            log::info!(
+                "redis KEY:{} 缓存数据成功",
+                RedisKeyConstant::ARCHIVE_BLOG_MAP
+            );
         }
         Ok(map)
     }

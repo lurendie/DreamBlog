@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
+use crate::app::RedisClient;
 use crate::app::CONFIG;
 use crate::error::DataBaseError;
-use crate::app::RedisClient;
 use deadpool_redis::redis::AsyncCommands;
+use rbs::value::map::ValueMap;
 use rbs::Value;
 
 pub struct RedisService;
@@ -21,7 +22,7 @@ impl RedisService {
         //2.判断key是否存在
         let exists: i32 = connection.exists::<String, i32>(key.clone()).await?;
         if exists == 0 {
-            return Err(DataBaseError::Custom(format!("redis {} 不存在", key)));
+            return Err(DataBaseError::Custom(format!("key {} 不存在", key)));
         }
 
         // 检查哈希字段是否存在
@@ -30,7 +31,7 @@ impl RedisService {
             .await?;
         if field_exists == 0 {
             return Err(DataBaseError::Custom(format!(
-                "redis {} 中不存在字段 {}",
+                "key {} 中不存在字段 {}",
                 key, hash
             )));
         }
@@ -74,10 +75,7 @@ impl RedisService {
     /**
      * Set `key` `value`字符串
      */
-    pub async fn set_value_map(
-        key: String,
-        value: &HashMap<String, Value>,
-    ) -> Result<(), DataBaseError> {
+    pub async fn set_value_map(key: String, value: &ValueMap) -> Result<(), DataBaseError> {
         //1.序列化
         let value_str = serde_json::to_string(&value).unwrap_or_default();
         //2.获取连接
@@ -92,23 +90,21 @@ impl RedisService {
     /**
      * 获取`key`字符串
      */
-    pub async fn get_value_map(key: String) -> Result<HashMap<String, Value>, DataBaseError> {
+    pub async fn get_value_map(key: String) -> Result<ValueMap, DataBaseError> {
         //1.获取连接
         let mut connection = RedisClient::get_connection().await?;
 
         // 检查key是否存在
         let exists: i32 = connection.exists::<String, i32>(key.clone()).await?;
         if exists == 0 {
-            return Err(DataBaseError::Custom(format!("redis {} 不存在", key)));
+            return Err(DataBaseError::Custom(format!("key:{} 不存在", key)));
         }
 
         let result: Option<String> = connection
             .get::<String, Option<String>>(key.clone())
             .await?;
         match result {
-            Some(value) => Ok(serde_json::from_str::<HashMap<String, Value>>(
-                value.as_str(),
-            )?),
+            Some(value) => Ok(serde_json::from_str::<ValueMap>(value.as_str())?),
             None => Err(DataBaseError::Custom(format!(
                 "无法从 redis {} 获取值",
                 key

@@ -6,6 +6,7 @@ use crate::model::SiteSetting;
 use crate::model::{Badge, Copyright, Favorite, Introduction};
 use crate::service::RedisService;
 use rbs::value;
+use rbs::value::map::ValueMap;
 use rbs::Value;
 use sea_orm::DatabaseConnection;
 use sea_orm::EntityTrait;
@@ -14,9 +15,7 @@ use std::collections::HashMap;
 pub struct SiteSettingService;
 
 impl SiteSettingService {
-    pub async fn find_site_info(
-        db: &DatabaseConnection,
-    ) -> Result<HashMap<String, Value>, DataBaseError> {
+    pub async fn find_site_info(db: &DatabaseConnection) -> Result<ValueMap, DataBaseError> {
         //查询缓存
         let cache_result =
             RedisService::get_value_map(RedisKeyConstant::SITE_INFO_MAP.to_string()).await;
@@ -30,7 +29,7 @@ impl SiteSettingService {
 
         //查询数据库
         let site_setting_list = site_setting::Entity::find().all(db).await?; // 假设这是一个 Vec 或其他可迭代集合
-        let mut map: HashMap<String, Value> = HashMap::new();
+        let mut map = ValueMap::new();
         let mut introduction = Introduction::new();
         let mut site_info: HashMap<String, Value> = HashMap::new();
         let mut badges = vec![];
@@ -114,9 +113,9 @@ impl SiteSettingService {
             //类型3
         }
         introduction.favorites = favorites;
-        map.insert("introduction".to_string(), value!(introduction));
-        map.insert("siteInfo".to_string(), value!(site_info));
-        map.insert("badges".to_string(), value!(badges));
+        map.insert(value!("introduction"), value!(introduction));
+        map.insert(value!("siteInfo"), value!(site_info));
+        map.insert(value!("badges"), value!(badges));
         //缓存数据
         RedisService::set_value_map(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await?;
         log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::SITE_INFO_MAP);
