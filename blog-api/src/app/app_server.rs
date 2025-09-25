@@ -6,10 +6,11 @@
 use super::app_config::CONFIG;
 use super::app_state::{self, AppState};
 use super::RedisClient;
-use crate::controller::admin::tag_controller;
 use crate::controller::{
-    about_controller, admin, archive_controller, blog_controller, comment_controller,
-    friend_controller, index_controller, moment_controller, user_controller,
+    about_controller,
+    admin::{self, tag_controller},
+    archive_controller, blog_controller, comment_controller, friend_controller, index_controller,
+    moment_controller, user_controller,
 };
 use crate::middleware::{AppClaims, VisiLog};
 use actix_jwt_session::{Duration, Extractors, JwtTtl, RefreshTtl, UseJwt, JWT_HEADER_NAME};

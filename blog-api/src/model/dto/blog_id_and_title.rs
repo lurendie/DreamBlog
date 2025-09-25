@@ -2,7 +2,7 @@ use crate::entity::blog::Model as Blog;
 use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, FromQueryResult, Clone)]
+#[derive(Debug, Serialize, Deserialize, FromQueryResult, Clone, Default)]
 pub struct BlogIdAndTitle {
     pub id: i64,
     pub title: String,
