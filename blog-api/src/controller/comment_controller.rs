@@ -37,6 +37,7 @@ pub(crate) async fn get_comments(
     let list = match CommentService::find_by_id_comments(
         page_request.get_page_num(),
         page_request.get_blog_id(),
+        page_request.get_page(),
         connect,
     )
     .await
@@ -54,7 +55,7 @@ pub(crate) async fn get_comments(
     let mut data = ValueMap::new();
     data.insert("comments".into(), value!(list));
 
-    match CommentService::get_all_count(page_request.get_blog_id(), connect).await {
+    match CommentService::get_all_count(page_request.get_blog_id(),page_request.get_page(), connect).await {
         Ok(close_comment) => {
             data.insert("allComment".into(), value!(close_comment));
         }
@@ -66,7 +67,7 @@ pub(crate) async fn get_comments(
             .json();
         }
     }
-    match CommentService::get_close_count(page_request.get_blog_id(), connect).await {
+    match CommentService::get_close_count(page_request.get_blog_id(),page_request.get_page(), connect).await {
         Ok(close_comment) => {
             data.insert("closeComment".into(), value!(close_comment));
         }

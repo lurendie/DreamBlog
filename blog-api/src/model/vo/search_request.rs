@@ -14,7 +14,7 @@ pub struct SearchRequest {
     #[serde(rename = "pageSize")]
     page_size: Option<u64>,
     #[serde(rename = "page")]
-    page: Option<u64>,
+    page: Option<u8>,
     #[serde(rename = "blogId")]
     blog_id: Option<i64>,
     #[serde(rename = "password")]
@@ -49,9 +49,9 @@ impl SearchRequest {
     pub fn get_blog_id(&self) -> i64 {
         self.blog_id.unwrap_or_default()
     }
-    // pub fn get_page(&self) -> u64 {
-    //     self.page.unwrap_or_default()
-    // }
+    pub fn get_page(&self) -> u8 {
+        self.page.unwrap_or_default()
+    }
     pub fn get_password(&self) -> String {
         self.password.clone().unwrap_or_default()
     }

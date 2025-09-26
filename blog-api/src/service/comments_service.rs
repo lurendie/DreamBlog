@@ -2,6 +2,7 @@ use crate::entity::comment;
 use crate::error::DataBaseError;
 use crate::model::{CommentDTO, CommentVO};
 use crate::service::BlogService;
+use chrono::Local;
 use rbs::value;
 use rbs::value::map::ValueMap;
 use sea_orm::{
@@ -18,15 +19,24 @@ impl CommentService {
     pub(crate) async fn find_by_id_comments(
         page_num: u64,
         blog_id: i64,
+        page: u8,
         db: &DatabaseConnection,
     ) -> Result<ValueMap, DataBaseError> {
         let mut map = ValueMap::new();
-        let page = comment::Entity::find()
-            .filter(comment::Column::BlogId.eq(blog_id))
+        let select_sql = comment::Entity::find()
             .filter(comment::Column::IsPublished.eq(true))
             .filter(comment::Column::ParentCommentId.eq(-1))
-            .paginate(db, PAGE_SIZE);
-        let models = page.fetch_page(page_num - 1).await?;
+            .filter(comment::Column::Page.eq(page));
+
+        let page_list = {
+            match page == 0 {
+                true => select_sql
+                    .filter(comment::Column::BlogId.eq(blog_id))
+                    .paginate(db, PAGE_SIZE),
+                false => select_sql.paginate(db, PAGE_SIZE),
+            }
+        };
+        let models = page_list.fetch_page(page_num - 1).await?;
         let mut comments = vec![];
         for model in models.into_iter() {
             let id = model.id;
@@ -35,7 +45,10 @@ impl CommentService {
             comments.push(comment);
         }
         map.insert("list".into(), value!(comments));
-        map.insert("totalPage".into(), rbs::Value::U64(page.num_pages().await?));
+        map.insert(
+            "totalPage".into(),
+            rbs::Value::U64(page_list.num_pages().await?),
+        );
 
         Ok(map)
     }
@@ -160,32 +173,48 @@ impl CommentService {
 
     pub(crate) async fn get_all_count(
         blog_id: i64,
+        page: u8,
         db: &DatabaseConnection,
     ) -> Result<u64, DataBaseError> {
-        let count = comment::Entity::find()
-            .filter(comment::Column::BlogId.eq(blog_id))
-            .count(db)
-            .await?;
+        let select = comment::Entity::find().filter(comment::Column::Page.eq(page));
+        let count = match page == 0 {
+            true => {
+                select
+                    .filter(comment::Column::BlogId.eq(blog_id))
+                    .count(db)
+                    .await?
+            }
+            false => select.count(db).await?,
+        };
         Ok(count)
     }
 
     pub(crate) async fn get_close_count(
         blog_id: i64,
+        page: u8,
         db: &DatabaseConnection,
     ) -> Result<u64, DataBaseError> {
-        let count = comment::Entity::find()
-            .filter(comment::Column::BlogId.eq(blog_id))
-            .filter(comment::Column::IsPublished.eq(false))
-            .count(db)
-            .await?;
+        let select = comment::Entity::find()
+            .filter(comment::Column::Page.eq(page))
+            .filter(comment::Column::IsPublished.eq(false));
+        let count = match page == 0 {
+            true => {
+                select
+                    .filter(comment::Column::BlogId.eq(blog_id))
+                    .count(db)
+                    .await?
+            }
+            false => select.count(db).await?,
+        };
         Ok(count)
     }
 
     pub async fn save_comment(
-        comment_dto: CommentDTO,
+        mut comment_dto: CommentDTO,
         db: &DatabaseConnection,
     ) -> Result<(), DataBaseError> {
         let option_model = comment::Entity::find_by_id(comment_dto.id).one(db).await?;
+        comment_dto.create_time = Local::now().naive_local(); // 设置创建时间
         if let Some(mut model) = option_model {
             model.avatar = comment_dto.avatar;
             model.content = comment_dto.content;
@@ -196,7 +225,8 @@ impl CommentService {
             dbg!(&model);
             model.into_active_model().update(db).await?;
         } else {
-            let model = comment::Model::from(comment_dto);
+            let mut model = comment::Model::from(comment_dto);
+            model.parent_comment_id = -1; // 设置默认值
             model.into_active_model().insert(db).await?;
         }
         Ok(())
