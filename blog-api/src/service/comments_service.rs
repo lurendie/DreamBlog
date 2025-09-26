@@ -222,11 +222,21 @@ impl CommentService {
             model.ip = comment_dto.ip;
             model.nickname = comment_dto.nickname;
             model.website = comment_dto.website;
+
             dbg!(&model);
             model.into_active_model().update(db).await?;
         } else {
+            //http://q.qlogo.cn/headimg_dl?dst_uin=QQ号码&spec=640
             let mut model = comment::Model::from(comment_dto);
             model.parent_comment_id = -1; // 设置默认值
+            if model.qq.is_some() {
+                model.avatar = format!(
+                    "http://q.qlogo.cn/headimg_dl?dst_uin={}&spec=640",
+                    model.qq.as_ref().unwrap()
+                );
+            } else {
+                //随机头像
+            }
             model.into_active_model().insert(db).await?;
         }
         Ok(())

@@ -9,7 +9,7 @@ mod redis_service;
 mod site_setting_service;
 mod tag_service;
 mod user_service;
-
+mod visit_service;
 pub use about_service::AboutService;
 pub use blog_service::BlogService;
 pub use category_service::CategoryService;
@@ -21,3 +21,4 @@ pub use redis_service::RedisService;
 pub use site_setting_service::SiteSettingService;
 pub use tag_service::TagService;
 pub use user_service::UserService;
+pub use visit_service::VisitService;

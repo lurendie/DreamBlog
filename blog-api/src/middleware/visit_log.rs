@@ -6,10 +6,7 @@
 
 */
 use crate::app::AppState;
-use crate::common::IpRegion;
-use crate::constant::{VisitBehavior, VisitBehaviorType};
-use crate::entity::visit_log;
-use crate::service::BlogService;
+use crate::service::VisitService;
 use actix_jwt_session::Uuid;
 use actix_web::web;
 use actix_web::{self, web::Data};
@@ -20,31 +17,14 @@ use actix_web::{
 };
 use chrono::Local;
 
+use crate::common::UserAgent;
 use rbs::value;
-use sea_orm::ActiveModelTrait;
-use sea_orm::ActiveValue::Set;
 use std::collections::HashMap;
 use std::{
     future::{ready, Future, Ready},
     pin::Pin,
     str::FromStr,
-    sync::LazyLock,
 };
-use user_agent_parser::UserAgentParser;
-// 全局UserAgent解析器
-static USER_AGENT_PARSER: LazyLock<UserAgentParser> = LazyLock::new(|| {
-    // 尝试从文件加载，如果失败则使用默认解析器
-    match std::fs::read_to_string("./data/regexes.yaml") {
-        Ok(content) => UserAgentParser::from_str(&content).unwrap_or_else(|_| {
-            log::warn!("无法解析UserAgent正则表达式文件");
-            panic!("无法解析UserAgent正则表达式文件")
-        }),
-        Err(_) => {
-            log::warn!("找不到UserAgent正则表达式文件");
-            panic!("无法解析UserAgent正则表达式文件")
-        }
-    }
-});
 
 /**
  * 校验访客标识码并记录访问日志
@@ -97,7 +77,7 @@ where
         // 在调用服务之前获取所有需要的信息
         let method = req.method().to_string();
         let uri = req.uri().path().to_string();
-        let user_agent = req
+        let user_agent_str = req
             .headers()
             .get("User-Agent")
             .and_then(|h| h.to_str().ok())
@@ -111,9 +91,9 @@ where
         Box::pin(async move {
             // 记录请求开始时间
             let start_time = Local::now().naive_local();
-
             // 调用下一个服务
             let mut res: ServiceResponse<B> = fut.await?;
+            // 服务调用完成,处理访问日志
             let path = res.request().uri().path();
             let query = res.request().query_string();
             if !(res.request().method().to_string() == "OPTIONS") {
@@ -123,111 +103,24 @@ where
                         //获取参数
                         let parameter = web::Query::<HashMap<String, String>>::from_query(query)
                             .unwrap_or_else(|_| {
-                                web::Query::<HashMap<String, String>>::from_query("one=1").unwrap()
+                                web::Query::<HashMap<String, String>>::from_query("blog=zero")
+                                    .unwrap()
                             });
-                        let mut map = HashMap::new();
-                        let visit_behavior = match path {
-                            "/blogs" => {
-                                let mut behavior = VisitBehavior::from(VisitBehaviorType::INDEX);
-                                if let Some((key, value)) = parameter.0.get_key_value("pageNum") {
-                                    map.insert(key.to_string(), value.to_string());
-
-                                    behavior.set_remark(format!("第{value}页"));
-                                }
-                                if let Some((key, value)) = parameter.0.get_key_value("pageSize") {
-                                    map.insert(key.to_string(), value.to_string());
-                                }
-                                behavior
-                            }
-                            "/archives" => VisitBehavior::from(VisitBehaviorType::ARCHIVE),
-                            "/moments" => VisitBehavior::from(VisitBehaviorType::MOMENT),
-                            "/friends" => VisitBehavior::from(VisitBehaviorType::FRIEND),
-                            "/about" => VisitBehavior::from(VisitBehaviorType::ABOUT),
-                            "/category" => {
-                                let mut behavior = VisitBehavior::from(VisitBehaviorType::CATEGORY);
-                                if let Some((key, value)) =
-                                    parameter.0.get_key_value("categoryName")
-                                {
-                                    map.insert(key.to_string(), value.to_string());
-                                    behavior.set_content(value.to_string());
-                                    if let Some(page_num) = parameter.0.get("pageNum") {
-                                        behavior.set_remark(format!(
-                                            "分类名称：{value},第{page_num}页"
-                                        ));
-                                    } else {
-                                        behavior.set_remark(format!("分类名称：{value},第1页"));
-                                    };
-                                }
-                                behavior
-                            }
-                            "/tag" => {
-                                let mut behavior = VisitBehavior::from(VisitBehaviorType::TAG);
-                                if let Some((key, value)) = parameter.0.get_key_value("tagName") {
-                                    map.insert(key.to_string(), value.to_string());
-                                    behavior.set_content(value.to_string());
-                                    if let Some(page_num) = parameter.0.get("pageNum") {
-                                        behavior.set_remark(format!(
-                                            "标签名称：{value},第{page_num}页"
-                                        ));
-                                    } else {
-                                        behavior.set_remark(format!("标签名称：{value},第1页"));
-                                    };
-                                }
-                                behavior
-                            }
-                            "/blog" => {
-                                let mut behavior = VisitBehavior::from(VisitBehaviorType::BLOG);
-                                if let Some(id) = parameter.0.get("id") {
-                                    if let Some(app) = app_state.as_ref() {
-                                        let blog = BlogService::find_blog_id_and_title(
-                                            app.get_mysql_pool(),
-                                            id.parse().unwrap_or(0),
-                                        )
-                                        .await
-                                        .unwrap_or_default();
-                                        map.insert("id".to_string(), id.to_string());
-                                        behavior.set_remark(format!("文章标题：{:?}", blog.title));
-                                        behavior.set_content(blog.title);
-                                    }
-                                }
-                                behavior
-                            }
-                            "/searchBlog" => {
-                                let mut behavior = VisitBehavior::from(VisitBehaviorType::SEARCH);
-                                if let Some((key, value)) = parameter.0.get_key_value("query") {
-                                    map.insert(key.to_string(), value.to_string());
-                                    behavior.set_content(value.to_string());
-                                    behavior.set_remark(format!("搜索内容：{value}"));
-                                }
-                                behavior
-                            }
-                            "/friend" => {
-                                let mut behavior =
-                                    VisitBehavior::from(VisitBehaviorType::ClickFriend);
-                                if let Some((key, value)) = parameter.0.get_key_value("nickname") {
-                                    map.insert(key.to_string(), value.to_string());
-                                    behavior.set_content(value.to_string());
-                                    behavior.set_remark(format!("友链名称：{value}"));
-                                }
-                                VisitBehavior::from(VisitBehaviorType::ClickFriend)
-                            }
-
-                            "/moment/like/" => VisitBehavior::from(VisitBehaviorType::LikeMoment),
-                            "/checkBlogPassword" => {
-                                VisitBehavior::from(VisitBehaviorType::CheckPassword)
-                            }
-                            _ => VisitBehavior::from(VisitBehaviorType::UNKNOWN),
-                        };
+                        let (visit_behavior, map) =
+                            VisitService::get_behavior(&path, &parameter, &app_state).await;
                         let uuid = Uuid::new_v4();
                         let uuid_str = uuid.to_string();
                         //1.检测访客标识码是否存在
                         let req_headers = res.request().headers();
                         let identification = req_headers.get("Identification");
-
                         let visitor_uuid = if let Some(uuid) = identification {
                             log::info!(
                                 "访客UUID:{:?} ,访问路径:{:?} ,访问参数:{:?}, 访问IP:{:?}",
-                                uuid,
+                                if let Ok(uuid_str) = uuid.to_str() {
+                                    uuid_str
+                                } else {
+                                    "Invalid UUID"
+                                },
                                 path,
                                 map,
                                 ip
@@ -249,56 +142,29 @@ where
                         };
 
                         // 解析用户代理
-                        let browser = match USER_AGENT_PARSER.parse_engine(&user_agent).name {
-                            Some(_) => "UNKNOWN".to_string(),
-                            None => {
-                                log::warn!("解析user_agent中的browser异常");
-                                "UNKNOWN".to_string()
-                            }
-                        };
-                        let os = match USER_AGENT_PARSER.parse_os(&user_agent).name {
-                            Some(name) => name.to_string(),
-                            None => {
-                                log::warn!("解析user_agent中的os异常");
-                                "未知os".to_string()
-                            }
-                        };
+                        let user_agent = UserAgent::parse_user_agent(&user_agent_str).await;
                         // 计算请求处理时间
-                        let end_time = Local::now().naive_local();
+                        let end_time: chrono::NaiveDateTime = Local::now().naive_local();
                         let duration = end_time.signed_duration_since(start_time);
                         let times = duration.num_milliseconds() as i32;
                         let param = match map.is_empty() {
                             true => "".to_string(),
                             false => value!(map).to_string(),
                         };
-                        // 记录访问日志
-                        if let Some(app) = app_state {
-                            let db = app.get_mysql_pool();
-                            let new_visit_log = visit_log::ActiveModel {
-                                uuid: Set(Some(visitor_uuid)),
-                                uri: Set(uri),
-                                method: Set(method),
-                                param: Set(param),
-                                ip: Set(Some(ip.clone())),
-                                ip_source: Set(Some(
-                                    IpRegion::search_by_ip::<&str>(&ip).unwrap_or_default(),
-                                )),
-                                os: Set(Some(os)),
-                                browser: Set(Some(browser)),
-                                times: Set(times),
-                                create_time: Set(end_time),
-                                user_agent: Set(Some(user_agent)),
-                                behavior: Set(Some(visit_behavior.get_behavior().to_string())),
-                                content: Set(Some(visit_behavior.get_content().to_string())),
-                                remark: Set(Some(visit_behavior.get_remark().to_string())),
-                                ..Default::default()
-                            };
-                            if let Err(e) = new_visit_log.save(db).await {
-                                log::error!("保存访问日志失败: {}", e);
-                            };
-                        } else {
-                            log::warn!("获取AppState对象异常,保存访问日志异常!");
-                        }
+                        //保存访问日志
+                        VisitService::save_visit(
+                            &app_state,
+                            &visitor_uuid,
+                            &uri,
+                            &method,
+                            &param,
+                            &ip,
+                            user_agent,
+                            times,
+                            end_time,
+                            visit_behavior,
+                        )
+                        .await;
                     }
                     _ => (),
                 };
