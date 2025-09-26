@@ -60,7 +60,7 @@ impl AppServer {
                 .service(web::scope("/admin/").configure(Self::admin_router))
                 .default_service(web::to(index_controller::default))
         })
-        .bind(format!("{}:{}", server_config.host, server_config.port))?
+        .bind_auto_h2c(format!("{}:{}", server_config.host, server_config.port))?
         .run()
         .await
     }
