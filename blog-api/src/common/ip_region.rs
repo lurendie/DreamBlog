@@ -5,6 +5,8 @@ use std::io::Read;
 use std::path::Path;
 use std::sync::LazyLock;
 
+use actix_web::dev::ServiceRequest;
+
 use crate::common::ip_value::ToUIntIP;
 
 pub struct IpRegion;
@@ -82,6 +84,62 @@ impl IpRegion {
             result += usize::from(*value) << (index << 3);
         }
         result
+    }
+
+    /// 获取真实的客户端IP地址，考虑代理和转发的情况
+    pub fn get_real_client_ip(req: &ServiceRequest) -> String {
+        // 按优先级尝试获取IP地址
+        let headers = req.headers();
+
+        // 1. 首先检查 X-Forwarded-For 头
+        if let Some(x_forwarded_for) = headers.get("X-Forwarded-For") {
+            if let Ok(x_forwarded_for_str) = x_forwarded_for.to_str() {
+                // X-Forwarded-For 可能包含多个IP，第一个是真实的客户端IP
+                let ips: Vec<&str> = x_forwarded_for_str.split(',').collect();
+                if !ips.is_empty() {
+                    let ip = ips[0].trim();
+                    if !ip.is_empty() {
+                        return ip.to_string();
+                    }
+                }
+            }
+        }
+
+        // 2. 检查 X-Real-IP 头
+        if let Some(x_real_ip) = headers.get("X-Real-IP") {
+            if let Ok(x_real_ip_str) = x_real_ip.to_str() {
+                let ip = x_real_ip_str.trim();
+                if !ip.is_empty() {
+                    return ip.to_string();
+                }
+            }
+        }
+
+        // 3. 检查 Proxy-Client-IP 头
+        if let Some(proxy_client_ip) = headers.get("Proxy-Client-IP") {
+            if let Ok(proxy_client_ip_str) = proxy_client_ip.to_str() {
+                let ip = proxy_client_ip_str.trim();
+                if !ip.is_empty() {
+                    return ip.to_string();
+                }
+            }
+        }
+
+        // 4. 检查 WL-Proxy-Client-IP 头
+        if let Some(wl_proxy_client_ip) = headers.get("WL-Proxy-Client-IP") {
+            if let Ok(wl_proxy_client_ip_str) = wl_proxy_client_ip.to_str() {
+                let ip = wl_proxy_client_ip_str.trim();
+                if !ip.is_empty() {
+                    return ip.to_string();
+                }
+            }
+        }
+
+        // 5. 最后从连接信息中获取IP
+        let conn_info = req.connection_info();
+        // 如果都无法获取，返回unknown
+        //"unknown".to_string()
+        return conn_info.peer_addr().unwrap_or("unknown").to_string();
     }
 }
 
