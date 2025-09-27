@@ -6,6 +6,7 @@
 
 */
 use crate::app::AppState;
+use crate::constant::VisitBehaviorType;
 use crate::service::VisitService;
 use actix_jwt_session::Uuid;
 use actix_web::web;
@@ -85,50 +86,50 @@ where
             .to_string();
         let ip = get_real_client_ip(&req);
         let app_state = req.app_data::<Data<AppState>>().cloned();
-
         let fut = self.service.call(req);
-
         Box::pin(async move {
             // 记录请求开始时间
             let start_time = Local::now().naive_local();
             // 调用下一个服务
             let mut res: ServiceResponse<B> = fut.await?;
             // 服务调用完成,处理访问日志
-            let path = res.request().uri().path();
             let query = res.request().query_string();
+            let visit_behavior_type = VisitBehaviorType::from(uri.as_str());
             if !(res.request().method().to_string() == "OPTIONS") {
-                match path {
-                    "/blogs" | "/category" | "/archives" | "/moments" | "/friends" | "/about"
-                    | "/tag" | "/blog" | "/searchBlog" | "/friend" | "/checkBlogPassword" => {
+                match visit_behavior_type {
+                    VisitBehaviorType::BLOG
+                    | VisitBehaviorType::CATEGORY
+                    | VisitBehaviorType::ARCHIVE
+                    | VisitBehaviorType::MOMENT
+                    | VisitBehaviorType::FRIEND
+                    | VisitBehaviorType::ClickFriend
+                    | VisitBehaviorType::ABOUT
+                    | VisitBehaviorType::TAG
+                    | VisitBehaviorType::INDEX
+                    | VisitBehaviorType::SEARCH
+                    | VisitBehaviorType::LikeMoment
+                    | VisitBehaviorType::CheckPassword => {
                         //获取参数
                         let parameter = web::Query::<HashMap<String, String>>::from_query(query)
                             .unwrap_or_else(|_| {
                                 web::Query::<HashMap<String, String>>::from_query("blog=zero")
                                     .unwrap()
                             });
-                        let (visit_behavior, map) =
-                            VisitService::get_behavior(&path, &parameter, &app_state).await;
+                        let (visit_behavior, map) = VisitService::get_behavior(
+                            &visit_behavior_type,
+                            &parameter,
+                            &app_state,
+                        )
+                        .await;
                         let uuid = Uuid::new_v4();
                         let uuid_str = uuid.to_string();
                         //1.检测访客标识码是否存在
                         let req_headers = res.request().headers();
                         let identification = req_headers.get("Identification");
                         let visitor_uuid = if let Some(uuid) = identification {
-                            log::info!(
-                                "访客UUID:{:?} ,访问路径:{:?} ,访问参数:{:?}, 访问IP:{:?}",
-                                if let Ok(uuid_str) = uuid.to_str() {
-                                    uuid_str
-                                } else {
-                                    "Invalid UUID"
-                                },
-                                path,
-                                map,
-                                ip
-                            );
                             uuid.to_str().unwrap_or("").to_string()
                         } else {
-                            let resp = res.response_mut();
-                            let resp_headers = resp.headers_mut();
+                            let resp_headers = res.response_mut().headers_mut();
                             //添加访客标识码UUID至响应头
                             resp_headers.insert(
                                 HeaderName::from_str("Identification").unwrap(),
@@ -140,6 +141,15 @@ where
                             );
                             uuid_str
                         };
+                        log::info!(
+                                "访客UUID:{:?} , 访问路径:{:?},访问参数:{:?}, 访问IP:{:?}, 访问行为:{:?},访问内容:{:?}",
+                                &visitor_uuid,
+                                uri,
+                                &map,
+                                &ip,
+                                &visit_behavior.get_behavior(),
+                                &visit_behavior.get_content()
+                            );
 
                         // 解析用户代理
                         let user_agent = UserAgent::parse_user_agent(&user_agent_str).await;

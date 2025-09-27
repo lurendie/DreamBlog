@@ -33,7 +33,7 @@ impl VisitBehavior {
         self.remark = remark;
     }
 }
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum VisitBehaviorType {
     UNKNOWN,
     INDEX,
@@ -48,6 +48,31 @@ pub enum VisitBehaviorType {
     ClickFriend,
     LikeMoment,
     CheckPassword,
+}
+
+impl From<&str> for VisitBehaviorType {
+    fn from(behavior: &str) -> Self {
+        match behavior {
+            "/blogs" => Self::INDEX,
+            "/archives" => Self::ARCHIVE,
+            "/moments" => Self::MOMENT,
+            "/friends" => Self::FRIEND,
+            "/about" => Self::ABOUT,
+            "/category" => Self::CATEGORY,
+            "/tag" => Self::TAG,
+            "/searchBlog" => Self::SEARCH,
+            "/friend" => Self::ClickFriend,
+            "/checkBlogPassword" => Self::CheckPassword,
+             "/blog" => Self::BLOG,
+            _ => {
+                if behavior.contains("moment/like") {
+                    Self::LikeMoment
+                } else {
+                    Self::UNKNOWN
+                }
+            }
+        }
+    }
 }
 
 impl From<VisitBehaviorType> for VisitBehavior {

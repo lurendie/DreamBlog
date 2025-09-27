@@ -18,14 +18,14 @@ impl VisitService {
      * 获取访问行为及请求参数
      */
     pub async fn get_behavior(
-        path: &str,
+        path: &VisitBehaviorType,
         parameter: &Query<HashMap<String, String>>,
         app_state: &Option<Data<AppState>>,
     ) -> (VisitBehavior, HashMap<String, String>) {
         let mut map = HashMap::new();
         let behavior = {
             match path {
-                "/blogs" => {
+                VisitBehaviorType::INDEX => {
                     let mut behavior = VisitBehavior::from(VisitBehaviorType::INDEX);
                     if let Some((key, value)) = parameter.0.get_key_value("pageNum") {
                         map.insert(key.to_string(), value.to_string());
@@ -37,11 +37,11 @@ impl VisitService {
                     }
                     behavior
                 }
-                "/archives" => VisitBehavior::from(VisitBehaviorType::ARCHIVE),
-                "/moments" => VisitBehavior::from(VisitBehaviorType::MOMENT),
-                "/friends" => VisitBehavior::from(VisitBehaviorType::FRIEND),
-                "/about" => VisitBehavior::from(VisitBehaviorType::ABOUT),
-                "/category" => {
+                VisitBehaviorType::ARCHIVE => VisitBehavior::from(VisitBehaviorType::ARCHIVE),
+                VisitBehaviorType::MOMENT => VisitBehavior::from(VisitBehaviorType::MOMENT),
+                VisitBehaviorType::FRIEND => VisitBehavior::from(VisitBehaviorType::FRIEND),
+                VisitBehaviorType::ABOUT => VisitBehavior::from(VisitBehaviorType::ABOUT),
+                VisitBehaviorType::CATEGORY => {
                     let mut behavior = VisitBehavior::from(VisitBehaviorType::CATEGORY);
                     if let Some((key, value)) = parameter.0.get_key_value("categoryName") {
                         map.insert(key.to_string(), value.to_string());
@@ -54,7 +54,7 @@ impl VisitService {
                     }
                     behavior
                 }
-                "/tag" => {
+                VisitBehaviorType::TAG => {
                     let mut behavior = VisitBehavior::from(VisitBehaviorType::TAG);
                     if let Some((key, value)) = parameter.0.get_key_value("tagName") {
                         map.insert(key.to_string(), value.to_string());
@@ -67,7 +67,7 @@ impl VisitService {
                     }
                     behavior
                 }
-                "/blog" => {
+                VisitBehaviorType::BLOG => {
                     let mut behavior = VisitBehavior::from(VisitBehaviorType::BLOG);
                     if let Some(id) = parameter.0.get("id") {
                         if let Some(app) = app_state.as_ref() {
@@ -84,7 +84,7 @@ impl VisitService {
                     }
                     behavior
                 }
-                "/searchBlog" => {
+                VisitBehaviorType::SEARCH => {
                     let mut behavior = VisitBehavior::from(VisitBehaviorType::SEARCH);
                     if let Some((key, value)) = parameter.0.get_key_value("query") {
                         map.insert(key.to_string(), value.to_string());
@@ -93,7 +93,7 @@ impl VisitService {
                     }
                     behavior
                 }
-                "/friend" => {
+                VisitBehaviorType::ClickFriend => {
                     let mut behavior = VisitBehavior::from(VisitBehaviorType::ClickFriend);
                     if let Some((key, value)) = parameter.0.get_key_value("nickname") {
                         map.insert(key.to_string(), value.to_string());
@@ -103,8 +103,10 @@ impl VisitService {
                     VisitBehavior::from(VisitBehaviorType::ClickFriend)
                 }
 
-                "/moment/like/" => VisitBehavior::from(VisitBehaviorType::LikeMoment),
-                "/checkBlogPassword" => VisitBehavior::from(VisitBehaviorType::CheckPassword),
+                VisitBehaviorType::LikeMoment => VisitBehavior::from(VisitBehaviorType::LikeMoment),
+                VisitBehaviorType::CheckPassword => {
+                    VisitBehavior::from(VisitBehaviorType::CheckPassword)
+                }
                 _ => VisitBehavior::from(VisitBehaviorType::UNKNOWN),
             }
         };
