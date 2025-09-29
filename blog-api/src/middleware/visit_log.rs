@@ -7,7 +7,8 @@
 */
 use crate::app::AppState;
 use crate::constant::VisitBehaviorType;
-use crate::service::VisitService;
+use crate::model::Visitor;
+use crate::service::{VisitService, VisitorService};
 use actix_jwt_session::Uuid;
 use actix_web::web;
 use actix_web::{self, web::Data};
@@ -162,22 +163,37 @@ where
                             false => value!(map).to_string(),
                         };
                         //保存访问日志
-                        if let Some(e) = VisitService::save_visit(
-                            &app_state,
-                            &visitor_uuid,
-                            &uri,
-                            &method,
-                            &param,
-                            &ip,
-                            user_agent,
-                            times,
-                            end_time,
-                            visit_behavior,
-                        )
-                        .await
-                        .err()
-                        {
-                            log::error!("保存访问日志失败:{}", e);
+                        let visitor = Visitor::new(
+                            0,
+                            visitor_uuid.to_string(),
+                            Some(ip.to_string()),
+                            Some(IpRegion::search_by_ip::<&str>(&ip).unwrap_or_default()),
+                            Some(user_agent.os.name.to_string()),
+                            Some(user_agent.browser.name.to_string()),
+                            Local::now().naive_local(),
+                            Local::now().naive_local(),
+                            Some(1),
+                            Some(user_agent.user_agent.to_string()),
+                        );
+                        if let Some(app_stat) = &app_state {
+                            let db = app_stat.get_mysql_pool();
+                            VisitorService::save_visitor(visitor, &db)
+                                .await
+                                .unwrap_or_else(|e| log::error!("保存访客失败{e}"));
+                            VisitService::save_visit(
+                                &db,
+                                &visitor_uuid,
+                                &uri,
+                                &method,
+                                &param,
+                                &ip,
+                                user_agent,
+                                times,
+                                end_time,
+                                visit_behavior,
+                            )
+                            .await
+                            .unwrap_or_else(|e| log::error!("保存访问日志失败{e}"));
                         }
                     }
                     _ => (),

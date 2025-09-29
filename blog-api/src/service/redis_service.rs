@@ -63,7 +63,7 @@ impl RedisService {
         }
         Ok(false)
     }
-    
+
     /**
      * 判断key是否存在
      */
@@ -219,6 +219,53 @@ impl RedisService {
             Err(e) => log::error!("redis key: {} 设置过期时间失败:{}", key, e),
         };
         Ok(())
+    }
+
+    pub async fn _del_key(key: &str) -> Result<(), DataBaseError> {
+        //获取连接
+        let mut connection = RedisClient::get_connection().await?;
+        match connection.del::<String, i64>(key.to_string()).await {
+            Ok(_) => log::info!("redis key: {} 删除成功", key),
+            Err(e) => log::error!("redis key: {} 删除失败:{}", key, e),
+        }
+        Ok(())
+    }
+
+    /**
+     * 向set集合中添加元素
+     */
+    pub async fn sadd(key: String, value: String) -> Result<bool, DataBaseError> {
+        //获取连接
+        let mut connection = RedisClient::get_connection().await?;
+        let exists = Self::sismember(&key, &value).await?;
+
+        if !exists {
+            match connection
+                .sadd::<String, String, i64>(key.clone(), value)
+                .await
+            {
+                Ok(_) => return Ok(true), //log::info!("redis key: {} sadd成功", key),
+                Err(e) => {
+                    return Err(DataBaseError::Custom(format!(
+                        "redis key: {} sadd失败:{}",
+                        key, e
+                    )))
+                }
+            }
+        }
+        Ok(false)
+    }
+
+    pub async fn sismember(key: &str, value: &str) -> Result<bool, DataBaseError> {
+        //获取连接
+        let mut connection = RedisClient::get_connection().await?;
+        let exists = connection
+            .sismember::<String, String, i32>(key.to_string(), value.to_string())
+            .await?;
+        if exists == 0 {
+            return Ok(false);
+        }
+        Ok(true)
     }
 }
 

@@ -26,25 +26,25 @@ impl RedisKeyConstant {
      * 随机推荐博客key
      */
     pub const RANDOM_BLOG_LIST: &str = "randomBlogList";
-    // /**
-    //  * 关于我页面key
-    //  */
-    //pub const ABOUT_INFO_MAP: &str = "aboutInfoMap";
-    // /**
-    //  * 友链页面信息key
-    //  */
-    //pub const FRIEND_INFO_MAP: &str = "friendInfoMap";
-    // /**
-    //  * 博客归档key
-    //  */
+    /**
+     * 关于我页面key
+     */
+    pub const ABOUT_INFO_MAP: &str = "aboutInfoMap";
+    /**
+     * 友链页面信息key
+     */
+    pub const FRIEND_INFO_MAP: &str = "friendInfoMap";
+    /**
+     * 博客归档key
+     */
     pub const ARCHIVE_BLOG_MAP: &str = "archiveBlogMap";
-    // /**
-    //  * 博客访问量key
-    //  */
-    //pub const BLOG_VIEWS_MAP: &str = "blogViewsMap";
-    // /**
-    //  * 访客标识码key
-    //  */
+    /**
+     * 博客访问量key
+     */
+    pub const BLOG_VIEWS_MAP: &str = "blogViewsMap";
+    /**
+     * 访客标识码key
+     */
     pub const IDENTIFICATION_SET: &str = "identificationSet";
     // /**
     //  * QQ号与对应头像URL key
