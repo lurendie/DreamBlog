@@ -121,25 +121,25 @@ where
                             &app_state,
                         )
                         .await;
-                        let uuid = Uuid::new_v4();
-                        let uuid_str = uuid.to_string();
+
                         //1.检测访客标识码是否存在
                         let req_headers = res.request().headers();
                         let identification = req_headers.get("Identification");
                         let visitor_uuid = if let Some(uuid) = identification {
                             uuid.to_str().unwrap_or("").to_string()
                         } else {
+                            let uuid = Uuid::new_v4().to_string();
                             let resp_headers = res.response_mut().headers_mut();
                             //添加访客标识码UUID至响应头
                             resp_headers.insert(
                                 HeaderName::from_str("Identification").unwrap(),
-                                HeaderValue::from_str(uuid_str.as_str()).unwrap(),
+                                HeaderValue::from_str(uuid.as_str()).unwrap(),
                             );
                             resp_headers.insert(
                                 HeaderName::from_str("access-control-expose-headers").unwrap(),
                                 HeaderValue::from_str("Identification").unwrap(),
                             );
-                            uuid_str
+                            uuid
                         };
                         log::info!(
                                 "访客UUID:{:?} , 访问路径:{:?},访问参数:{:?}, 访问IP:{:?}, 访问行为:{:?},访问内容:{:?}",
@@ -162,7 +162,7 @@ where
                             false => value!(map).to_string(),
                         };
                         //保存访问日志
-                        VisitService::save_visit(
+                        if let Some(e) = VisitService::save_visit(
                             &app_state,
                             &visitor_uuid,
                             &uri,
@@ -174,7 +174,11 @@ where
                             end_time,
                             visit_behavior,
                         )
-                        .await;
+                        .await
+                        .err()
+                        {
+                            log::error!("保存访问日志失败:{}", e);
+                        }
                     }
                     _ => (),
                 };

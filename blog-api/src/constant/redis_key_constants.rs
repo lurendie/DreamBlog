@@ -45,7 +45,7 @@ impl RedisKeyConstant {
     // /**
     //  * 访客标识码key
     //  */
-    //pub const IDENTIFICATION_SET: &str = "identificationSet";
+    pub const IDENTIFICATION_SET: &str = "identificationSet";
     // /**
     //  * QQ号与对应头像URL key
     //  */

@@ -15,6 +15,34 @@ pub struct Visitor {
     pub user_agent: Option<String>,
 }
 
+impl Visitor {
+    pub fn new(
+        id: i64,
+        uuid: String,
+        ip: Option<String>,
+        ip_source: Option<String>,
+        os: Option<String>,
+        browser: Option<String>,
+        create_time: NaiveDateTime,
+        last_time: NaiveDateTime,
+        pv: Option<i32>,
+        user_agent: Option<String>,
+    ) -> Self {
+        Self {
+            id: id,
+            uuid: uuid,
+            ip: ip,
+            ip_source: ip_source,
+            os: os,
+            browser: browser,
+            create_time: create_time,
+            last_time: last_time,
+            pv: pv,
+            user_agent: user_agent,
+        }
+    }
+}
+
 impl From<visitor::Model> for Visitor {
     fn from(value: visitor::Model) -> Self {
         Self {

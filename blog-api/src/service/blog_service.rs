@@ -69,11 +69,10 @@ impl BlogService {
         }
 
         BlogService::bloginfo_handle(&mut blog_info_list, db).await;
-
         map.insert("list".to_string(), value!(&blog_info_list));
         map.insert(
             "totalPage".to_string(),
-            value!(page.num_pages().await.expect("分页错误")),
+            value!(page.num_pages().await.unwrap_or_default()),
         );
         //4.如果数据库查询不是Null 存放到Redis中
         if !blog_info_list.is_empty() {

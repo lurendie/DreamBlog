@@ -1,11 +1,10 @@
-use std::collections::HashMap;
-
 use crate::app::RedisClient;
 use crate::app::CONFIG;
 use crate::error::DataBaseError;
 use deadpool_redis::redis::AsyncCommands;
 use rbs::value::map::ValueMap;
 use rbs::Value;
+use serde::Serialize;
 
 pub struct RedisService;
 
@@ -13,54 +12,79 @@ impl RedisService {
     /**
         根据KEY HashName 查询HashMap<String, Value>
     */
-    pub async fn get_hash_key(
+    pub async fn get_hash_key<T: serde::de::DeserializeOwned>(
         key: String,
         hash: String,
-    ) -> Result<HashMap<String, Value>, DataBaseError> {
+    ) -> Result<T, DataBaseError> {
         //1.获取连接
         let mut connection = RedisClient::get_connection().await?;
         //2.判断key是否存在
-        let exists: i32 = connection.exists::<String, i32>(key.clone()).await?;
-        if exists == 0 {
-            return Err(DataBaseError::Custom(format!("key {} 不存在", key)));
-        }
-
-        // 检查哈希字段是否存在
-        let field_exists: i32 = connection
-            .hexists::<String, String, i32>(key.clone(), hash.clone())
-            .await?;
-        if field_exists == 0 {
+        let exists = Self::hexists(&key, &hash).await?;
+        if !exists {
             return Err(DataBaseError::Custom(format!(
-                "key {} 中不存在字段 {}",
+                "无法从 redis {} 获取字段 {} 的值",
                 key, hash
             )));
         }
 
-        let redis_reuslt: Option<String> = connection
+        let redis_reuslt = connection
             .hget::<String, String, Option<String>>(key.to_owned(), hash.to_owned())
             .await?;
-
         match redis_reuslt {
-            Some(result) => {
-                //3.redis反序列化
-                let parsed_result =
-                    serde_json::from_str::<HashMap<String, Value>>(result.as_str())?;
-                Ok(parsed_result)
+            Some(result_str) => {
+                let result = serde_json::from_str::<T>(&result_str)?;
+                return Ok(result);
             }
-            None => Err(DataBaseError::Custom(format!(
-                "无法从 redis {} 获取字段 {} 的值",
-                key, hash
-            ))),
+            None => {
+                return Err(DataBaseError::Custom(format!(
+                    "无法从 redis {} 获取字段 {} 的值",
+                    key, hash
+                )));
+            }
         }
+    }
+
+    /**
+     * 根据hash KEY查询字符串
+     */
+    pub async fn hexists(key: &str, hash: &str) -> Result<bool, DataBaseError> {
+        //1.获取连接
+        let mut connection = RedisClient::get_connection().await?;
+        //2.判断key是否存在
+        let exists = Self::key_exists(key).await?;
+        if exists {
+            // 检查哈希字段是否存在
+            let field_exists: i32 = connection
+                .hexists::<String, String, i32>(key.to_string(), hash.to_string())
+                .await?;
+            if field_exists != 0 {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+    
+    /**
+     * 判断key是否存在
+     */
+    pub async fn key_exists(key: &str) -> Result<bool, DataBaseError> {
+        //1.获取连接
+        let mut connection = RedisClient::get_connection().await?;
+        //2.判断key是否存在
+        let exists: i32 = connection.exists::<String, i32>(key.to_string()).await?;
+        if exists == 0 {
+            return Ok(false);
+        }
+        Ok(true)
     }
 
     /**
      * 根据HashName key保存HashMap<String, Value>
      */
-    pub async fn set_hash_key(
+    pub async fn set_hash_key<T: Serialize>(
         key: String,
         hash: String,
-        value: &HashMap<String, Value>,
+        value: &T,
     ) -> Result<(), DataBaseError> {
         //redis序列化
         let value_str = serde_json::to_string(&value).unwrap_or_default();
@@ -201,6 +225,7 @@ impl RedisService {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::collections::HashMap;
     #[test]
     fn test_json_get() {
         let mut map: HashMap<String, Value> = HashMap::new();

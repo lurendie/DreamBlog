@@ -2,6 +2,8 @@
 
 use sea_orm::entity::prelude::*;
 
+use crate::model::Visitor;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "visitor")]
 pub struct Model {
@@ -23,3 +25,20 @@ pub struct Model {
 pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl From<Visitor> for Model {
+    fn from(value: Visitor) -> Self {
+        Self {
+            id: value.id,
+            uuid: value.uuid,
+            ip: value.ip,
+            ip_source: value.ip_source,
+            os: value.os,
+            browser: value.browser,
+            create_time: value.create_time,
+            last_time: value.last_time,
+            pv: value.pv,
+            user_agent: value.user_agent,
+        }
+    }
+}

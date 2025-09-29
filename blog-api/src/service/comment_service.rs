@@ -7,7 +7,7 @@ use rbs::value;
 use rbs::value::map::ValueMap;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
-    IntoActiveModel, PaginatorTrait, QueryFilter, TransactionTrait,
+    IntoActiveModel, PaginatorTrait, QueryFilter, QueryOrder, TransactionTrait,
 };
 //每页显示5条博客简介
 const PAGE_SIZE: u64 = 5;
@@ -26,7 +26,8 @@ impl CommentService {
         let select_sql = comment::Entity::find()
             .filter(comment::Column::IsPublished.eq(true))
             .filter(comment::Column::ParentCommentId.eq(-1))
-            .filter(comment::Column::Page.eq(page));
+            .filter(comment::Column::Page.eq(page))
+            .order_by_desc(comment::Column::CreateTime);
 
         let page_list = {
             match page == 0 {
