@@ -60,9 +60,6 @@ jobs:
         if: matrix.build == 'linux' || matrix.build == 'macos'
         run: strip "blog-api/target/${{ matrix.target }}/release/blog_api"
 
-      - name: Create config directory
-        run: mkdir -p blog-api/config
-
       - name: Build archive
         shell: bash
         run: |
