@@ -8,6 +8,7 @@ use crate::entity::{
 use crate::common::MarkdownParser;
 use crate::common::TypeValue;
 use crate::error::DataBaseError;
+use crate::model::BlogView;
 use crate::model::{
     BlogArchive, BlogDetail, BlogInfo, BlogVO, BlogVisibility, SearchBlog, SearchRequest,
 };
@@ -272,6 +273,7 @@ impl BlogService {
         };
         let mut blog = BlogDetail::from(blog_model);
         blog.content = MarkdownParser::parser_html(blog.content.clone());
+        BlogView::new(blog.id.unwrap_or_default(), blog.views);
         Some(blog)
     }
 

@@ -1,0 +1,155 @@
+name: build
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ "master" ]
+  # pull_request:
+  #   branches: [ "master" ]
+jobs:
+  build-backend:
+    name: Build Backend (Rust)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [linux, macos, windows]
+        include:
+          - build: linux
+            os: ubuntu-latest
+            rust: stable
+            target: x86_64-unknown-linux-gnu
+            archive-name: blog-api-linux.tar.gz
+          - build: macos
+            os: macos-latest
+            rust: stable
+            target: x86_64-apple-darwin
+            archive-name: blog-api-macos.tar.gz
+          - build: windows
+            os: windows-2019
+            rust: stable-x86_64-msvc
+            target: x86_64-pc-windows-msvc
+            archive-name: blog-api-windows.7z
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+          target: ${{ matrix.target }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            blog-api/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('blog-api/Cargo.lock') }}
+
+      - name: Build binary
+        run: cd blog-api && cargo build --verbose --release --target ${{ matrix.target }}
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Strip binary (linux and macos)
+        if: matrix.build == 'linux' || matrix.build == 'macos'
+        run: strip "blog-api/target/${{ matrix.target }}/release/blog_api"
+
+      - name: Create config directory
+        run: mkdir -p blog-api/config
+
+      - name: Build archive
+        shell: bash
+        run: |
+          mkdir archive
+          cp LICENSE README.MD archive/
+          cp -r blog-api/config archive/
+          cd archive
+          if [ "${{ matrix.build }}" = "windows" ]; then
+            cp "../blog-api/target/${{ matrix.target }}/release/blog_api.exe" ./
+            7z a "${{ matrix.archive-name }}" LICENSE README.MD config/ blog_api.exe
+          else
+            cp "../blog-api/target/${{ matrix.target }}/release/blog_api" ./
+            tar -czf "${{ matrix.archive-name }}" LICENSE README.MD config/ blog_api
+          fi
+
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.archive-name }}
+          path: archive/${{ matrix.archive-name }}
+
+  build-frontend:
+    name: Build Frontend (Vue.js)
+    runs-on: ubuntu-latest
+    needs: build-backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install CMS dependencies
+        run: cd blog-cms && npm ci
+
+      - name: Build CMS
+        run: cd blog-cms && npm run build
+
+      - name: Install View dependencies
+        run: cd blog-view && npm ci
+
+      - name: Build View
+        run: cd blog-view && npm run build
+
+      - name: Create frontend archive
+        run: |
+          mkdir frontend-dist
+          cp -r blog-cms/dist frontend-dist/cms
+          cp -r blog-view/dist frontend-dist/view
+          tar -czf frontend-dist.tar.gz -C frontend-dist .
+
+      - name: Upload frontend archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist.tar.gz
+          path: frontend-dist.tar.gz
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/blog-api-linux.tar.gz/blog-api-linux.tar.gz
+            artifacts/blog-api-macos.tar.gz/blog-api-macos.tar.gz
+            artifacts/blog-api-windows.7z/blog-api-windows.7z
+            artifacts/frontend-dist.tar.gz/frontend-dist.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

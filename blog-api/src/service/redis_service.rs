@@ -93,7 +93,10 @@ impl RedisService {
         connection
             .hset::<String, String, String, i64>(key.clone(), hash, value_str)
             .await?;
-        RedisService::set_expire(key).await?;
+        if CONFIG.get_redis_config().ttl > 0 {
+            RedisService::set_expire(key).await?;
+        }
+
         Ok(())
     }
     /**
@@ -107,7 +110,9 @@ impl RedisService {
         connection
             .set::<String, String, String>(key.clone(), value_str)
             .await?;
-        RedisService::set_expire(key).await?;
+        if CONFIG.get_redis_config().ttl > 0 {
+            RedisService::set_expire(key).await?;
+        }
         Ok(())
     }
 
@@ -154,7 +159,9 @@ impl RedisService {
         con.set::<String, String, String>(key.clone(), value_str)
             .await?;
         //5.设置过期时间
-        RedisService::set_expire(key).await?;
+        if CONFIG.get_redis_config().ttl > 0 {
+            RedisService::set_expire(key).await?;
+        }
         Ok(())
     }
 
