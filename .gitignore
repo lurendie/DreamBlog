@@ -6,3 +6,6 @@
 
 ### VS Code ###
 .vscode/
+
+blog-view/package-lock.json
+blog-cms/package-lock.json
