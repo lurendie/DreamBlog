@@ -94,16 +94,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
       - name: Install CMS dependencies
-        run: cd blog-cms && npm ci
+        run: cd blog-cms && npm install
 
       - name: Build CMS
         run: cd blog-cms && npm run build
 
       - name: Install View dependencies
-        run: cd blog-view && npm ci
+        run: cd blog-view && npm install
 
       - name: Build View
         run: cd blog-view && npm run build
