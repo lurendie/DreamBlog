@@ -39,6 +39,7 @@ pub async fn login(
     session: MaybeAuthenticated<AppClaims>,
     app: Data<AppState>,
 ) -> impl Responder {
+    //TODO BUG 前端页面token没有过期时间 登录过一次后会一直保持   actix-jwt-session 发现请求头带有token 会进行验证 token过期无法找到session 拦截
     //验证账号 密码是否正确
     let mut user = UserService::get_by_username(&user_form.username, app.get_mysql_pool()).await;
     if let Ok(user) = user.as_mut() {
@@ -129,10 +130,8 @@ pub async fn login(
                 value!("expires"),
                 value!(CONFIG.get_server_config().token_expires),
             );
-            let result = ApiResponse::<Value>::success_with_msg(
-                "请求成功".to_string(),
-                Some(value!(map)),
-            );
+            let result =
+                ApiResponse::<Value>::success_with_msg("请求成功".to_string(), Some(value!(map)));
             return HttpResponse::Ok()
                 .append_header((JWT_HEADER_NAME, pair.jwt.encode().unwrap()))
                 .append_header((REFRESH_HEADER_NAME, pair.refresh.encode().unwrap()))

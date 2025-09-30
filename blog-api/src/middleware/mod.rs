@@ -8,4 +8,5 @@
 mod jwt;
 mod visit_log;
 pub use jwt::AppClaims;
+pub use jwt::CustomExtractor;
 pub use visit_log::VisiLog;

@@ -12,8 +12,8 @@ use crate::controller::{
     archive_controller, blog_controller, comment_controller, friend_controller, index_controller,
     moment_controller, user_controller,
 };
-use crate::middleware::{AppClaims, VisiLog};
-use actix_jwt_session::{Duration, Extractors, JwtTtl, RefreshTtl, UseJwt, JWT_HEADER_NAME};
+use crate::middleware::{AppClaims, CustomExtractor, VisiLog};
+use actix_jwt_session::{Duration, JwtTtl, RefreshTtl, UseJwt, JWT_HEADER_NAME};
 //use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
@@ -49,7 +49,7 @@ impl AppServer {
                 .app_data(Data::new(refresh_ttl))
                 .app_data(app_data.clone())
                 .use_jwt::<AppClaims>(
-                    Extractors::default().with_jwt_header(JWT_HEADER_NAME),
+                    CustomExtractor::new(JWT_HEADER_NAME),
                     Some(redis_pool.clone()),
                 )
                 .wrap(VisiLog::default())
