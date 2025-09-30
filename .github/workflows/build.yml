@@ -1,8 +1,8 @@
 name: build
 on:
   workflow_dispatch: {}
-  push:
-    branches: [ "master" ]
+  # push:
+  #   branches: [ "master" ]
   # pull_request:
   #   branches: [ "master" ]
 jobs:
@@ -69,10 +69,10 @@ jobs:
           cd archive
           if [ "${{ matrix.build }}" = "windows" ]; then
             cp "../blog-api/target/${{ matrix.target }}/release/blog_api.exe" ./
-            7z a "${{ matrix.archive-name }}" LICENSE README.MD config/ blog_api.exe
+            7z a "${{ matrix.archive-name }}" LICENSE README.MD config/ data/ blog_api.exe
           else
             cp "../blog-api/target/${{ matrix.target }}/release/blog_api" ./
-            tar -czf "${{ matrix.archive-name }}" LICENSE README.MD config/ blog_api
+            tar -czf "${{ matrix.archive-name }}" LICENSE README.MD config/ data/ blog_api
           fi
 
       - name: Upload archive
