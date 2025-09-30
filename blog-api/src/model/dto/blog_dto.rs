@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     entity::{category, tag},
-    model::category::Category,
+    model::dto::category::Category,
 };
 
 use super::tag_dto::TagDTO;
