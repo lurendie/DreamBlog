@@ -44,60 +44,60 @@ pub async fn login(
     let mut user = UserService::get_by_username(&user_form.username, app.get_mysql_pool()).await;
     if let Ok(user) = user.as_mut() {
         //验证账号密码是否正确,排除非Admin账号登录
-        let flag = match UserBcrypt::verify_password(&user.get_password(), &user_form.password) {
-            Ok(flag) => flag,
-            Err(e) => {
-                log::error!("验证密码失败:{e:?}");
-                return ApiResponse::<Value>::error("验证密码失败".to_string()).json();
-            }
-        };
-        if flag || user.get_role() != "ROLE_admin" {
+        let password_flag =
+            match UserBcrypt::verify_password(&user.get_password(), &user_form.password) {
+                Ok(flag) => flag,
+                Err(e) => {
+                    log::error!("验证密码失败:{e:?}");
+                    return ApiResponse::<Value>::error("验证密码失败".to_string()).json();
+                }
+            };
+        if !password_flag || user.get_role() != "ROLE_admin" {
             //密码错误或者非Admin账号登录
             log::error!(
                 "用户{}登录失败，密码错误或者非Admin账号登录",
                 user_form.username
             );
             return ApiResponse::<Value>::error("用户名或密码错误！".to_string()).json();
-        } else {
-            //密码正确并且权限正确，登录成功返回token
-            let mut map: ValueMap = ValueMap::new();
-            //登录
-            log::info!("用户:{}登录成功", user_form.username);
-            let uuid = Uuid::new_v4();
-            //创建认证数据
-            let claims = AppClaims {
-                issues_at: OffsetDateTime::now_utc().unix_timestamp() as usize,
-                subject: user.get_username(),
-                expiration_time: jwt_ttl.0.as_seconds_f64() as u64,
-                //audience: Audience::Web,
-                jwt_id: Uuid::parse_str(uuid.to_string().as_str()).unwrap(),
-                account_id: user.get_id() as i32,
-                not_before: 0,
-            };
-            let pair = store
-                .clone()
-                .store(claims, *jwt_ttl.into_inner(), *refresh_ttl.into_inner())
-                .await
-                .unwrap();
-
-            user.set_password("".to_string());
-            map.insert(value!("user"), value!(user));
-            map.insert(value!("token"), value!(pair.jwt.encode().unwrap()));
-            map.insert(
-                value!("expires"),
-                value!(CONFIG.get_server_config().token_expires),
-            );
-            let result =
-                ApiResponse::<Value>::success_with_msg("请求成功".to_string(), Some(value!(map)));
-            return HttpResponse::Ok()
-                .append_header((JWT_HEADER_NAME, pair.jwt.encode().unwrap()))
-                .append_header((REFRESH_HEADER_NAME, pair.refresh.encode().unwrap()))
-                .cookie(
-                    actix_web::cookie::Cookie::build(JWT_COOKIE_NAME, pair.jwt.encode().unwrap())
-                        .finish(),
-                )
-                .json(result);
         }
+        //密码正确并且权限正确，登录成功返回token
+        let mut map: ValueMap = ValueMap::new();
+        //登录
+        log::info!("用户:{}登录成功", user_form.username);
+        let uuid = Uuid::new_v4();
+        //创建认证数据
+        let claims = AppClaims {
+            issues_at: OffsetDateTime::now_utc().unix_timestamp() as usize,
+            subject: user.get_username(),
+            expiration_time: jwt_ttl.0.as_seconds_f64() as u64,
+            //audience: Audience::Web,
+            jwt_id: Uuid::parse_str(uuid.to_string().as_str()).unwrap(),
+            account_id: user.get_id() as i32,
+            not_before: 0,
+        };
+        let pair = store
+            .clone()
+            .store(claims, *jwt_ttl.into_inner(), *refresh_ttl.into_inner())
+            .await
+            .unwrap();
+
+        user.set_password("".to_string());
+        map.insert(value!("user"), value!(user));
+        map.insert(value!("token"), value!(pair.jwt.encode().unwrap()));
+        map.insert(
+            value!("expires"),
+            value!(CONFIG.get_server_config().token_expires),
+        );
+        let result =
+            ApiResponse::<Value>::success_with_msg("请求成功".to_string(), Some(value!(map)));
+        return HttpResponse::Ok()
+            .append_header((JWT_HEADER_NAME, pair.jwt.encode().unwrap()))
+            .append_header((REFRESH_HEADER_NAME, pair.refresh.encode().unwrap()))
+            .cookie(
+                actix_web::cookie::Cookie::build(JWT_COOKIE_NAME, pair.jwt.encode().unwrap())
+                    .finish(),
+            )
+            .json(result);
     }
     log::warn!("用户名{}尝试登录，未找到用户", user_form.username);
     ApiResponse::<String>::error("用户名或密码错误！".to_string()).json()

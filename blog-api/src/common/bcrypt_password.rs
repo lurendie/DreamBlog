@@ -27,8 +27,8 @@ mod test {
         )
         .unwrap_or_default();
         println!(
-            "测试加密的字符串是:{:?}  原始密码是123456",
-            "$2b$12$J9Z8AKjIMluR34q7ksRUBe2k5glay6rVndjIzCzeN94Gt.o5BTRXW"
+            "测试加密的字符串是:{:?}  原始密码是123456 解密结果是{:?}",
+            "$2b$12$J9Z8AKjIMluR34q7ksRUBe2k5glay6rVndjIzCzeN94Gt.o5BTRXW", result
         );
         assert_eq!(result, true)
     }
