@@ -40,6 +40,17 @@ impl User {
     pub fn get_role(&self) -> String {
         self.role.clone()
     }
+
+    pub fn get_nickname(&self) -> String {
+        self.nickname.clone()
+    }
+
+    pub fn get_avatar(&self) -> String {
+        self.avatar.clone()
+    }
+    pub fn get_email(&self) -> String {
+        self.email.clone()
+    }
 }
 
 impl From<user::Model> for User {

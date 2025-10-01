@@ -10,7 +10,7 @@ impl UserBcrypt {
         verify(password, hashed)
     }
 
-    fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
+    pub fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
         // 使用默认成本因子（12）进行哈希
         hash(password, DEFAULT_COST)
     }
