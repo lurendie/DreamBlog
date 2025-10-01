@@ -14,8 +14,10 @@ use actix_jwt_session::SessionStorage;
 use actix_web::dev::ServiceRequest;
 use actix_web::HttpMessage;
 use async_trait::async_trait;
+use jsonwebtoken::decode;
 use jsonwebtoken::DecodingKey;
 use jsonwebtoken::EncodingKey;
+use jsonwebtoken::Validation;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -76,6 +78,9 @@ impl<ClaimsType: Claims> CustomHeaderExtractor<ClaimsType> {
 
 #[async_trait(?Send)]
 impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<ClaimsType> {
+    /**
+     * 从headers中获取token
+     */
     async fn extract_token_text<'req>(
         &self,
         req: &'req mut ServiceRequest,
@@ -89,6 +94,9 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
         Some((ExtractorKind::Header, self.header_name.into()))
     }
 
+    /**
+     * 中间件调用extract_claims进行验证JWT
+     */
     async fn extract_claims(
         &self,
         req: &mut ServiceRequest,
@@ -108,5 +116,53 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
             algorithm,
         });
         Ok(())
+    }
+
+    /**
+     * 将JWT解析成Claims对象
+     */
+    fn decode(
+        &self,
+        value: &str,
+        jwt_decoding_key: Arc<DecodingKey>,
+        algorithm: Algorithm,
+    ) -> Result<ClaimsType, Error> {
+        let mut validation = Validation::new(algorithm);
+        validation.validate_exp = false;
+        validation.validate_nbf = false;
+        validation.leeway = 0;
+        validation.required_spec_claims.clear();
+
+        decode::<ClaimsType>(value, &jwt_decoding_key, &validation)
+            .map_err(|e| {
+                log::error!("Failed to decode claims: {e:?}. {e}");
+                Error::CantDecode
+            })
+            .map(|t| t.claims)
+    }
+
+    /// Validate JWT Claims agains stored in storage tokens.
+    ///
+    /// * Token must exists in storage
+    /// * Token must be exactly the same as token from storage
+    async fn validate(&self, claims: &ClaimsType, storage: SessionStorage) -> Result<(), Error> {
+        let stored = storage
+            .clone()
+            .find_jwt::<ClaimsType>(claims.jti())
+            .await
+            .map_err(|e| {
+                log::error!(
+                    "Failed to load {} from storage: {e:?}",
+                    std::any::type_name::<ClaimsType>()
+                );
+                Error::LoadError
+            })?;
+
+        if &stored != claims {
+            log::error!("{claims:?} != {stored:?}");
+            Err(Error::DontMatch)
+        } else {
+            Ok(())
+        }
     }
 }

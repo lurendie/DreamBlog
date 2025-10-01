@@ -4,6 +4,7 @@
  * @LastEditors: lurendie
  * @LastEditTime: 2024-05-15 19:14:37
  */
+mod bcrypt_password;
 mod ip_region;
 mod ip_value;
 mod markdown;
@@ -11,6 +12,7 @@ mod pagination;
 pub mod param_utils;
 mod type_value;
 mod user_agent;
+pub use bcrypt_password::UserBcrypt;
 pub use ip_region::IpRegion;
 pub use markdown::MarkdownParser;
 pub use param_utils::ParamUtils;

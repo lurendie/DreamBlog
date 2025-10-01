@@ -30,7 +30,7 @@ impl AppServer {
      */
     pub async fn run() -> std::io::Result<()> {
         let server_config = CONFIG.get_server_config();
-        //创建JWT
+        //创建JWT TTL
         let jwt_ttl = JwtTtl(Duration::days(server_config.token_expires));
         let refresh_ttl = RefreshTtl(Duration::days(server_config.token_expires));
 
@@ -57,7 +57,7 @@ impl AppServer {
                 //.wrap(ErrorHandler::default())
                 .configure(Self::view_router)
                 //admin
-                .service(web::scope("/admin/").configure(Self::admin_router))
+                .service(web::scope("/admin").configure(Self::admin_router))
                 .default_service(web::to(index_controller::default))
         })
         .bind_auto_h2c(format!("{}:{}", server_config.host, server_config.port))?
