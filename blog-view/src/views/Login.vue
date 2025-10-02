@@ -11,7 +11,8 @@
 					<el-input v-model="loginForm.username" prefix-icon="el-icon-user-solid"></el-input>
 				</el-form-item>
 				<el-form-item prop="password">
-					<el-input v-model="loginForm.password" prefix-icon="el-icon-lock" show-password @keyup.native.enter="login"></el-input>
+					<el-input v-model="loginForm.password" prefix-icon="el-icon-lock" show-password
+						@keyup.native.enter="login"></el-input>
 				</el-form-item>
 				<el-form-item class="btns">
 					<el-button type="primary" @click="login">登录</el-button>
@@ -23,22 +24,22 @@
 </template>
 
 <script>
-	import {login} from "@/api/login";
+	import { login } from "@/api/login";
 
 	export default {
 		name: "Login",
 		data() {
 			return {
 				loginForm: {
-					username: 'Naccl',
-					password: '11'
+					username: '',
+					password: ''
 				},
 				loginFormRules: {
 					username: [
-						{required: true, message: '请输入用户名', trigger: 'blur'},
+						{ required: true, message: '请输入用户名', trigger: 'blur' },
 					],
 					password: [
-						{required: true, message: '请输入密码', trigger: 'blur'},
+						{ required: true, message: '请输入密码', trigger: 'blur' },
 					]
 				}
 			}

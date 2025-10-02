@@ -1,10 +1,15 @@
+use std::collections::HashMap;
+
 use crate::app::RedisClient;
 use crate::app::CONFIG;
 use crate::error::DataBaseError;
 use deadpool_redis::redis::AsyncCommands;
+use deadpool_redis::redis::FromRedisValue;
 use rbs::value::map::ValueMap;
 use rbs::Value;
 use serde::Serialize;
+use std::cmp::Eq;
+use std::hash::Hash;
 
 pub struct RedisService;
 
@@ -99,6 +104,22 @@ impl RedisService {
 
         Ok(())
     }
+
+    /**
+     * 根据KEY获取 所有hash和value
+     */
+    pub async fn get_hash_all<K, V>(key: String) -> Result<HashMap<K, V>, DataBaseError>
+    where
+        K: serde::de::DeserializeOwned + Hash + Eq + FromRedisValue,
+        V: serde::de::DeserializeOwned + Hash + Eq + FromRedisValue,
+    {
+        let mut connection = RedisClient::get_connection().await?;
+        let redis_reuslt = connection
+            .hgetall::<String, HashMap<K, V>>(key.to_owned())
+            .await?;
+        Ok(redis_reuslt)
+    }
+
     /**
      * Set `key` `value`字符串
      */

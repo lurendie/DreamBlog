@@ -402,21 +402,46 @@ impl BlogService {
      * 处理BlogInfo结构体依赖关系
      */
     async fn bloginfo_handle(list: &mut Vec<BlogInfo>, db: &DatabaseConnection) {
+        let blog_view_map =
+            RedisService::get_hash_all::<i64, i32>(RedisKeyConstant::BLOG_VIEWS_MAP.to_string())
+                .await
+                .unwrap_or_else(|e| {
+                    log::error!(
+                        "获取 Redis KEY:{} 失败，错误信息：{}",
+                        RedisKeyConstant::BLOG_VIEWS_MAP,
+                        e
+                    );
+                    HashMap::new()
+                });
         for item in list.iter_mut() {
-            let id = item.id.unwrap_or_default();
-            if let Ok(ok) = blog::Entity::find_by_id(id).one(db).await {
-                match ok {
-                    Some(blog) => {
-                        item.related_handle(blog, db).await;
-                    }
-                    None => {
-                        log::error!("没有检索到ID：{} 的文章，无法处理依赖关系", id);
-                    }
-                }
+            let id: i64 = item.id.unwrap_or_default();
+            if let Ok(Some(blog)) = blog::Entity::find_by_id(id).one(db).await {
+                item.related_handle(blog, db).await;
+            } else {
+                log::error!("检索到ID：{} 的文章出现异常，无法处理依赖关系", id);
             }
+
+            if blog_view_map.contains_key(&id) {
+                item.views = *blog_view_map.get(&id).unwrap_or_else(|| {
+                    log::error!("获取 Redis KEY:{} 失败", RedisKeyConstant::BLOG_VIEWS_MAP,);
+                    &0
+                });
+            } else {
+                //如果Redis没有，则缓存数据
+                RedisService::set_hash_key::<i32>(
+                    RedisKeyConstant::BLOG_VIEWS_MAP.to_string(),
+                    id.to_string(),
+                    &item.views,
+                )
+                .await
+                .unwrap_or_else(|e| {
+                    log::error!("Redis KEY: blogViewsMap 缓存数据失败，错误信息：{e}");
+                })
+            }
+
             if let Some(password) = &item.password {
                 //如果password!=null
-                if *password != "" {
+                if !password.is_empty() {
                     item.privacy = Some(true);
                 } else {
                     item.privacy = Some(false)

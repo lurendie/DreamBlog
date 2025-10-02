@@ -55,6 +55,9 @@ impl actix_jwt_session::Claims for AppClaims {
     }
 }
 
+/**
+ * 创建session_storage和session_middleware
+ */
 pub async fn build_session_storage() -> (SessionStorage, SessionMiddlewareFactory<AppClaims>) {
     let redis_pool = RedisClient::get_redis_pool().await;
     let mut builder = SessionMiddlewareFactory::build_ed_dsa()
@@ -123,7 +126,7 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
         if matches!(self.validate_login_path(req.path()).await, true) {
             return Ok(());
         }
-        // 从接口获取token 未获取到则
+        // 从接口获取token 未获取到则跳过
         let Some(as_str) = self.extract_token_text(req).await else {
             return Ok(());
         };
