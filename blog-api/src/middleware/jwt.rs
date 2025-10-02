@@ -10,7 +10,9 @@ use actix_jwt_session::Error;
 use actix_jwt_session::ExtractorKind;
 use actix_jwt_session::Extractors;
 use actix_jwt_session::SessionExtractor;
+use actix_jwt_session::SessionMiddlewareFactory;
 use actix_jwt_session::SessionStorage;
+use actix_jwt_session::JWT_HEADER_NAME;
 use actix_web::dev::ServiceRequest;
 use actix_web::HttpMessage;
 use async_trait::async_trait;
@@ -20,6 +22,8 @@ use jsonwebtoken::EncodingKey;
 use jsonwebtoken::Validation;
 use serde::Deserialize;
 use serde::Serialize;
+
+use crate::app::RedisClient;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "snake_case")]
@@ -50,6 +54,16 @@ impl actix_jwt_session::Claims for AppClaims {
         &self.subject
     }
 }
+
+pub async fn build_session_storage() -> (SessionStorage, SessionMiddlewareFactory<AppClaims>) {
+    let redis_pool = RedisClient::get_redis_pool().await;
+    let mut builder = SessionMiddlewareFactory::build_ed_dsa()
+        .with_extractors(CustomExtractor::new(JWT_HEADER_NAME));
+    builder = builder.with_redis_pool(redis_pool);
+    // create new [SessionStorage] and [SessionMiddlewareFactory]
+    builder.finish()
+}
+
 pub struct CustomExtractor;
 
 impl CustomExtractor {
@@ -105,6 +119,11 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
         algorithm: Algorithm,
         storage: SessionStorage,
     ) -> Result<(), Error> {
+        // 跳过登录接口
+        if matches!(self.validate_login_path(req.path()).await, true) {
+            return Ok(());
+        }
+        // 从接口获取token 未获取到则
         let Some(as_str) = self.extract_token_text(req).await else {
             return Ok(());
         };
@@ -164,5 +183,11 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
         } else {
             Ok(())
         }
+    }
+}
+
+impl<ClaimsType: Claims> CustomHeaderExtractor<ClaimsType> {
+    async fn validate_login_path(&self, path: &str) -> bool {
+        path.contains("/login")
     }
 }

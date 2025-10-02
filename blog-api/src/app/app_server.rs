@@ -5,16 +5,15 @@
  */
 use super::app_config::CONFIG;
 use super::app_state::{self, AppState};
-use super::RedisClient;
 use crate::controller::{
     about_controller,
     admin::{self, tag_controller},
     archive_controller, blog_controller, comment_controller, friend_controller, index_controller,
     moment_controller, user_controller,
 };
-use crate::middleware::{AppClaims, CustomExtractor, VisiLog};
-use actix_jwt_session::{Duration, JwtTtl, RefreshTtl, UseJwt, JWT_HEADER_NAME};
-//use actix_web::middleware::Logger;
+use crate::middleware::build_session_storage;
+use crate::middleware::VisiLog;
+use actix_jwt_session::{Duration, JwtTtl, RefreshTtl};
 use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
 
@@ -40,24 +39,24 @@ impl AppServer {
             //,
             // CONFIG.clone(),
         );
-        let redis_pool = RedisClient::get_redis_pool().await;
-        let app_data = Data::new(app_state.clone());
+        let (session_storage, factory) = build_session_storage().await;
         HttpServer::new(move || {
             //创建App
             App::new()
                 .app_data(Data::new(jwt_ttl))
                 .app_data(Data::new(refresh_ttl))
-                .app_data(app_data.clone())
-                .use_jwt::<AppClaims>(
-                    CustomExtractor::new(JWT_HEADER_NAME),
-                    Some(redis_pool.clone()),
+                .app_data(Data::new(app_state.clone()))
+                .app_data(Data::new(session_storage.clone()))
+                .service(
+                    web::scope("/blog")
+                        .wrap(VisiLog::default())
+                        .configure(Self::view_router),
                 )
-                .wrap(VisiLog::default())
-                //.wrap(Logger::default())
-                //.wrap(ErrorHandler::default())
-                .configure(Self::view_router)
-                //admin
-                .service(web::scope("/admin").configure(Self::admin_router))
+                .service(
+                    web::scope("/admin")
+                        .wrap(factory.clone())
+                        .configure(Self::cms_router),
+                )
                 .default_service(web::to(index_controller::default))
         })
         .bind_auto_h2c(format!("{}:{}", server_config.host, server_config.port))?
@@ -89,7 +88,7 @@ impl AppServer {
     /**
      * 后台路由
      */
-    fn admin_router(cfg: &mut web::ServiceConfig) {
+    fn cms_router(cfg: &mut web::ServiceConfig) {
         cfg.service(user_controller::login)
             .service(admin::dashboard_controller::dashboard) //.default_service(web::to(adminIndexController::default)),
             .service(admin::blog_controller::blogs)

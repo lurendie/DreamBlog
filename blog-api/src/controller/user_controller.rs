@@ -44,14 +44,8 @@ pub async fn login(
     let mut user = UserService::get_by_username(&user_form.username, app.get_mysql_pool()).await;
     if let Ok(user) = user.as_mut() {
         //验证账号密码是否正确,排除非Admin账号登录
-        let password_flag =
-            match UserBcrypt::verify_password(&user.get_password(), &user_form.password) {
-                Ok(flag) => flag,
-                Err(e) => {
-                    log::error!("验证密码失败:{e:?}");
-                    return ApiResponse::<Value>::error("验证密码失败".to_string()).json();
-                }
-            };
+        let password_flag = UserBcrypt::verify_password(&user.get_password(), &user_form.password)
+            .unwrap_or_default();
         if !password_flag || user.get_role() != "ROLE_admin" {
             //密码错误或者非Admin账号登录
             log::error!(
@@ -62,7 +56,7 @@ pub async fn login(
         }
         //密码正确并且权限正确，登录成功返回token
         let mut map: ValueMap = ValueMap::new();
-        //登录
+        //登录成功
         log::info!("用户:{}登录成功", user_form.username);
         let uuid = Uuid::new_v4();
         //创建认证数据
@@ -75,15 +69,32 @@ pub async fn login(
             account_id: user.get_id() as i32,
             not_before: 0,
         };
-        let pair = store
-            .clone()
+        let pair = match store
             .store(claims, *jwt_ttl.into_inner(), *refresh_ttl.into_inner())
             .await
-            .unwrap();
+        {
+            Ok(pair) => pair,
+            Err(e) => {
+                log::error!("用户{}登录失败，创建认证数据失败:{}", user_form.username, e);
+                return ApiResponse::<String>::error("登录失败！".to_string()).json();
+            }
+        };
 
         user.set_password("".to_string());
+        //获取jwt 如果失败则返回
+        let jwt_token = pair.jwt.encode().unwrap_or_default();
+        if jwt_token.is_empty() {
+            log::warn!("用户{}登录失败，获取jwt为空", user_form.username);
+            return ApiResponse::<String>::error("登录失败！".to_string()).json();
+        }
+        //获取refresh 如果失败则返回
+        let refresh_token = pair.refresh.encode().unwrap_or_default();
+        if refresh_token.is_empty() {
+            log::warn!("用户{}登录失败，获取refresh为空", user_form.username);
+            return ApiResponse::<String>::error("登录失败！".to_string()).json();
+        }
         map.insert(value!("user"), value!(user));
-        map.insert(value!("token"), value!(pair.jwt.encode().unwrap()));
+        map.insert(value!("token"), value!(&jwt_token));
         map.insert(
             value!("expires"),
             value!(CONFIG.get_server_config().token_expires),
@@ -91,12 +102,9 @@ pub async fn login(
         let result =
             ApiResponse::<Value>::success_with_msg("请求成功".to_string(), Some(value!(map)));
         return HttpResponse::Ok()
-            .append_header((JWT_HEADER_NAME, pair.jwt.encode().unwrap()))
-            .append_header((REFRESH_HEADER_NAME, pair.refresh.encode().unwrap()))
-            .cookie(
-                actix_web::cookie::Cookie::build(JWT_COOKIE_NAME, pair.jwt.encode().unwrap())
-                    .finish(),
-            )
+            .append_header((JWT_HEADER_NAME, jwt_token.to_string()))
+            .append_header((REFRESH_HEADER_NAME, refresh_token))
+            .cookie(actix_web::cookie::Cookie::build(JWT_COOKIE_NAME, jwt_token).finish())
             .json(result);
     }
     log::warn!("用户名{}尝试登录，未找到用户", user_form.username);
