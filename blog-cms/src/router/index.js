@@ -2,8 +2,6 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import getPageTitle from '@/util/get-page-title'
 import Layout from '@/layout'
-import cookie from 'js-cookie'
-import { Message } from 'element-ui'
 
 Vue.use(VueRouter)
 
@@ -247,17 +245,9 @@ const router = new VueRouter({
 //挂载路由守卫
 router.beforeEach((to, from, next) => {
 	if (to.path !== '/login') {
-		//判断是否有token
-		const token = cookie.get('token')
-		// console.log("token:",token)
-		if (typeof  token === 'undefined') {
-			//没有token，跳转到登录页面
-			Message.error("请先登录")
-			next("/login")
-		}
 		//获取token
-		//const tokenStr = window.localStorage.getItem('token')
-		//if (!tokenStr) return next("/login")
+		const tokenStr = window.localStorage.getItem('token')
+		if (!tokenStr) return next("/login")
 	}
 	document.title = getPageTitle(to.meta.title)
 	next()

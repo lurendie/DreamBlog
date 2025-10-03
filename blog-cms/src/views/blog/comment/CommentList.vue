@@ -10,7 +10,7 @@
 			</el-col>
 		</el-row>
 
-		<el-table :data="commentList" row-key="id" :tree-props="{ children: 'replyComments' }" :indent=0>
+		<el-table :data="commentList" row-key="id" :tree-props="{ children: 'replyComments' }" indent="0">
 			<el-table-column label="评论ID" prop="id"></el-table-column>
 			<el-table-column label="头像" width="70">
 				<template v-slot="scope">
@@ -31,11 +31,11 @@
 			<el-table-column label="所在页面" show-overflow-tooltip>
 				<template v-slot="scope">
 					<el-link type="success" :href="`/blog/${scope.row.blog.id}`" target="_blank"
-						v-if="scope.row.page === 0">{{ scope.row.blog.title }}</el-link>
+						v-if="scope.row.page===0">{{ scope.row.blog.title }}</el-link>
 					<el-link type="success" :href="'/about'" target="_blank"
 						v-else-if="scope.row.page === 1">关于我</el-link>
 					<el-link type="success" :href="'/friends'" target="_blank"
-						v-else-if="scope.row.page === 2">友人帐</el-link>
+						v-else-if="scope.row.page===2">友人帐</el-link>
 				</template>
 			</el-table-column>
 			<el-table-column label="发表时间" width="170">
@@ -94,7 +94,7 @@
 			</el-form>
 			<!--底部-->
 			<span slot="footer">
-				<el-button @click="editDialogVisible = false">取 消</el-button>
+				<el-button @click="editDialogVisible=false">取 消</el-button>
 				<el-button type="primary" @click="editComment">确 定</el-button>
 			</span>
 		</el-dialog>

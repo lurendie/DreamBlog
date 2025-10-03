@@ -20,9 +20,11 @@ import 'viewerjs/dist/viewer.css'
 import Viewer from 'v-viewer'
 //directive
 import './util/directive'
+//懒加载
+import VueLazyload from 'vue-lazyload'
 
 console.log(
-	'%c DreamBlog %c By lurendie %c https://github.com/lurendie/dream_blog',
+	'%c DreamBlog %c By Naccl %c https://github.com/lurendie/DreamBlog',
 	'background:#35495e ; padding: 1px; border-radius: 3px 0 0 3px;  color: #fff',
 	'background:#41b883 ; padding: 1px; border-radius: 0 3px 3px 0;  color: #000',
 	'background:transparent'
@@ -30,6 +32,10 @@ console.log(
 
 Vue.use(Element)
 Vue.use(Viewer)
+Vue.use(VueLazyload, {
+	preLoad: 1.2,
+	loading: require('./assets/img/loading.gif'),
+})
 
 Vue.prototype.msgSuccess = function (msg) {
 	this.$message.success(msg)

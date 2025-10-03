@@ -11,5 +11,5 @@ module.exports = {
 	 * @type {string}
 	 * @description 首页故障风文字
 	 */
-	malfunctionText: 'Zero\'s Blog'
+	malfunctionText: 'Dream\'s Blog'
 }

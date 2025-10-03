@@ -46,7 +46,6 @@
 
 <script>
 	import {login} from "@/api/login";
-	import cookie from 'js-cookie'
 
 	export default {
 		name: 'Login',
@@ -87,7 +86,6 @@
 							this.msgSuccess(res.msg);
 							window.localStorage.setItem('token', res.data.token)
 							window.localStorage.setItem('user', JSON.stringify(res.data.user))
-							cookie.set("token", res.data.token,{expires: res.data.expires});
 							this.$router.push('/')
 						})
 						this.loading = false

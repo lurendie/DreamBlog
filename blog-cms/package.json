@@ -4,17 +4,16 @@
   "description": "NBlog cms",
   "author": "Naccl <i@naccl.top>",
   "private": true,
-  "scripts": {
+ "scripts": {
     "serve": "set NODE_OPTIONS=--openssl-legacy-provider & vue-cli-service serve",
     "build": "set NODE_OPTIONS=--openssl-legacy-provider & vue-cli-service build"
   },
   "dependencies": {
-    "axios": "1.7.7",
+    "axios": "0.24.0",
     "core-js": "3.6.5",
     "cos-js-sdk-v5": "^1.4.10",
     "echarts": "4.9.0",
     "element-ui": "2.13.2",
-    "js-cookie": "^3.0.5",
     "lodash": "4.17.19",
     "mavon-editor": "2.9.1",
     "moment": "2.27.0",

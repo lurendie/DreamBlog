@@ -40,7 +40,6 @@ request.interceptors.response.use(response => {
 		NProgress.done()
 		const res = response.data
 		if (res.code !== 200) {
-			// 错误提示
 			let msg = res.msg || 'Error'
 			Message.error(msg)
 			return Promise.reject(new Error(msg))

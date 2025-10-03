@@ -12,7 +12,6 @@
 
 <script>
 	import {mapState} from 'vuex'
-//	import tocbot from 'tocbot'
 
 	export default {
 		name: "Tocbot",
