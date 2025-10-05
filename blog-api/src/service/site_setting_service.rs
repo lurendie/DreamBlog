@@ -18,7 +18,7 @@ impl SiteSettingService {
     pub async fn find_site_info(db: &DatabaseConnection) -> Result<ValueMap, DataBaseError> {
         //查询缓存
         let cache_result =
-            RedisService::get_value_map(RedisKeyConstant::SITE_INFO_MAP.to_string()).await;
+            RedisService::get_string(RedisKeyConstant::SITE_INFO_MAP.to_string()).await;
         if let Ok(cache_result) = cache_result {
             log::info!(
                 "reids KEY:{} 获取缓存数据成功",
@@ -117,7 +117,7 @@ impl SiteSettingService {
         map.insert(value!("siteInfo"), value!(site_info));
         map.insert(value!("badges"), value!(badges));
         //缓存数据
-        RedisService::set_value_map(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await?;
+        RedisService::set_string(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await?;
         log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::SITE_INFO_MAP);
         Ok(map)
     }

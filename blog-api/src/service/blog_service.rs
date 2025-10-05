@@ -322,7 +322,7 @@ impl BlogService {
     //获取归档文章
     pub(crate) async fn find_archives(db: &DatabaseConnection) -> Result<ValueMap, DataBaseError> {
         let redis_cache =
-            RedisService::get_value_map(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string()).await;
+            RedisService::get_string(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string()).await;
         if let Ok(redis_cache) = redis_cache {
             log::info!(
                 "获取 KEY:{} 缓存数据成功",
@@ -378,8 +378,7 @@ impl BlogService {
 
         if map.len() > 0 {
             //保存到Redis
-            RedisService::set_value_map(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string(), &map)
-                .await?;
+            RedisService::set_string(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string(), &map).await?;
             log::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::ARCHIVE_BLOG_MAP

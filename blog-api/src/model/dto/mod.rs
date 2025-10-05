@@ -41,3 +41,6 @@ pub use category::Category;
 //pub use login_log::LoginLog;
 pub use moment::Moment;
 //pub use operation_log::OperationLog;
+pub use user::CacheUserInfo;
+pub use user::LoginUser;
+pub use user::LoginedCacheUser;

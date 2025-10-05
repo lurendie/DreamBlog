@@ -25,7 +25,7 @@ use serde::Serialize;
 
 use crate::app::RedisClient;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash, Default)]
 #[serde(rename_all = "snake_case")]
 pub struct AppClaims {
     #[serde(rename = "exp")]

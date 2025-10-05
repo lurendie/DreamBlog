@@ -17,7 +17,7 @@ impl FriendService {
     //获取友链数据
     pub(crate) async fn get_friend(db: &DatabaseConnection) -> Result<ValueMap, DataBaseError> {
         if let Ok(map) =
-            RedisService::get_value_map(RedisKeyConstant::FRIEND_INFO_MAP.to_string()).await
+            RedisService::get_string(RedisKeyConstant::FRIEND_INFO_MAP.to_string()).await
         {
             return Ok(map);
         }
@@ -54,7 +54,7 @@ impl FriendService {
         friend_map.insert(value!("friendInfo"), value!(friend_info));
         friend_map.insert(value!("friendList"), value!(friend_list));
         if !friend_map.is_empty() {
-            RedisService::set_value_map(RedisKeyConstant::FRIEND_INFO_MAP.to_string(), &friend_map)
+            RedisService::set_string(RedisKeyConstant::FRIEND_INFO_MAP.to_string(), &friend_map)
                 .await?;
         }
         Ok(friend_map)
