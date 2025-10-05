@@ -75,7 +75,7 @@ impl UserService {
                 }
 
                 Err(DataBaseError::Custom(format!(
-                    "用户名{}验证失败",
+                    "登录用户{},Redis缓存中的TOKEN验证失败",
                     user_form.username
                 )))
             }

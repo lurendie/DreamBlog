@@ -24,7 +24,7 @@ import './util/directive'
 import VueLazyload from 'vue-lazyload'
 
 console.log(
-	'%c DreamBlog %c By Naccl %c https://github.com/lurendie/DreamBlog',
+	'%c DreamBlog %c By lurendie %c https://github.com/lurendie/DreamBlog',
 	'background:#35495e ; padding: 1px; border-radius: 3px 0 0 3px;  color: #fff',
 	'background:#41b883 ; padding: 1px; border-radius: 0 3px 3px 0;  color: #000',
 	'background:transparent'

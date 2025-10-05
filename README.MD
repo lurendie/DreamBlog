@@ -1,5 +1,5 @@
 <p align="center">
-	<a href="https://naccl.top/" target="_blank">
+	<a href="https://lurendie.com/" target="_blank">
 		<img src="./blog-view/public/img/qr.png" alt="ZeroBlog logo" style="width: 200px; height: 200px">
 	</a>
 </p>

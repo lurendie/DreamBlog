@@ -81,7 +81,7 @@ impl LogConfig {
     pub fn init_path(path: String) -> Result<Self, log4rs::config::InitError> {
         let _ = log4rs::init_file(path, Default::default())
             .expect("初始化日志配置失败，请检查 log_config.yaml 配置文件是否正确！");
-        log::info!("Zero Blog初始化完成, 时间为:[{}]...", Self::get_date_time());
+        log::info!("Blog API初始化完成, 时间为:[{}]...", Self::get_date_time());
         //修改日志等级ERROR 非ERROR日志不记录
         //log::set_max_level(log::LevelFilter::Error.to_level().unwrap().to_level_filter());
         Ok(Self)
