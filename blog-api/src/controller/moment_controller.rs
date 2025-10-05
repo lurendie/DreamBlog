@@ -1,4 +1,5 @@
 use crate::app::AppState;
+use crate::error::web_error::AppError;
 use crate::error::WebErrorCode;
 use crate::model::ApiResponse;
 use crate::model::SearchRequest;
@@ -42,18 +43,18 @@ pub(crate) async fn moments(
 
 #[routes]
 #[post("/moment/like/{id}")]
-pub async fn moment_like(id: Path<i64>, app: web::Data<AppState>) -> impl Responder {
+pub async fn moment_like(
+    id: Path<i64>,
+    app: web::Data<AppState>,
+) -> Result<impl Responder, AppError> {
     let id = id.into_inner();
     if id <= 0 {
-        return ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "参数有误!")
-            .json();
-    }
-    match MomentService::moment_like(id, app.get_mysql_pool()).await {
-        Ok(_) => ApiResponse::<String>::success_with_msg("点赞成功", None).json(),
-        Err(e) => ApiResponse::<String>::error_with_code(
-            WebErrorCode::DATABASE_ERROR,
-            e.to_string().as_str(),
+        return Ok(ApiResponse::<String>::error_with_code(
+            WebErrorCode::VALIDATION_ERROR,
+            "参数有误!",
         )
-        .json(),
+        .json());
     }
+    MomentService::moment_like(id, app.get_mysql_pool()).await?;
+    Ok(ApiResponse::<String>::success_with_msg("点赞成功", None).json())
 }

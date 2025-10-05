@@ -7,6 +7,7 @@
  */
 
 use crate::app::AppState;
+use crate::error::web_error::AppError;
 use crate::model::{ApiResponse, LoginUser};
 use crate::service::UserService;
 use actix_jwt_session::{JwtTtl, RefreshTtl, SessionStorage, JWT_HEADER_NAME};
@@ -25,7 +26,7 @@ pub async fn login(
     jwt_ttl: Data<JwtTtl>,
     refresh_ttl: Data<RefreshTtl>,
     app: Data<AppState>,
-) -> Result<impl Responder, actix_web::Error> {
+) -> Result<impl Responder, AppError> {
     match UserService::verify_logined_user(&user_form, &store).await {
         Ok(map) => {
             let result = ApiResponse::<Value>::success_with_msg(
@@ -43,28 +44,20 @@ pub async fn login(
         }
     }
     //验证账号 密码是否正确
-    match UserService::get_user_info(
+    let data = UserService::get_user_info(
         &user_form,
         app.get_mysql_pool(),
         jwt_ttl,
         refresh_ttl,
         store,
     )
-    .await
-    {
-        Ok(map) => {
-            let result = ApiResponse::<Value>::success_with_msg(
-                format!("用户{},登录成功!", user_form.username).as_str(),
-                Some(value!(&map.0)),
-            );
-            return Ok(HttpResponse::Ok()
-                .append_header((JWT_HEADER_NAME, map.1.to_string()))
-                .content_type("application/json; charset=utf-8")
-                .json(result));
-        }
-        Err(e) => {
-            log::warn!("用户名{}尝试登录，错误信息{e}", user_form.username);
-            return Ok(ApiResponse::<String>::error("用户名或密码错误！").json());
-        }
-    }
+    .await?;
+    let result = ApiResponse::<Value>::success_with_msg(
+        format!("登录成功!,欢迎用户{}回来", user_form.username).as_str(),
+        Some(value!(&data.0)),
+    );
+    return Ok(HttpResponse::Ok()
+        .append_header((JWT_HEADER_NAME, data.1.to_string()))
+        .content_type("application/json; charset=utf-8")
+        .json(result));
 }
