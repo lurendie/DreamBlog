@@ -25,7 +25,7 @@ pub(crate) async fn archives(app: web::Data<AppState>) -> impl Responder {
             ApiResponse::success(Some(value!(data))).json()
         }
         Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
         }
     }
 }

@@ -19,7 +19,7 @@ pub async fn site(app: web::Data<AppState>) -> impl Responder {
         Err(e) => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::DATABASE_ERROR,
-                e.to_string(),
+                e.to_string().as_str(),
             )
             .json()
         }
@@ -31,7 +31,7 @@ pub async fn site(app: web::Data<AppState>) -> impl Responder {
         Err(e) => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::DATABASE_ERROR,
-                e.to_string(),
+                e.to_string().as_str(),
             )
             .json()
         }
@@ -43,7 +43,7 @@ pub async fn site(app: web::Data<AppState>) -> impl Responder {
         Err(e) => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::DATABASE_ERROR,
-                e.to_string(),
+                e.to_string().as_str(),
             )
             .json()
         }
@@ -55,7 +55,7 @@ pub async fn site(app: web::Data<AppState>) -> impl Responder {
         Err(e) => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::DATABASE_ERROR,
-                e.to_string(),
+                e.to_string().as_str(),
             )
             .json()
         }
@@ -67,7 +67,7 @@ pub async fn site(app: web::Data<AppState>) -> impl Responder {
         Err(e) => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::DATABASE_ERROR,
-                e.to_string(),
+                e.to_string().as_str(),
             )
             .json()
         }
@@ -84,6 +84,6 @@ pub async fn site(app: web::Data<AppState>) -> impl Responder {
 
 pub async fn default() -> impl Responder {
     //error!("404,找不到页面");
-    ApiResponse::<String>::error_with_code(WebErrorCode::NOT_FOUND, "Error Not Found".to_string())
+    ApiResponse::<String>::error_with_code(WebErrorCode::NOT_FOUND, "Error Not Found")
         .json()
 }

@@ -68,12 +68,12 @@ pub async fn get_visit_log_list(
             result.insert("total".to_string(),  value!(total));
             result.insert("records".to_string(),  value!(logs));
             ApiResponse::success_with_msg(
-                "获取访问日志列表成功".to_string(),
+                "获取访问日志列表成功",
                 Some( value!(result)),
             )
             .json()
         }
-        Err(e) => ApiResponse::<String>::error(format!("获取访问日志列表失败: {}", e)).json(),
+        Err(e) => ApiResponse::<String>::error(format!("获取访问日志列表失败: {}", e).as_str()).json(),
     }
 }
 
@@ -90,11 +90,11 @@ pub async fn delete_visit_log_by_id(
     match visit_log::Entity::delete_by_id(id).exec(db).await {
         Ok(result) => {
             if result.rows_affected > 0 {
-                ApiResponse::<String>::success_with_msg("删除访问日志成功".to_string(), None).json()
+                ApiResponse::<String>::success_with_msg("删除访问日志成功", None).json()
             } else {
-                ApiResponse::<String>::error("访问日志不存在".to_string()).json()
+                ApiResponse::<String>::error("访问日志不存在").json()
             }
         }
-        Err(e) => ApiResponse::<String>::error(format!("删除访问日志失败: {}", e)).json(),
+        Err(e) => ApiResponse::<String>::error(format!("删除访问日志失败: {}", e).as_str()).json(),
     }
 }

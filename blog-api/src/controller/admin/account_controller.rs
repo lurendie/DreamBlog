@@ -49,7 +49,7 @@ pub async fn change_account(
                 let password = match UserBcrypt::hash_password(&user_from.get_password()) {
                     Ok(password) => password,
                     Err(e) => {
-                        return ApiResponse::<String>::error(format!("密码加密失败: {}", e)).json()
+                        return ApiResponse::<String>::error(format!("密码加密失败: {}", e).as_str()).json()
                     }
                 };
                 active_user.password = Set(password);
@@ -59,13 +59,13 @@ pub async fn change_account(
 
             match active_user.update(db).await {
                 Ok(_) => {
-                    ApiResponse::<String>::success_with_msg("用户信息更新成功".to_string(), None)
+                    ApiResponse::<String>::success_with_msg("用户信息更新成功", None)
                         .json()
                 }
-                Err(e) => ApiResponse::<String>::error(format!("用户信息更新失败: {}", e)).json(),
+                Err(e) => ApiResponse::<String>::error(format!("用户信息更新失败: {}", e).as_str()).json(),
             }
         }
-        Ok(None) => ApiResponse::<String>::error("用户不存在".to_string()).json(),
-        Err(e) => ApiResponse::<String>::error(format!("查询用户失败: {}", e)).json(),
+        Ok(None) => ApiResponse::<String>::error("用户不存在").json(),
+        Err(e) => ApiResponse::<String>::error(format!("查询用户失败: {}", e).as_str()).json(),
     }
 }

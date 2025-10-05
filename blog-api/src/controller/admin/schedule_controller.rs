@@ -88,13 +88,12 @@ pub async fn get_job_list(
             });
             result.insert("total".to_string(), value!(total));
             result.insert("records".to_string(), value!(jobs));
-            ApiResponse::<Value>::success_with_msg(
-                "获取定时任务列表成功".to_string(),
-                Some(value!(result)),
-            )
-            .json()
+            ApiResponse::<Value>::success_with_msg("获取定时任务列表成功", Some(value!(result)))
+                .json()
         }
-        Err(e) => ApiResponse::<String>::error(format!("获取定时任务列表失败: {}", e)).json(),
+        Err(e) => {
+            ApiResponse::<String>::error(format!("获取定时任务列表失败: {}", e).as_str()).json()
+        }
     }
 }
 
@@ -116,18 +115,17 @@ pub async fn update_job_status(
             active_job.status = Set(Some(params.status));
 
             match active_job.update(db).await {
-                Ok(_) => ApiResponse::<String>::success_with_msg(
-                    "更新定时任务状态成功".to_string(),
-                    None,
-                )
-                .json(),
+                Ok(_) => {
+                    ApiResponse::<String>::success_with_msg("更新定时任务状态成功", None).json()
+                }
                 Err(e) => {
-                    ApiResponse::<String>::error(format!("更新定时任务状态失败: {}", e)).json()
+                    ApiResponse::<String>::error(format!("更新定时任务状态失败: {}", e).as_str())
+                        .json()
                 }
             }
         }
-        Ok(None) => ApiResponse::<String>::error("定时任务不存在".to_string()).json(),
-        Err(e) => ApiResponse::<String>::error(format!("查询定时任务失败: {}", e)).json(),
+        Ok(None) => ApiResponse::<String>::error("定时任务不存在").json(),
+        Err(e) => ApiResponse::<String>::error(format!("查询定时任务失败: {}", e).as_str()).json(),
     }
 }
 
@@ -143,7 +141,7 @@ pub async fn run_job_once(
 
     // 这里需要实现执行定时任务的逻辑
     // 由于没有相应的服务实现，这里先返回一个占位响应
-    ApiResponse::<String>::success_with_msg("执行定时任务成功".to_string(), None).json()
+    ApiResponse::<String>::success_with_msg("执行定时任务成功", None).json()
 }
 
 #[routes]
@@ -159,12 +157,12 @@ pub async fn delete_job_by_id(
     match schedule_job::Entity::delete_by_id(job_id).exec(db).await {
         Ok(result) => {
             if result.rows_affected > 0 {
-                ApiResponse::<String>::success_with_msg("删除定时任务成功".to_string(), None).json()
+                ApiResponse::<String>::success_with_msg("删除定时任务成功", None).json()
             } else {
-                ApiResponse::<String>::error("定时任务不存在".to_string()).json()
+                ApiResponse::<String>::error("定时任务不存在").json()
             }
         }
-        Err(e) => ApiResponse::<String>::error(format!("删除定时任务失败: {}", e)).json(),
+        Err(e) => ApiResponse::<String>::error(format!("删除定时任务失败: {}", e).as_str()).json(),
     }
 }
 
@@ -190,10 +188,8 @@ pub async fn add_job(
     };
 
     match new_job.insert(db).await {
-        Ok(_) => {
-            ApiResponse::<String>::success_with_msg("添加定时任务成功".to_string(), None).json()
-        }
-        Err(e) => ApiResponse::<String>::error(format!("添加定时任务失败: {}", e)).json(),
+        Ok(_) => ApiResponse::<String>::success_with_msg("添加定时任务成功", None).json(),
+        Err(e) => ApiResponse::<String>::error(format!("添加定时任务失败: {}", e).as_str()).json(),
     }
 }
 
@@ -207,7 +203,7 @@ pub async fn edit_job(
     let db = app.get_mysql_pool();
 
     if job.job_id.is_none() {
-        return ApiResponse::<String>::error("定时任务ID不能为空".to_string()).json();
+        return ApiResponse::<String>::error("定时任务ID不能为空").json();
     }
 
     let job_id = job.job_id.unwrap();
@@ -226,14 +222,14 @@ pub async fn edit_job(
 
             match active_job.update(db).await {
                 Ok(_) => {
-                    ApiResponse::<String>::success_with_msg("更新定时任务成功".to_string(), None)
+                    ApiResponse::<String>::success_with_msg("更新定时任务成功", None)
                         .json()
                 }
-                Err(e) => ApiResponse::<String>::error(format!("更新定时任务失败: {}", e)).json(),
+                Err(e) => ApiResponse::<String>::error(format!("更新定时任务失败: {}", e).as_str()).json(),
             }
         }
-        Ok(None) => ApiResponse::<String>::error("定时任务不存在".to_string()).json(),
-        Err(e) => ApiResponse::<String>::error(format!("查询定时任务失败: {}", e)).json(),
+        Ok(None) => ApiResponse::<String>::error("定时任务不存在").json(),
+        Err(e) => ApiResponse::<String>::error(format!("查询定时任务失败: {}", e).as_str()).json(),
     }
 }
 
@@ -277,12 +273,12 @@ pub async fn get_job_log_list(
             result.insert("total".to_string(), value!(total));
             result.insert("records".to_string(), value!(logs));
             ApiResponse::<Value>::success_with_msg(
-                "获取定时任务日志列表成功".to_string(),
+                "获取定时任务日志列表成功",
                 Some(value!(result)),
             )
             .json()
         }
-        Err(e) => ApiResponse::<String>::error(format!("获取定时任务日志列表失败: {}", e)).json(),
+        Err(e) => ApiResponse::<String>::error(format!("获取定时任务日志列表失败: {}", e).as_str()).json(),
     }
 }
 
@@ -302,12 +298,12 @@ pub async fn delete_job_log_by_log_id(
     {
         Ok(result) => {
             if result.rows_affected > 0 {
-                ApiResponse::<String>::success_with_msg("删除定时任务日志成功".to_string(), None)
+                ApiResponse::<String>::success_with_msg("删除定时任务日志成功", None)
                     .json()
             } else {
-                ApiResponse::<String>::error("定时任务日志不存在".to_string()).json()
+                ApiResponse::<String>::error("定时任务日志不存在").json()
             }
         }
-        Err(e) => ApiResponse::<String>::error(format!("删除定时任务日志失败: {}", e)).json(),
+        Err(e) => ApiResponse::<String>::error(format!("删除定时任务日志失败: {}", e).as_str()).json(),
     }
 }

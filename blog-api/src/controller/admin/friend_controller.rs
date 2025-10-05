@@ -71,12 +71,12 @@ pub async fn get_friends_by_query(
             result.insert("total".to_string(),  value!(total));
             result.insert("records".to_string(),  value!(friends));
             ApiResponse::<String>::success_with_msg(
-                "获取友链列表成功".to_string(),
+                "获取友链列表成功",
                 Some( value!(result).to_string()),
             )
             .json()
         }
-        Err(e) => ApiResponse::<String>::error(format!("获取友链列表失败: {}", e)).json(),
+        Err(e) => ApiResponse::<String>::error(format!("获取友链列表失败: {}", e).as_str()).json(),
     }
 }
 
@@ -99,17 +99,17 @@ pub async fn update_friend_published(
 
             match active_friend.update(db).await {
                 Ok(_) => ApiResponse::<String>::success_with_msg(
-                    "更新友链发布状态成功".to_string(),
+                    "更新友链发布状态成功",
                     None,
                 )
                 .json(),
                 Err(e) => {
-                    ApiResponse::<String>::error(format!("更新友链发布状态失败: {}", e)).json()
+                    ApiResponse::<String>::error(format!("更新友链发布状态失败: {}", e).as_str()).json()
                 }
             }
         }
-        Ok(None) => ApiResponse::<String>::error("友链不存在".to_string()).json(),
-        Err(e) => ApiResponse::<String>::error(format!("查询友链失败: {}", e)).json(),
+        Ok(None) => ApiResponse::<String>::error("友链不存在").json(),
+        Err(e) => ApiResponse::<String>::error(format!("查询友链失败: {}", e).as_str()).json(),
     }
 }
 
@@ -135,8 +135,8 @@ pub async fn save_friend(
     };
 
     match new_friend.insert(db).await {
-        Ok(_) => ApiResponse::<String>::success_with_msg("添加友链成功".to_string(), None).json(),
-        Err(e) => ApiResponse::<String>::error(format!("添加友链失败: {}", e)).json(),
+        Ok(_) => ApiResponse::<String>::success_with_msg("添加友链成功", None).json(),
+        Err(e) => ApiResponse::<String>::error(format!("添加友链失败: {}", e).as_str()).json(),
     }
 }
 
@@ -150,7 +150,7 @@ pub async fn update_friend(
     let db = app.get_mysql_pool();
 
     if friend_form.id.is_none() {
-        return ApiResponse::<String>::error("友链ID不能为空".to_string()).json();
+        return ApiResponse::<String>::error("友链ID不能为空").json();
     }
 
     let friend_id = friend_form.id.unwrap();
@@ -168,13 +168,13 @@ pub async fn update_friend(
 
             match active_friend.update(db).await {
                 Ok(_) => {
-                    ApiResponse::<String>::success_with_msg("更新友链成功".to_string(), None).json()
+                    ApiResponse::<String>::success_with_msg("更新友链成功", None).json()
                 }
-                Err(e) => ApiResponse::<String>::error(format!("更新友链失败: {}", e)).json(),
+                Err(e) => ApiResponse::<String>::error(format!("更新友链失败: {}", e).as_str()).json(),
             }
         }
-        Ok(None) => ApiResponse::<String>::error("友链不存在".to_string()).json(),
-        Err(e) => ApiResponse::<String>::error(format!("查询友链失败: {}", e)).json(),
+        Ok(None) => ApiResponse::<String>::error("友链不存在").json(),
+        Err(e) => ApiResponse::<String>::error(format!("查询友链失败: {}", e).as_str()).json(),
     }
 }
 
@@ -191,12 +191,12 @@ pub async fn delete_friend_by_id(
     match friend::Entity::delete_by_id(friend_id).exec(db).await {
         Ok(result) => {
             if result.rows_affected > 0 {
-                ApiResponse::<String>::success_with_msg("删除友链成功".to_string(), None).json()
+                ApiResponse::<String>::success_with_msg("删除友链成功", None).json()
             } else {
-                ApiResponse::<String>::error("友链不存在".to_string()).json()
+                ApiResponse::<String>::error("友链不存在").json()
             }
         }
-        Err(e) => ApiResponse::<String>::error(format!("删除友链失败: {}", e)).json(),
+        Err(e) => ApiResponse::<String>::error(format!("删除友链失败: {}", e).as_str()).json(),
     }
 }
 
@@ -208,11 +208,11 @@ pub async fn get_friend_info(
 ) -> impl Responder {
     match FriendService::get_friend(app.get_mysql_pool()).await {
         Ok(data) => ApiResponse::<String>::success_with_msg(
-            "获取友链信息成功".to_string(),
+            "获取友链信息成功",
             Some( value!(data).to_string()),
         )
         .json(),
-        Err(e) => ApiResponse::<String>::error(format!("获取友链信息失败: {}", e)).json(),
+        Err(e) => ApiResponse::<String>::error(format!("获取友链信息失败: {}", e).as_str()).json(),
     }
 }
 
@@ -224,7 +224,7 @@ pub async fn update_friend_comment_enabled(
 ) -> impl Responder {
     // 这里需要实现更新友链评论启用状态的逻辑
     // 由于服务层没有提供相应方法，这里先返回一个占位响应
-    ApiResponse::<String>::success_with_msg("更新友链评论启用状态成功".to_string(), None).json()
+    ApiResponse::<String>::success_with_msg("更新友链评论启用状态成功", None).json()
 }
 
 #[routes]
@@ -236,7 +236,7 @@ pub async fn update_friend_content(
 ) -> impl Responder {
     // 这里需要实现更新友链内容的逻辑
     // 由于服务层没有提供相应方法，这里先返回一个占位响应
-    ApiResponse::<String>::success_with_msg("更新友链内容成功".to_string(), None).json()
+    ApiResponse::<String>::success_with_msg("更新友链内容成功", None).json()
 }
 
 #[derive(Debug, Deserialize)]

@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use crate::app::AppState;
 use crate::error::WebErrorCode;
+use crate::model::ApiResponse;
 use crate::model::Category;
 use crate::model::SearchRequest;
-use crate::model::ApiResponse;
 use crate::service::CategoryService;
 use crate::{middleware::AppClaims, service::BlogService};
 use actix_jwt_session::Authenticated;
@@ -22,11 +22,8 @@ pub async fn categories(
     app: web::Data<AppState>,
 ) -> impl Responder {
     if params.get_page_num() <= 0 || params.get_page_size() <= 0 {
-        return ApiResponse::<String>::error_with_code(
-            WebErrorCode::VALIDATION_ERROR,
-            "参数有误!".to_string(),
-        )
-        .json();
+        return ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "参数有误!")
+            .json();
     }
     match CategoryService::get_page_categories(
         params.get_page_num() as u64,
@@ -36,9 +33,11 @@ pub async fn categories(
     .await
     {
         Ok(data) => ApiResponse::success(Some(value!(data))).json(),
-        Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
-        }
+        Err(e) => ApiResponse::<String>::error_with_code(
+            WebErrorCode::DATABASE_ERROR,
+            e.to_string().as_str(),
+        )
+        .json(),
     }
 }
 
@@ -54,11 +53,8 @@ pub async fn update_category(
 ) -> impl Responder {
     //参数校验
     if form.get_name().is_empty() {
-        return ApiResponse::<String>::error_with_code(
-            WebErrorCode::VALIDATION_ERROR,
-            "参数有误!".to_string(),
-        )
-        .json();
+        return ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "参数有误!")
+            .json();
     }
     match form.get_id() == 0 {
         //新增分类
@@ -66,14 +62,12 @@ pub async fn update_category(
             let _ =
                 CategoryService::insert_category(form.get_name().to_string(), app.get_mysql_pool())
                     .await;
-            return ApiResponse::<String>::success_with_msg("新增分类成功!".to_string(), None)
-                .json();
+            return ApiResponse::<String>::success_with_msg("新增分类成功!", None).json();
         }
         //修改分类
         false => {
             let _ = CategoryService::update_category(form.0, app.get_mysql_pool()).await;
-            return ApiResponse::<String>::success_with_msg("修改分类成功!".to_string(), None)
-                .json();
+            return ApiResponse::<String>::success_with_msg("修改分类成功!", None).json();
         }
     }
 }
@@ -93,7 +87,7 @@ pub async fn delete_category(
             if *id == 0 {
                 return ApiResponse::<String>::error_with_code(
                     WebErrorCode::VALIDATION_ERROR,
-                    "参数有误!".to_string(),
+                    "参数有误!",
                 )
                 .json();
             }
@@ -102,7 +96,7 @@ pub async fn delete_category(
         None => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::VALIDATION_ERROR,
-                "参数有误!".to_string(),
+                "参数有误!",
             )
             .json()
         }
@@ -113,23 +107,25 @@ pub async fn delete_category(
         Ok(true) => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::BUSINESS_ERROR,
-                "分类下存在文章,不能删除!".to_string(),
+                "分类下存在文章,不能删除!",
             )
             .json()
         }
         Ok(false) => {
             // 删除分类
             match CategoryService::delete_category(id, connection).await {
-                Ok(_) => ApiResponse::<String>::success_with_msg("删除分类成功!".to_string(), None)
-                    .json(),
-                Err(e) => {
-                    ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string())
-                        .json()
-                }
+                Ok(_) => ApiResponse::<String>::success_with_msg("删除分类成功!", None).json(),
+                Err(e) => ApiResponse::<String>::error_with_code(
+                    WebErrorCode::DATABASE_ERROR,
+                    e.to_string().as_str(),
+                )
+                .json(),
             }
         }
-        Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
-        }
+        Err(e) => ApiResponse::<String>::error_with_code(
+            WebErrorCode::DATABASE_ERROR,
+            e.to_string().as_str(),
+        )
+        .json(),
     }
 }

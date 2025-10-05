@@ -18,7 +18,7 @@ pub(crate) async fn get_comments(
     if data.is_none() {
         return ApiResponse::<String>::error_with_code(
             WebErrorCode::VALIDATION_ERROR,
-            "获取数据失败!".to_string(),
+            "获取数据失败!",
         )
         .json();
     }
@@ -28,7 +28,7 @@ pub(crate) async fn get_comments(
         None => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::VALIDATION_ERROR,
-                "获取数据失败!".to_string(),
+                "获取数据失败!",
             )
             .json()
         }
@@ -46,7 +46,7 @@ pub(crate) async fn get_comments(
         Err(e) => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::DATABASE_ERROR,
-                e.to_string(),
+                e.to_string().as_str(),
             )
             .json();
         }
@@ -55,32 +55,44 @@ pub(crate) async fn get_comments(
     let mut data = ValueMap::new();
     data.insert("comments".into(), value!(list));
 
-    match CommentService::get_all_count(page_request.get_blog_id(),page_request.get_page(), connect).await {
+    match CommentService::get_all_count(
+        page_request.get_blog_id(),
+        page_request.get_page(),
+        connect,
+    )
+    .await
+    {
         Ok(close_comment) => {
             data.insert("allComment".into(), value!(close_comment));
         }
         Err(e) => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::DATABASE_ERROR,
-                e.to_string(),
+                e.to_string().as_str(),
             )
             .json();
         }
     }
-    match CommentService::get_close_count(page_request.get_blog_id(),page_request.get_page(), connect).await {
+    match CommentService::get_close_count(
+        page_request.get_blog_id(),
+        page_request.get_page(),
+        connect,
+    )
+    .await
+    {
         Ok(close_comment) => {
             data.insert("closeComment".into(), value!(close_comment));
         }
         Err(e) => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::DATABASE_ERROR,
-                e.to_string(),
+                e.to_string().as_str(),
             )
             .json();
         }
     }
 
-    ApiResponse::success_with_msg("获取成功!".to_string(), Some(value!(data))).json()
+    ApiResponse::success_with_msg("获取成功!", Some(value!(data))).json()
 }
 
 #[routes]
@@ -94,7 +106,7 @@ pub async fn save_comment(
         Err(e) => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::DATABASE_ERROR,
-                e.to_string(),
+                e.to_string().as_str(),
             )
             .json()
         }

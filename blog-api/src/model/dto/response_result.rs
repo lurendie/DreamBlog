@@ -77,28 +77,28 @@ impl<T: Serialize> ApiResponse<T> {
     }
 
     /// 成功响应（带自定义消息）
-    pub fn success_with_msg(msg: String, data: Option<T>) -> Self {
+    pub fn success_with_msg(msg: &str, data: Option<T>) -> Self {
         Self {
             code: crate::error::WebErrorCode::SUCCESS,
-            msg,
+           msg:msg.to_string(),
             data,
         }
     }
 
     /// 错误响应
-    pub fn error(msg: String) -> Self {
+    pub fn error(msg: &str) -> Self {
         Self {
             code: crate::error::WebErrorCode::INTERNAL_ERROR,
-            msg,
+            msg:msg.to_string(),
             data: None,
         }
     }
 
     /// 错误响应（带自定义状态码）
-    pub fn error_with_code(code: u16, msg: String) -> Self {
+    pub fn error_with_code(code: u16, msg: &str) -> Self {
         Self {
-            code,
-            msg,
+            code:code,
+            msg:msg.to_string(),
             data: None,
         }
     }

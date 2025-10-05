@@ -29,7 +29,7 @@ pub async fn login(
     match UserService::verify_logined_user(&user_form, &store).await {
         Ok(map) => {
             let result = ApiResponse::<Value>::success_with_msg(
-                "登录成功!".to_string(),
+                format!("登录成功!,欢迎用户{}回来", user_form.username).as_str(),
                 Some(value!(&map.0)),
             );
             return Ok(HttpResponse::Ok()
@@ -54,7 +54,7 @@ pub async fn login(
     {
         Ok(map) => {
             let result = ApiResponse::<Value>::success_with_msg(
-                "登录成功!".to_string(),
+                format!("用户{},登录成功!", user_form.username).as_str(),
                 Some(value!(&map.0)),
             );
             return Ok(HttpResponse::Ok()
@@ -64,7 +64,7 @@ pub async fn login(
         }
         Err(e) => {
             log::warn!("用户名{}尝试登录，错误信息{e}", user_form.username);
-            return Ok(ApiResponse::<String>::error("用户名或密码错误！".to_string()).json());
+            return Ok(ApiResponse::<String>::error("用户名或密码错误！").json());
         }
     }
 }

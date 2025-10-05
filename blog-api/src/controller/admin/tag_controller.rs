@@ -22,7 +22,7 @@ pub async fn get_all_tags(
     if params.get_page_num() <= 0 || params.get_page_size() <= 0 {
         return ApiResponse::<String>::error_with_code(
             WebErrorCode::VALIDATION_ERROR,
-            "参数有误!".to_string(),
+            "参数有误!",
         )
         .json();
     }
@@ -36,7 +36,7 @@ pub async fn get_all_tags(
     match tags_result {
         Ok(value_map) => ApiResponse::success(Some( value!(value_map))).json(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
         }
     }
 }
@@ -51,9 +51,9 @@ pub async fn insert_or_update(
 ) -> impl Responder {
     let tag_result = TagService::insert_or_update(tag.into_inner(), app.get_mysql_pool()).await;
     match tag_result {
-        Ok(_) => ApiResponse::<String>::success_with_msg("操作成功！".to_string(), None).json(),
+        Ok(_) => ApiResponse::<String>::success_with_msg("操作成功！", None).json(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
         }
     }
 }
@@ -71,16 +71,16 @@ pub async fn delete_by_id(
             None => {
                 return ApiResponse::<String>::error_with_code(
                     WebErrorCode::VALIDATION_ERROR,
-                    "参数有误!".to_string(),
+                    "参数有误!",
                 )
                 .json()
             }
         }
     };
     match TagService::delete_by_id(id, app.get_mysql_pool()).await {
-        Ok(_) => ApiResponse::<String>::success_with_msg("操作成功！".to_string(), None).json(),
+        Ok(_) => ApiResponse::<String>::success_with_msg("操作成功！", None).json(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
         }
     }
 }

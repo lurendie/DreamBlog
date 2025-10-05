@@ -1,8 +1,8 @@
 use crate::app::AppState;
 use crate::common::ParamUtils;
 use crate::error::WebErrorCode;
-use crate::model::SearchRequest;
 use crate::model::ApiResponse;
+use crate::model::SearchRequest;
 use crate::service;
 use actix_web::web::{self, Json, Query};
 use actix_web::{routes, Responder};
@@ -21,9 +21,11 @@ pub async fn blogs(params: Query<SearchRequest>, app: web::Data<AppState>) -> im
 
     match BlogService::find_list_by_page(page_num, db_conn).await {
         Ok(page) => ApiResponse::success(Some(value!(page))).json(),
-        Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
-        }
+        Err(e) => ApiResponse::<String>::error_with_code(
+            WebErrorCode::DATABASE_ERROR,
+            e.to_string().as_str(),
+        )
+        .json(),
     }
 }
 #[routes]
@@ -36,7 +38,7 @@ pub async fn blog(
     let id = match ParamUtils::get_i64_param(&params, "id") {
         Ok(id) => id,
         Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().to_string())
+            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
                 .json();
         }
     };
@@ -45,8 +47,7 @@ pub async fn blog(
     match blog {
         Some(blog) => ApiResponse::success(Some(value!(blog))).json(),
         None => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::NOT_FOUND, "博客不存在".to_string())
-                .json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::NOT_FOUND, "博客不存在").json()
         }
     }
 }
@@ -60,7 +61,7 @@ pub async fn category(
     let category_name = match ParamUtils::get_string_param(&params, "categoryName") {
         Ok(name) => name,
         Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().to_string())
+            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
                 .json()
         }
     };
@@ -69,7 +70,7 @@ pub async fn category(
     let (page_num, _) = match ParamUtils::validate_pagination_params(&params) {
         Ok(pagination) => pagination,
         Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().to_string())
+            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
                 .json()
         }
     };
@@ -89,7 +90,7 @@ pub async fn tag(
     let tag_name = match ParamUtils::get_string_param(&params, "tagName") {
         Ok(name) => name,
         Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().to_string())
+            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
                 .json()
         }
     };
@@ -98,7 +99,7 @@ pub async fn tag(
     let (page_num, _) = match ParamUtils::validate_pagination_params(&params) {
         Ok(pagination) => pagination,
         Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().to_string())
+            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
                 .json()
         }
     };
@@ -122,7 +123,7 @@ pub async fn check_blog_password(
     if blog_id <= 0 {
         return ApiResponse::<String>::error_with_code(
             WebErrorCode::VALIDATION_ERROR,
-            "博客ID必须大于0".to_string(),
+            "博客ID必须大于0",
         )
         .json();
     };
@@ -132,7 +133,7 @@ pub async fn check_blog_password(
         None => {
             return ApiResponse::<String>::error_with_code(
                 WebErrorCode::NOT_FOUND,
-                "博客不存在".to_string(),
+                "博客不存在",
             )
             .json()
         }
@@ -140,11 +141,14 @@ pub async fn check_blog_password(
 
     let password = data.get_password();
     if blog_info.password.clone().unwrap_or_default() == password {
-        ApiResponse::success_with_msg("验证成功,密码正确!".to_string(), Some(value!(blog_info)))
+        ApiResponse::success_with_msg("验证成功,密码正确!", Some(value!(blog_info)))
             .json()
     } else {
-        ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "密码错误".to_string())
-            .json()
+        ApiResponse::<String>::error_with_code(
+            WebErrorCode::VALIDATION_ERROR,
+            "密码错误",
+        )
+        .json()
     }
 }
 
@@ -157,7 +161,7 @@ pub async fn search_blog(
     let blog_title = match ParamUtils::get_string_param(&query, "query") {
         Ok(title) => title,
         Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().to_string())
+            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
                 .json()
         }
     };
@@ -165,8 +169,10 @@ pub async fn search_blog(
     //查找title内容的文章
     match BlogService::search_content(blog_title, app.get_mysql_pool()).await {
         Ok(result) => ApiResponse::success(Some(value!(result))).json(),
-        Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
-        }
+        Err(e) => ApiResponse::<String>::error_with_code(
+            WebErrorCode::DATABASE_ERROR,
+            e.to_string().as_str(),
+        )
+        .json(),
     }
 }

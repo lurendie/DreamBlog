@@ -11,7 +11,7 @@ pub(crate) async fn about(app: web::Data<AppState>) -> impl Responder {
             ApiResponse::success(Some(value!(value_map))).json()
         }
         Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
         }
     }
 }
