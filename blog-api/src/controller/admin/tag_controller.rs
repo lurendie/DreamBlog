@@ -24,7 +24,7 @@ pub async fn get_all_tags(
             WebErrorCode::VALIDATION_ERROR,
             "参数有误!",
         )
-        .json();
+        .respond();
     }
 
     let tags_result = TagService::get_tags_by_page(
@@ -34,9 +34,9 @@ pub async fn get_all_tags(
     )
     .await;
     match tags_result {
-        Ok(value_map) => ApiResponse::success(Some( value!(value_map))).json(),
+        Ok(value_map) => ApiResponse::success(Some( value!(value_map))).respond(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).respond()
         }
     }
 }
@@ -51,9 +51,9 @@ pub async fn insert_or_update(
 ) -> impl Responder {
     let tag_result = TagService::insert_or_update(tag.into_inner(), app.get_mysql_pool()).await;
     match tag_result {
-        Ok(_) => ApiResponse::<String>::success_with_msg("操作成功！", None).json(),
+        Ok(_) => ApiResponse::<String>::success_with_msg("操作成功！", None).respond(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).respond()
         }
     }
 }
@@ -73,14 +73,14 @@ pub async fn delete_by_id(
                     WebErrorCode::VALIDATION_ERROR,
                     "参数有误!",
                 )
-                .json()
+                .respond()
             }
         }
     };
     match TagService::delete_by_id(id, app.get_mysql_pool()).await {
-        Ok(_) => ApiResponse::<String>::success_with_msg("操作成功！", None).json(),
+        Ok(_) => ApiResponse::<String>::success_with_msg("操作成功！", None).respond(),
         Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).respond()
         }
     }
 }

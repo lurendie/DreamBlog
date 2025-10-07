@@ -25,5 +25,5 @@ pub async fn dashboard(_: Authenticated<AppClaims>, app: web::Data<AppState>) ->
     map.insert( value!("tag"), value!(tag_blog_count_map));
     map.insert( value!("visitRecord"), value!(visit_record_map));
     map.insert( value!("cityVisitor"), value!(city_visitor_list));
-    ApiResponse::success_with_msg("请求成功!", Some(value!(map))).json()
+    ApiResponse::success_with_msg("请求成功!", Some(value!(map))).respond()
 }

@@ -71,9 +71,9 @@ pub async fn get_visit_log_list(
                 "获取访问日志列表成功",
                 Some( value!(result)),
             )
-            .json()
+            .respond()
         }
-        Err(e) => ApiResponse::<String>::error(format!("获取访问日志列表失败: {}", e).as_str()).json(),
+        Err(e) => ApiResponse::<String>::error(format!("获取访问日志列表失败: {}", e).as_str()).respond(),
     }
 }
 
@@ -90,11 +90,11 @@ pub async fn delete_visit_log_by_id(
     match visit_log::Entity::delete_by_id(id).exec(db).await {
         Ok(result) => {
             if result.rows_affected > 0 {
-                ApiResponse::<String>::success_with_msg("删除访问日志成功", None).json()
+                ApiResponse::<String>::success_with_msg("删除访问日志成功", None).respond()
             } else {
-                ApiResponse::<String>::error("访问日志不存在").json()
+                ApiResponse::<String>::error("访问日志不存在").respond()
             }
         }
-        Err(e) => ApiResponse::<String>::error(format!("删除访问日志失败: {}", e).as_str()).json(),
+        Err(e) => ApiResponse::<String>::error(format!("删除访问日志失败: {}", e).as_str()).respond(),
     }
 }

@@ -7,14 +7,13 @@
  */
 
 use crate::app::AppState;
-use crate::error::web_error::AppError;
+use crate::error::AppError;
 use crate::model::{ApiResponse, LoginUser};
 use crate::service::UserService;
 use actix_jwt_session::{JwtTtl, RefreshTtl, SessionStorage, JWT_HEADER_NAME};
 use actix_web::{
     routes,
     web::{Data, Json},
-    HttpResponse, Responder,
 };
 use rbs::{value, Value};
 
@@ -26,17 +25,17 @@ pub async fn login(
     jwt_ttl: Data<JwtTtl>,
     refresh_ttl: Data<RefreshTtl>,
     app: Data<AppState>,
-) -> Result<impl Responder, AppError> {
+) -> Result<ApiResponse<Value>, AppError> {
     match UserService::verify_logined_user(&user_form, &store).await {
-        Ok(map) => {
+        Ok(data) => {
             let result = ApiResponse::<Value>::success_with_msg(
                 format!("登录成功!,欢迎用户{}回来", user_form.username).as_str(),
-                Some(value!(&map.0)),
+                Some(value!(&data.0)),
             );
-            return Ok(HttpResponse::Ok()
-                .append_header((JWT_HEADER_NAME, map.1.to_string()))
-                .content_type("application/json; charset=utf-8")
-                .json(result));
+            result
+                .http_response_builder()
+                .append_header((JWT_HEADER_NAME, data.1.to_string()));
+            return Ok(result);
         }
         Err(e) => {
             log::warn!("用户名{}尝试登录，错误信息{e}", user_form.username);
@@ -56,8 +55,8 @@ pub async fn login(
         format!("登录成功!,欢迎用户{}回来", user_form.username).as_str(),
         Some(value!(&data.0)),
     );
-    return Ok(HttpResponse::Ok()
-        .append_header((JWT_HEADER_NAME, data.1.to_string()))
-        .content_type("application/json; charset=utf-8")
-        .json(result));
+    result
+        .http_response_builder()
+        .append_header((JWT_HEADER_NAME, data.1.to_string()));
+    return Ok(result);
 }

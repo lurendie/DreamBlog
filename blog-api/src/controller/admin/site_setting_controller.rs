@@ -14,9 +14,9 @@ pub async fn get_site_setting_data(
     match SiteSettingService::get_site_info(app.get_mysql_pool()).await {
         Ok(data) => {
             ApiResponse::success_with_msg("获取站点设置成功", Some( value!(data)))
-                .json()
+                .respond()
         }
-        Err(e) => ApiResponse::<String>::error(format!("获取站点设置失败: {}", e).as_str()).json(),
+        Err(e) => ApiResponse::<String>::error(format!("获取站点设置失败: {}", e).as_str()).respond(),
     }
 }
 
@@ -29,7 +29,7 @@ pub async fn update_site_settings(
 ) -> impl Responder {
     // 这里需要实现更新站点设置的逻辑
     // 由于服务层没有提供更新方法，这里先返回一个占位响应
-    ApiResponse::<String>::success_with_msg("站点设置更新成功", None).json()
+    ApiResponse::<String>::success_with_msg("站点设置更新成功", None).respond()
 }
 
 #[routes]
@@ -44,5 +44,5 @@ pub async fn get_web_title_suffix(
         "获取网站标题后缀成功",
         Some( value!(" - ZeroBlog")),
     )
-    .json()
+    .respond()
 }

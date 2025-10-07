@@ -26,11 +26,14 @@ pub async fn find_comments(
 ) -> impl Responder {
     let page_num = query.get_page_num();
     let page_size = query.get_page_size();
-    match CommentService::find_comment_dto(page_num, page_size, app.get_mysql_pool()).await {
+    let page_type = query.get_page();
+    match CommentService::find_comment_dto(page_num, page_size, page_type, app.get_mysql_pool())
+        .await
+    {
         Ok(comments) => {
-            ApiResponse::success_with_msg("请求成功！", Some(value!(comments))).json()
+            ApiResponse::success_with_msg("请求成功！", Some(value!(comments))).respond()
         }
-        Err(e) => ApiResponse::<String>::error(e.to_string().as_str()).json(),
+        Err(e) => ApiResponse::<String>::error(e.to_string().as_str()).respond(),
     }
 }
 
@@ -41,11 +44,12 @@ pub async fn find_blog_id_and_title(
     app: Data<AppState>,
 ) -> impl Responder {
     match BlogService::find_blogs_and_title(app.get_mysql_pool()).await {
-        Ok(comments) => ApiResponse::success(Some(value!(comments))).json(),
-        Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str())
-                .json()
-        }
+        Ok(comments) => ApiResponse::success(Some(value!(comments))).respond(),
+        Err(e) => ApiResponse::<String>::error_with_code(
+            WebErrorCode::DATABASE_ERROR,
+            e.to_string().as_str(),
+        )
+        .respond(),
     }
 }
 
@@ -58,10 +62,10 @@ pub async fn update_comment(
     comment: web::Json<CommentDTO>,
 ) -> impl Responder {
     match CommentService::save_comment(comment.into_inner(), app.get_mysql_pool()).await {
-        Ok(_) => ApiResponse::<String>::success_with_msg("更新成功！", None).json(),
+        Ok(_) => ApiResponse::<String>::success_with_msg("更新成功！", None).respond(),
         Err(e) => {
             ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, &e.to_string())
-                .json()
+                .respond()
         }
     }
 }
@@ -76,10 +80,10 @@ pub async fn delete_comment(
 ) -> impl Responder {
     let id = *parameter.get("id").unwrap_or(&0);
     match CommentService::delete_comment_recursive(id, app.get_mysql_pool()).await {
-        Ok(_) => ApiResponse::<String>::success_with_msg("删除成功！", None).json(),
+        Ok(_) => ApiResponse::<String>::success_with_msg("删除成功！", None).respond(),
         Err(e) => {
             ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, &e.to_string())
-                .json()
+                .respond()
         }
     }
 }

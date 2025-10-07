@@ -23,7 +23,7 @@ pub async fn categories(
 ) -> impl Responder {
     if params.get_page_num() <= 0 || params.get_page_size() <= 0 {
         return ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "参数有误!")
-            .json();
+            .respond();
     }
     match CategoryService::get_page_categories(
         params.get_page_num() as u64,
@@ -32,12 +32,12 @@ pub async fn categories(
     )
     .await
     {
-        Ok(data) => ApiResponse::success(Some(value!(data))).json(),
+        Ok(data) => ApiResponse::success(Some(value!(data))).respond(),
         Err(e) => ApiResponse::<String>::error_with_code(
             WebErrorCode::DATABASE_ERROR,
             e.to_string().as_str(),
         )
-        .json(),
+        .respond(),
     }
 }
 
@@ -54,7 +54,7 @@ pub async fn update_category(
     //参数校验
     if form.get_name().is_empty() {
         return ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "参数有误!")
-            .json();
+            .respond();
     }
     match form.get_id() == 0 {
         //新增分类
@@ -62,12 +62,12 @@ pub async fn update_category(
             let _ =
                 CategoryService::insert_category(form.get_name().to_string(), app.get_mysql_pool())
                     .await;
-            return ApiResponse::<String>::success_with_msg("新增分类成功!", None).json();
+            return ApiResponse::<String>::success_with_msg("新增分类成功!", None).respond();
         }
         //修改分类
         false => {
             let _ = CategoryService::update_category(form.0, app.get_mysql_pool()).await;
-            return ApiResponse::<String>::success_with_msg("修改分类成功!", None).json();
+            return ApiResponse::<String>::success_with_msg("修改分类成功!", None).respond();
         }
     }
 }
@@ -89,7 +89,7 @@ pub async fn delete_category(
                     WebErrorCode::VALIDATION_ERROR,
                     "参数有误!",
                 )
-                .json();
+                .respond();
             }
             *id
         }
@@ -98,7 +98,7 @@ pub async fn delete_category(
                 WebErrorCode::VALIDATION_ERROR,
                 "参数有误!",
             )
-            .json()
+            .respond()
         }
     };
     // 查询分类下是否有文章
@@ -109,23 +109,23 @@ pub async fn delete_category(
                 WebErrorCode::BUSINESS_ERROR,
                 "分类下存在文章,不能删除!",
             )
-            .json()
+            .respond()
         }
         Ok(false) => {
             // 删除分类
             match CategoryService::delete_category(id, connection).await {
-                Ok(_) => ApiResponse::<String>::success_with_msg("删除分类成功!", None).json(),
+                Ok(_) => ApiResponse::<String>::success_with_msg("删除分类成功!", None).respond(),
                 Err(e) => ApiResponse::<String>::error_with_code(
                     WebErrorCode::DATABASE_ERROR,
                     e.to_string().as_str(),
                 )
-                .json(),
+                .respond(),
             }
         }
         Err(e) => ApiResponse::<String>::error_with_code(
             WebErrorCode::DATABASE_ERROR,
             e.to_string().as_str(),
         )
-        .json(),
+        .respond(),
     }
 }

@@ -4,9 +4,11 @@
  * @LastEditors: lurendie
  * @LastEditTime: 2024-05-15 19:14:37
  */
-pub mod web_error;
+mod app_error;
 mod data_base_error;
-pub mod error_code;
-pub use web_error::WebError;
+mod error_code;
+mod web_error;
+pub use app_error::AppError;
 pub use data_base_error::DataBaseError;
 pub use error_code::WebErrorCode;
+pub use web_error::WebError;

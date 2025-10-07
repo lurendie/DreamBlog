@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::error::web_error::AppError;
+use crate::error::AppError;
 use crate::error::WebErrorCode;
 use crate::model::ApiResponse;
 use crate::model::SearchRequest;
@@ -22,7 +22,7 @@ pub(crate) async fn moments(
             WebErrorCode::VALIDATION_ERROR,
             "参数有误！",
         )
-        .json();
+        .respond();
     }
     query.0.set_page_size(Some(5));
     match MomentService::get_public_moments(
@@ -32,12 +32,12 @@ pub(crate) async fn moments(
     )
     .await
     {
-        Ok(data) => ApiResponse::success(Some(value!(data))).json(),
+        Ok(data) => ApiResponse::success(Some(value!(data))).respond(),
         Err(e) => ApiResponse::<String>::error_with_code(
             WebErrorCode::DATABASE_ERROR,
             e.to_string().as_str(),
         )
-        .json(),
+        .respond(),
     }
 }
 
@@ -53,8 +53,8 @@ pub async fn moment_like(
             WebErrorCode::VALIDATION_ERROR,
             "参数有误!",
         )
-        .json());
+        .respond());
     }
     MomentService::moment_like(id, app.get_mysql_pool()).await?;
-    Ok(ApiResponse::<String>::success_with_msg("点赞成功", None).json())
+    Ok(ApiResponse::<String>::success_with_msg("点赞成功", None).respond())
 }

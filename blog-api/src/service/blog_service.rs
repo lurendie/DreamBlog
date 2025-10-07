@@ -809,8 +809,9 @@ impl BlogService {
             let blog_info = BlogIdAndTitle::from(model.clone());
             Ok(blog_info)
         } else {
-            log::error!("没有检索到文章");
-            Err(DataBaseError::Custom("没有检索到文章".to_string()))
+            Err(DataBaseError::Custom(format!(
+                "没有检索到文章ID{blog_id}的关联评论"
+            )))
         }
     }
 }

@@ -64,9 +64,9 @@ pub async fn get_visitor_list(
             result.insert("total".to_string(),  value!(total));
             result.insert("records".to_string(),  value!(visitors));
             ApiResponse::success_with_msg("获取访客列表成功", Some( value!(result)))
-                .json()
+                .respond()
         }
-        Err(e) => ApiResponse::<String>::error(format!("获取访客列表失败: {}", e).as_str()).json(),
+        Err(e) => ApiResponse::<String>::error(format!("获取访客列表失败: {}", e).as_str()).respond(),
     }
 }
 
@@ -93,15 +93,15 @@ pub async fn delete_visitor(
                 Ok(result) => {
                     if result.rows_affected > 0 {
                         ApiResponse::<String>::success_with_msg("删除访客成功", None)
-                            .json()
+                            .respond()
                     } else {
-                        ApiResponse::<String>::error("删除访客失败").json()
+                        ApiResponse::<String>::error("删除访客失败").respond()
                     }
                 }
-                Err(e) => ApiResponse::<String>::error(format!("删除访客失败: {}", e).as_str()).json(),
+                Err(e) => ApiResponse::<String>::error(format!("删除访客失败: {}", e).as_str()).respond(),
             }
         }
-        Ok(None) => ApiResponse::<String>::error("访客不存在").json(),
-        Err(e) => ApiResponse::<String>::error(format!("查询访客失败: {}", e).as_str()).json(),
+        Ok(None) => ApiResponse::<String>::error("访客不存在").respond(),
+        Err(e) => ApiResponse::<String>::error(format!("查询访客失败: {}", e).as_str()).respond(),
     }
 }

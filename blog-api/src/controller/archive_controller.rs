@@ -22,10 +22,10 @@ pub(crate) async fn archives(app: web::Data<AppState>) -> impl Responder {
             let count = BlogService::find_archives_count(connection).await;
             data.insert(value!("blogMap"), value!(blog_map));
             data.insert(value!("count"), value!(count.unwrap_or_default()));
-            ApiResponse::success(Some(value!(data))).json()
+            ApiResponse::success(Some(value!(data))).respond()
         }
         Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).respond()
         }
     }
 }

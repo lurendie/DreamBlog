@@ -5,7 +5,7 @@
  * @LastEditTime: 2024-05-15 19:14:37
  */
 use crate::error::WebError;
-use actix_web::{HttpResponse, Responder};
+use actix_web::{HttpResponse, HttpResponseBuilder, Responder};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -80,7 +80,7 @@ impl<T: Serialize> ApiResponse<T> {
     pub fn success_with_msg(msg: &str, data: Option<T>) -> Self {
         Self {
             code: crate::error::WebErrorCode::SUCCESS,
-           msg:msg.to_string(),
+            msg: msg.to_string(),
             data,
         }
     }
@@ -89,7 +89,7 @@ impl<T: Serialize> ApiResponse<T> {
     pub fn error(msg: &str) -> Self {
         Self {
             code: crate::error::WebErrorCode::INTERNAL_ERROR,
-            msg:msg.to_string(),
+            msg: msg.to_string(),
             data: None,
         }
     }
@@ -97,8 +97,8 @@ impl<T: Serialize> ApiResponse<T> {
     /// 错误响应（带自定义状态码）
     pub fn error_with_code(code: u16, msg: &str) -> Self {
         Self {
-            code:code,
-            msg:msg.to_string(),
+            code: code,
+            msg: msg.to_string(),
             data: None,
         }
     }
@@ -113,10 +113,21 @@ impl<T: Serialize> ApiResponse<T> {
     }
 
     /// 转换为HTTP响应
-    pub fn json(&self) -> HttpResponse {
+    pub fn respond(&self) -> HttpResponse {
         HttpResponse::Ok()
             .content_type("application/json; charset=utf-8")
             .json(&self)
+    }
+    pub fn http_response_builder(&self) -> HttpResponseBuilder {
+        HttpResponse::Ok()
+    }
+}
+
+impl<T: Serialize> Responder for ApiResponse<T> {
+    type Body = actix_web::body::BoxBody;
+
+    fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
+        self.respond()
     }
 }
 
@@ -136,7 +147,7 @@ impl Responder for WebError {
 
     fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
         let response = ApiResponse::<()>::from_error(&self);
-        response.json()
+        response.respond()
     }
 }
 

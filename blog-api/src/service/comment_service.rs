@@ -58,18 +58,22 @@ impl CommentService {
     pub(crate) async fn find_comment_dto(
         page_num: u64,
         page_size: u64,
+        page_type: u8,
         db: &DatabaseConnection,
     ) -> Result<ValueMap, DataBaseError> {
         let mut map = ValueMap::new();
-        let page = comment::Entity::find().paginate(db, page_size);
+        let page = comment::Entity::find()
+            .filter(comment::Column::Page.eq(page_type))
+            .paginate(db, page_size);
         let models = page.fetch_page(page_num - 1).await?;
         let mut comments = vec![];
         for model in models.into_iter() {
             let blog_id = model.blog_id.unwrap_or_default();
-
             let mut comment = CommentDTO::from(model);
-            comment.blog_id_and_title =
-                Some(BlogService::find_blog_id_and_title(db, blog_id).await?);
+            if matches!(comment.page.unwrap_or(-1), 0) {
+                comment.blog_id_and_title =
+                    Some(BlogService::find_blog_id_and_title(db, blog_id).await?);
+            }
             comments.push(comment);
         }
         map.insert(

@@ -20,12 +20,12 @@ pub async fn blogs(params: Query<SearchRequest>, app: web::Data<AppState>) -> im
     let db_conn = app.get_mysql_pool();
 
     match BlogService::find_list_by_page(page_num, db_conn).await {
-        Ok(page) => ApiResponse::success(Some(value!(page))).json(),
+        Ok(page) => ApiResponse::success(Some(value!(page))).respond(),
         Err(e) => ApiResponse::<String>::error_with_code(
             WebErrorCode::DATABASE_ERROR,
             e.to_string().as_str(),
         )
-        .json(),
+        .respond(),
     }
 }
 #[routes]
@@ -39,16 +39,15 @@ pub async fn blog(
         Ok(id) => id,
         Err(e) => {
             return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .json();
+                .respond();
         }
     };
 
     let blog = BlogService::find_id_detail(id, app.get_mysql_pool()).await;
     match blog {
-        Some(blog) => ApiResponse::success(Some(value!(blog))).json(),
-        None => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::NOT_FOUND, "博客不存在").json()
-        }
+        Some(blog) => ApiResponse::success(Some(value!(blog))).respond(),
+        None => ApiResponse::<String>::error_with_code(WebErrorCode::NOT_FOUND, "博客不存在")
+            .respond(),
     }
 }
 
@@ -62,7 +61,7 @@ pub async fn category(
         Ok(name) => name,
         Err(e) => {
             return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .json()
+                .respond()
         }
     };
 
@@ -71,14 +70,14 @@ pub async fn category(
         Ok(pagination) => pagination,
         Err(e) => {
             return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .json()
+                .respond()
         }
     };
 
     let page =
         BlogService::find_by_categorya_name(category_name, page_num as usize, app.get_mysql_pool())
             .await;
-    ApiResponse::success(Some(value!(page))).json()
+    ApiResponse::success(Some(value!(page))).respond()
 }
 
 #[routes]
@@ -91,7 +90,7 @@ pub async fn tag(
         Ok(name) => name,
         Err(e) => {
             return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .json()
+                .respond()
         }
     };
 
@@ -100,13 +99,13 @@ pub async fn tag(
         Ok(pagination) => pagination,
         Err(e) => {
             return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .json()
+                .respond()
         }
     };
 
     let page =
         BlogService::find_by_tag_name(tag_name, page_num as usize, app.get_mysql_pool()).await;
-    ApiResponse::success(Some(value!(page))).json()
+    ApiResponse::success(Some(value!(page))).respond()
 }
 
 /**
@@ -125,30 +124,23 @@ pub async fn check_blog_password(
             WebErrorCode::VALIDATION_ERROR,
             "博客ID必须大于0",
         )
-        .json();
+        .respond();
     };
 
     let blog_info = match BlogService::find_id_detail(blog_id, app.get_mysql_pool()).await {
         Some(info) => info,
         None => {
-            return ApiResponse::<String>::error_with_code(
-                WebErrorCode::NOT_FOUND,
-                "博客不存在",
-            )
-            .json()
+            return ApiResponse::<String>::error_with_code(WebErrorCode::NOT_FOUND, "博客不存在")
+                .respond()
         }
     };
 
     let password = data.get_password();
     if blog_info.password.clone().unwrap_or_default() == password {
-        ApiResponse::success_with_msg("验证成功,密码正确!", Some(value!(blog_info)))
-            .json()
+        ApiResponse::success_with_msg("验证成功,密码正确!", Some(value!(blog_info))).respond()
     } else {
-        ApiResponse::<String>::error_with_code(
-            WebErrorCode::VALIDATION_ERROR,
-            "密码错误",
-        )
-        .json()
+        ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "密码错误")
+            .respond()
     }
 }
 
@@ -162,17 +154,17 @@ pub async fn search_blog(
         Ok(title) => title,
         Err(e) => {
             return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .json()
+                .respond()
         }
     };
 
     //查找title内容的文章
     match BlogService::search_content(blog_title, app.get_mysql_pool()).await {
-        Ok(result) => ApiResponse::success(Some(value!(result))).json(),
+        Ok(result) => ApiResponse::success(Some(value!(result))).respond(),
         Err(e) => ApiResponse::<String>::error_with_code(
             WebErrorCode::DATABASE_ERROR,
             e.to_string().as_str(),
         )
-        .json(),
+        .respond(),
     }
 }

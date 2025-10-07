@@ -8,10 +8,10 @@ use rbs::value;
 pub(crate) async fn about(app: web::Data<AppState>) -> impl Responder {
     match AboutService::get_about(app.get_mysql_pool()).await {
         Ok(value_map) => {
-            ApiResponse::success(Some(value!(value_map))).json()
+            ApiResponse::success(Some(value!(value_map))).respond()
         }
         Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
+            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).respond()
         }
     }
 }

@@ -4,11 +4,7 @@
  * @LastEditors: lurendie
  * @LastEditTime: 2024-05-15 19:14:37
  */
-use crate::{
-    error::{error_code::WebErrorCode, DataBaseError},
-    model::ApiResponse,
-};
-use actix_web::{body::BoxBody, error, http::StatusCode, HttpResponse};
+use crate::error::error_code::WebErrorCode;
 use thiserror::Error;
 
 /// 应用错误类型
@@ -84,23 +80,5 @@ impl From<(u16, String)> for WebError {
             WebErrorCode::CUSTOM_ERROR => WebError::Custom(message),
             _ => WebError::Internal(message),
         }
-    }
-}
-
-#[derive(Error, Debug)]
-pub enum AppError {
-    #[error("WebError异常消息:{0}")]
-    WebError(#[from] WebError),
-    #[error("DataBaseError异常消息:{0}")]
-    DataBaseError(#[from] DataBaseError),
-}
-
-impl error::ResponseError for AppError {
-    fn status_code(&self) -> StatusCode {
-        StatusCode::INTERNAL_SERVER_ERROR
-    }
-
-    fn error_response(&self) -> HttpResponse<BoxBody> {
-        ApiResponse::<String>::error(&self.to_string()).json()
     }
 }

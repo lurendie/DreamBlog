@@ -8,11 +8,11 @@ use actix_web::{get, web, Responder};
 #[get("/friends")]
 pub(crate) async fn get_friend(app: web::Data<AppState>) -> impl Responder {
     match FriendService::get_friend(app.get_mysql_pool()).await {
-        Ok(friend) => {
-            ApiResponse::success(Some(friend)).json()
-        }
-        Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).json()
-        }
+        Ok(friend) => ApiResponse::success(Some(friend)).respond(),
+        Err(e) => ApiResponse::<String>::error_with_code(
+            WebErrorCode::DATABASE_ERROR,
+            e.to_string().as_str(),
+        )
+        .respond(),
     }
 }
