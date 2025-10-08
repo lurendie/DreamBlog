@@ -28,3 +28,33 @@ impl From<Model> for ScheduleJob {
         }
     }
 }
+
+
+
+
+#[derive(Debug, Deserialize)]
+pub struct JobQuery {
+    pub page_num: Option<u32>,
+    pub page_size: Option<u32>,
+    pub bean_name: Option<String>,
+    pub status: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct JobStatusUpdate {
+    pub job_id: i64,
+    pub status: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct JobIdParam {
+    pub job_id: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct JobLogQuery {
+    pub page_num: Option<u32>,
+    pub page_size: Option<u32>,
+    pub job_id: Option<i64>,
+    pub status: Option<bool>,
+}

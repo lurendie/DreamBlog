@@ -1,6 +1,6 @@
+use crate::entity::friend;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use crate::entity::friend;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 //友链
 pub struct Friend {
@@ -13,7 +13,6 @@ pub struct Friend {
     pub(crate) views: i32,
     pub(crate) create_time: NaiveDateTime,
 }
-
 
 impl From<friend::Model> for Friend {
     fn from(friend: friend::Model) -> Self {
@@ -28,4 +27,18 @@ impl From<friend::Model> for Friend {
             create_time: friend.create_time,
         }
     }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FriendUpdatePublished {
+    pub id: i64,
+    pub published: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FriendQuery {
+    pub page_num: Option<u32>,
+    pub page_size: Option<u32>,
+    pub nickname: Option<String>,
+    pub is_published: Option<bool>,
 }

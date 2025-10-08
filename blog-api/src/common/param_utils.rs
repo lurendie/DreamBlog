@@ -4,7 +4,7 @@
  * @LastEditors: lurendie
  * @LastEditTime: 2024-05-15 19:14:37
  */
-use crate::error::WebError;
+use crate::{error::WebError, model::SearchRequest};
 use actix_web::web::Query;
 use std::collections::HashMap;
 
@@ -52,7 +52,7 @@ impl ParamUtils {
     }
 
     /// 从HashMap中获取布尔参数
-    pub fn _get_bool_param(params: &HashMap<String, String>, key: &str) -> Result<bool, WebError> {
+    pub fn get_bool_param(params: &HashMap<String, String>, key: &str) -> Result<bool, WebError> {
         let value = Self::get_string_param(params, key)?;
         match value.to_lowercase().as_str() {
             "true" | "1" | "yes" | "on" => Ok(true),
@@ -100,5 +100,25 @@ impl ParamUtils {
         };
 
         Ok((page.max(1), page_size.max(1)))
+    }
+
+    pub async fn validate_request_params(param: &SearchRequest) -> Result<(), WebError> {
+        if param.get_page_num() == 0 {
+            return Err(WebError::Validation("页码不能为0".to_string()));
+        } else if param.get_page_size() == 0 {
+            return Err(WebError::Validation("每页大小不能为0".to_string()));
+        } else if param.get_blog_id() == 0 {
+            return Err(WebError::Validation("博客ID不能为0".to_string()));
+        } else if param.get_category_id().unwrap_or_default() == 0 {
+            return Err(WebError::Validation("分类ID不能为0".to_string()));
+        } else if param.get_password().contains("") {
+            return Err(WebError::Validation("密码错误".to_string()));
+        } else if param.get_page() >= 3 {
+            return Err(WebError::Validation("页面类型错误".to_string()));
+        } else if param.get_title().unwrap_or_default().eq("") {
+            return Err(WebError::Validation("标题不能为空".to_string()));
+        }
+
+        Ok(())
     }
 }

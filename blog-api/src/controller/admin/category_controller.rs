@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use crate::app::AppState;
+use crate::common::ParamUtils;
+use crate::error::AppError;
 use crate::error::WebErrorCode;
 use crate::model::ApiResponse;
 use crate::model::Category;
@@ -8,8 +10,9 @@ use crate::model::SearchRequest;
 use crate::service::CategoryService;
 use crate::{middleware::AppClaims, service::BlogService};
 use actix_jwt_session::Authenticated;
-use actix_web::{routes, web, Responder};
+use actix_web::{routes, web};
 use rbs::value;
+use rbs::Value;
 
 /**
  * 获取分类列表
@@ -20,25 +23,15 @@ pub async fn categories(
     _: Authenticated<AppClaims>,
     params: web::Query<SearchRequest>,
     app: web::Data<AppState>,
-) -> impl Responder {
-    if params.get_page_num() <= 0 || params.get_page_size() <= 0 {
-        return ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "参数有误!")
-            .respond();
-    }
-    match CategoryService::get_page_categories(
+) -> Result<ApiResponse<Value>, AppError> {
+    ParamUtils::validate_request_params(&params.0).await?;
+    let data = CategoryService::get_page_categories(
         params.get_page_num() as u64,
         params.get_page_size() as u64,
         app.get_mysql_pool(),
     )
-    .await
-    {
-        Ok(data) => ApiResponse::success(Some(value!(data))).respond(),
-        Err(e) => ApiResponse::<String>::error_with_code(
-            WebErrorCode::DATABASE_ERROR,
-            e.to_string().as_str(),
-        )
-        .respond(),
-    }
+    .await?;
+    Ok(ApiResponse::success(Some(value!(data))))
 }
 
 /**
@@ -50,26 +43,22 @@ pub async fn update_category(
     _: Authenticated<AppClaims>,
     form: web::Json<Category>,
     app: web::Data<AppState>,
-) -> impl Responder {
-    //参数校验
-    if form.get_name().is_empty() {
-        return ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "参数有误!")
-            .respond();
-    }
-    match form.get_id() == 0 {
+) -> Result<ApiResponse<Value>, AppError> {
+    match matches!(form.get_id(), 0) {
         //新增分类
         true => {
-            let _ =
-                CategoryService::insert_category(form.get_name().to_string(), app.get_mysql_pool())
-                    .await;
-            return ApiResponse::<String>::success_with_msg("新增分类成功!", None).respond();
+            CategoryService::insert_category(form.get_name().to_string(), app.get_mysql_pool())
+                .await?;
         }
         //修改分类
         false => {
-            let _ = CategoryService::update_category(form.0, app.get_mysql_pool()).await;
-            return ApiResponse::<String>::success_with_msg("修改分类成功!", None).respond();
+            CategoryService::update_category(form.0, app.get_mysql_pool()).await?;
         }
     }
+    Ok(ApiResponse::<Value>::success_with_msg(
+        "新增分类成功!",
+        None,
+    ))
 }
 
 /**
@@ -79,53 +68,26 @@ pub async fn update_category(
 #[delete("/category")]
 pub async fn delete_category(
     _: Authenticated<AppClaims>,
-    query: web::Query<HashMap<String, i64>>,
+    query: web::Query<HashMap<String, String>>,
     app: web::Data<AppState>,
-) -> impl Responder {
-    let id = match query.get("id") {
-        Some(id) => {
-            if *id == 0 {
-                return ApiResponse::<String>::error_with_code(
-                    WebErrorCode::VALIDATION_ERROR,
-                    "参数有误!",
-                )
-                .respond();
-            }
-            *id
-        }
-        None => {
-            return ApiResponse::<String>::error_with_code(
-                WebErrorCode::VALIDATION_ERROR,
-                "参数有误!",
-            )
-            .respond()
-        }
-    };
+) -> Result<ApiResponse<Value>, AppError> {
+    let id = ParamUtils::get_i64_param(&query.0, "id")?;
     // 查询分类下是否有文章
     let connection = app.get_mysql_pool();
-    match BlogService::check_category_exist_blog(id, connection).await {
-        Ok(true) => {
-            return ApiResponse::<String>::error_with_code(
+    match BlogService::check_category_exist_blog(id, connection).await? {
+        true => {
+            return Ok(ApiResponse::<Value>::error_with_code(
                 WebErrorCode::BUSINESS_ERROR,
                 "分类下存在文章,不能删除!",
-            )
-            .respond()
+            ));
         }
-        Ok(false) => {
+        false => {
             // 删除分类
-            match CategoryService::delete_category(id, connection).await {
-                Ok(_) => ApiResponse::<String>::success_with_msg("删除分类成功!", None).respond(),
-                Err(e) => ApiResponse::<String>::error_with_code(
-                    WebErrorCode::DATABASE_ERROR,
-                    e.to_string().as_str(),
-                )
-                .respond(),
-            }
+            CategoryService::delete_category(id, connection).await?;
+            return Ok(ApiResponse::<Value>::success_with_msg(
+                "删除分类成功!",
+                None,
+            ));
         }
-        Err(e) => ApiResponse::<String>::error_with_code(
-            WebErrorCode::DATABASE_ERROR,
-            e.to_string().as_str(),
-        )
-        .respond(),
     }
 }

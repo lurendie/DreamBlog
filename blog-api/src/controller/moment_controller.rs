@@ -1,4 +1,5 @@
 use crate::app::AppState;
+use crate::common::ParamUtils;
 use crate::error::AppError;
 use crate::error::WebErrorCode;
 use crate::model::ApiResponse;
@@ -8,6 +9,7 @@ use actix_web::web::Path;
 use actix_web::{routes, web};
 use actix_web::{web::Query, Responder};
 use rbs::value;
+use rbs::Value;
 
 //动态
 #[routes]
@@ -15,30 +17,17 @@ use rbs::value;
 pub(crate) async fn moments(
     mut query: Query<SearchRequest>,
     app: web::Data<AppState>,
-) -> impl Responder {
+) -> Result<ApiResponse<Value>, AppError> {
+    ParamUtils::validate_request_params(&query.0).await?;
     //查询所有moments
-    if query.0.get_page_num() == 0 {
-        return ApiResponse::<String>::error_with_code(
-            WebErrorCode::VALIDATION_ERROR,
-            "参数有误！",
-        )
-        .respond();
-    }
     query.0.set_page_size(Some(5));
-    match MomentService::get_public_moments(
+    let data = MomentService::get_public_moments(
         query.0.get_page_num(),
         query.0.get_page_size(),
         app.get_mysql_pool(),
     )
-    .await
-    {
-        Ok(data) => ApiResponse::success(Some(value!(data))).respond(),
-        Err(e) => ApiResponse::<String>::error_with_code(
-            WebErrorCode::DATABASE_ERROR,
-            e.to_string().as_str(),
-        )
-        .respond(),
-    }
+    .await?;
+    Ok(ApiResponse::success(Some(value!(data))))
 }
 
 #[routes]

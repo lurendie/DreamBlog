@@ -1,13 +1,15 @@
 use actix_jwt_session::{JwtTtl, OffsetDateTime, RefreshTtl, SessionStorage, Uuid};
 use actix_web::web::{Data, Json};
+use chrono::Utc;
 use rbs::value;
 use rbs::value::map::ValueMap;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::ActiveValue::Set;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 use crate::common::UserBcrypt;
 use crate::constant::RedisKeyConstant;
 use crate::entity::user;
-use crate::error::DataBaseError;
+use crate::error::{AppError, DataBaseError};
 use crate::middleware::AppClaims;
 use crate::model::{CacheUserInfo, LoginUser, LoginedCacheUser, User};
 use crate::service::RedisService;
@@ -19,7 +21,7 @@ impl UserService {
      *根据Name获取User
      */
     pub async fn get_by_username(
-        username: &String,
+        username: &str,
         db: &DatabaseConnection,
     ) -> Result<User, DataBaseError> {
         let user = user::Entity::find()
@@ -176,5 +178,40 @@ impl UserService {
         map.insert(value!("user"), value!(&user));
         map.insert(value!("token"), value!(&jwt_token));
         Ok((map, jwt_token))
+    }
+
+    pub async fn update(
+        user_from: User,
+        username: &str,
+        db: &DatabaseConnection,
+    ) -> Result<(), AppError> {
+        let user = UserService::get_by_username(&username, db).await?;
+        let user_model = user::Model::from(user);
+        let mut active_user: user::ActiveModel = user_model.into();
+        let now = Utc::now().naive_utc();
+        // 更新字段
+        if !user_from.get_username().is_empty() {
+            // 检查用户名是否已被其他用户使用
+            active_user.username = Set(user_from.get_username());
+        }
+        if !user_from.get_nickname().is_empty() {
+            active_user.nickname = Set(user_from.get_nickname());
+        }
+        if !user_from.get_avatar().is_empty() {
+            active_user.avatar = Set(user_from.get_avatar());
+        }
+
+        if !user_from.get_email().is_empty() {
+            active_user.email = Set(user_from.get_email());
+        }
+        if !user_from.get_password().is_empty() {
+            let password = UserBcrypt::hash_password(&user_from.get_password())?;
+            active_user.password = Set(password);
+        }
+        active_user.update_time = Set(now);
+        if let Err(e) = active_user.update(db).await {
+            return Err(DataBaseError::Custom(format!("更新用户信息失败:{}", e)).into());
+        }
+        Ok(())
     }
 }

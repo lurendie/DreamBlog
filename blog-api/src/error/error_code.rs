@@ -33,7 +33,7 @@ impl WebErrorCode {
     pub const JWT_ERROR: u16 = 502;
 
     /// 数据库错误
-    pub const DATABASE_ERROR: u16 = 504;
+   // pub const DATABASE_ERROR: u16 = 504;
 
     /// 自定义错误
     pub const CUSTOM_ERROR: u16 = 600;

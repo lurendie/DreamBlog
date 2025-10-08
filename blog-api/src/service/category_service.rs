@@ -9,7 +9,7 @@
 use rbs::value::map::ValueMap;
 use rbs::{value, Value};
 use sea_orm::{
-    ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, ModelTrait, PaginatorTrait,
+    ActiveModelTrait, DatabaseConnection, EntityTrait, ModelTrait, PaginatorTrait,
 };
 
 use crate::constant::RedisKeyConstant;
@@ -165,30 +165,16 @@ impl CategoryService {
         Ok(())
     }
 
-    pub async fn delete_category(id: i64, db: &DatabaseConnection) -> Result<u64, sea_orm::DbErr> {
+    pub async fn delete_category(id: i64, db: &DatabaseConnection) -> Result<u64, DataBaseError> {
         //判断分类是否有文章
-        let count = match category::Entity::find_by_id(id).one(db).await {
-            Ok(Some(item)) => {
-                let count = match item.find_related(blog::Entity).count(db).await {
-                    Ok(count) => count,
-                    Err(e) => {
-                        log::error!("查询分类文章数失败:{}", e);
-                        0
-                    }
-                };
-                count
-            }
-            Ok(None) => {
-                return Err(DbErr::Custom("分类下有文章，不能删除".to_string()));
-            }
-            Err(e) => {
-                log::error!("查询分类失败:{}", e);
-                0
-            }
-        };
+        let model = category::Entity::find_by_id(id)
+            .one(db)
+            .await?
+            .ok_or_else(|| DataBaseError::Custom("分类不存在".to_string()))?;
 
+        let count = model.find_related(blog::Entity).count(db).await?;
         if count > 0 {
-            return Err(DbErr::Custom("分类下有文章，不能删除".to_string()));
+            return Err(DataBaseError::Custom("分类下有文章，不能删除".to_string()));
         }
         let result = category::Entity::delete_by_id(id).exec(db).await?;
         Ok(result.rows_affected)

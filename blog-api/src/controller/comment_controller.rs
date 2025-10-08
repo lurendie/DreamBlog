@@ -1,98 +1,51 @@
 use crate::app::AppState;
-use crate::error::WebErrorCode;
+use crate::common::ParamUtils;
+use crate::error::AppError;
 use crate::model::ApiResponse;
 use crate::model::CommentDTO;
 use crate::model::SearchRequest;
 use crate::service::CommentService;
+use actix_web::get;
 use actix_web::routes;
 use actix_web::web::{self, Query};
-use actix_web::{get, Responder};
 use rbs::value;
 use rbs::value::map::ValueMap;
+use rbs::Value;
 
 #[get("/comments")]
 pub(crate) async fn get_comments(
-    data: Option<Query<SearchRequest>>,
+    data: Query<SearchRequest>,
     app: web::Data<AppState>,
-) -> impl Responder {
-    if data.is_none() {
-        return ApiResponse::<String>::error_with_code(
-            WebErrorCode::VALIDATION_ERROR,
-            "获取数据失败!",
-        )
-        .respond();
-    }
-
-    let page_request = match data {
-        Some(page_request) => page_request,
-        None => {
-            return ApiResponse::<String>::error_with_code(
-                WebErrorCode::VALIDATION_ERROR,
-                "获取数据失败!",
-            )
-            .respond()
-        }
-    };
+) -> Result<ApiResponse<Value>, AppError> {
+    let page_request = data.into_inner();
+    ParamUtils::validate_request_params(&page_request).await?;
     let connect = app.get_mysql_pool();
-    let list = match CommentService::find_by_id_comments(
+    let list = CommentService::find_by_id_comments(
         page_request.get_page_num(),
         page_request.get_blog_id(),
         page_request.get_page(),
         connect,
     )
-    .await
-    {
-        Ok(list) => list,
-        Err(e) => {
-            return ApiResponse::<String>::error_with_code(
-                WebErrorCode::DATABASE_ERROR,
-                e.to_string().as_str(),
-            )
-            .respond();
-        }
-    };
-
+    .await?;
     let mut data = ValueMap::new();
     data.insert("comments".into(), value!(list));
 
-    match CommentService::get_all_count(
+    let all_comment =
+        CommentService::get_all_count(page_request.get_blog_id(), page_request.get_page(), connect)
+            .await?;
+    data.insert("allComment".into(), value!(all_comment));
+    let close_count = CommentService::get_close_count(
         page_request.get_blog_id(),
         page_request.get_page(),
         connect,
     )
-    .await
-    {
-        Ok(close_comment) => {
-            data.insert("allComment".into(), value!(close_comment));
-        }
-        Err(e) => {
-            return ApiResponse::<String>::error_with_code(
-                WebErrorCode::DATABASE_ERROR,
-                e.to_string().as_str(),
-            )
-            .respond();
-        }
-    }
-    match CommentService::get_close_count(
-        page_request.get_blog_id(),
-        page_request.get_page(),
-        connect,
-    )
-    .await
-    {
-        Ok(close_comment) => {
-            data.insert("closeComment".into(), value!(close_comment));
-        }
-        Err(e) => {
-            return ApiResponse::<String>::error_with_code(
-                WebErrorCode::DATABASE_ERROR,
-                e.to_string().as_str(),
-            )
-            .respond();
-        }
-    }
+    .await?;
+    data.insert("closeComment".into(), value!(close_count));
 
-    ApiResponse::success_with_msg("获取成功!", Some(value!(data))).respond()
+    Ok(ApiResponse::success_with_msg(
+        "获取成功!",
+        Some(value!(data)),
+    ))
 }
 
 #[routes]
@@ -100,15 +53,7 @@ pub(crate) async fn get_comments(
 pub async fn save_comment(
     state: web::Data<AppState>,
     comment_dto: web::Json<CommentDTO>,
-) -> impl Responder {
-    match CommentService::save_comment(comment_dto.0, &state.mysql_connection).await {
-        Ok(_) => return ApiResponse::<String>::success(None).respond(),
-        Err(e) => {
-            return ApiResponse::<String>::error_with_code(
-                WebErrorCode::DATABASE_ERROR,
-                e.to_string().as_str(),
-            )
-            .respond()
-        }
-    }
+) -> Result<ApiResponse<Value>, AppError> {
+    CommentService::save_comment(comment_dto.0, &state.mysql_connection).await?;
+    Ok(ApiResponse::<Value>::success(None))
 }

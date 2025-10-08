@@ -1,12 +1,15 @@
 use crate::app::AppState;
 use crate::common::ParamUtils;
+use crate::error::AppError;
+use crate::error::WebError;
 use crate::error::WebErrorCode;
 use crate::model::ApiResponse;
 use crate::model::SearchRequest;
 use crate::service;
+use actix_web::routes;
 use actix_web::web::{self, Json, Query};
-use actix_web::{routes, Responder};
 use rbs::value;
+use rbs::Value;
 use service::BlogService;
 use std::collections::HashMap;
 
@@ -14,41 +17,30 @@ use std::collections::HashMap;
 #[routes]
 //#[options("/site")]
 #[get("/blogs")]
-pub async fn blogs(params: Query<SearchRequest>, app: web::Data<AppState>) -> impl Responder {
+pub async fn blogs(
+    params: Query<SearchRequest>,
+    app: web::Data<AppState>,
+) -> Result<ApiResponse<Value>, AppError> {
     //提供默认值page_num
     let page_num = params.get_page_num().max(1);
     let db_conn = app.get_mysql_pool();
 
-    match BlogService::find_list_by_page(page_num, db_conn).await {
-        Ok(page) => ApiResponse::success(Some(value!(page))).respond(),
-        Err(e) => ApiResponse::<String>::error_with_code(
-            WebErrorCode::DATABASE_ERROR,
-            e.to_string().as_str(),
-        )
-        .respond(),
-    }
+    let data = BlogService::find_list_by_page(page_num, db_conn).await?;
+    Ok(ApiResponse::success(Some(value!(data))))
 }
 #[routes]
 #[get("/blog")]
 pub async fn blog(
     params: Query<HashMap<String, String>>,
     app: web::Data<AppState>,
-) -> impl Responder {
+) -> Result<ApiResponse<Value>, AppError> {
     //获取blog_id参数   不是必要参数，如果没有，则返回参数有误的错误信息
-    let id = match ParamUtils::get_i64_param(&params, "id") {
-        Ok(id) => id,
-        Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .respond();
-        }
-    };
+    let id = ParamUtils::get_i64_param(&params, "id")?;
 
-    let blog = BlogService::find_id_detail(id, app.get_mysql_pool()).await;
-    match blog {
-        Some(blog) => ApiResponse::success(Some(value!(blog))).respond(),
-        None => ApiResponse::<String>::error_with_code(WebErrorCode::NOT_FOUND, "博客不存在")
-            .respond(),
-    }
+    let blog = BlogService::find_id_detail(id, app.get_mysql_pool())
+        .await
+        .ok_or_else(|| WebError::Validation("blogid参数有误".to_string()))?;
+    Ok(ApiResponse::success(Some(value!(blog))))
 }
 
 #[routes]
@@ -56,28 +48,14 @@ pub async fn blog(
 pub async fn category(
     params: Query<HashMap<String, String>>,
     app: web::Data<AppState>,
-) -> impl Responder {
-    let category_name = match ParamUtils::get_string_param(&params, "categoryName") {
-        Ok(name) => name,
-        Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .respond()
-        }
-    };
-
+) -> Result<ApiResponse<Value>, AppError> {
+    let category_name = ParamUtils::get_string_param(&params, "categoryName")?;
     //使用新的分页参数验证方法
-    let (page_num, _) = match ParamUtils::validate_pagination_params(&params) {
-        Ok(pagination) => pagination,
-        Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .respond()
-        }
-    };
-
+    let (page_num, _) = ParamUtils::validate_pagination_params(&params)?;
     let page =
         BlogService::find_by_categorya_name(category_name, page_num as usize, app.get_mysql_pool())
             .await;
-    ApiResponse::success(Some(value!(page))).respond()
+    Ok(ApiResponse::success(Some(value!(page))))
 }
 
 #[routes]
@@ -85,27 +63,13 @@ pub async fn category(
 pub async fn tag(
     params: Query<HashMap<String, String>>,
     app: web::Data<AppState>,
-) -> impl Responder {
-    let tag_name = match ParamUtils::get_string_param(&params, "tagName") {
-        Ok(name) => name,
-        Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .respond()
-        }
-    };
-
+) -> Result<ApiResponse<Value>, AppError> {
+    let tag_name = ParamUtils::get_string_param(&params, "tagName")?;
     //使用新的分页参数验证方法
-    let (page_num, _) = match ParamUtils::validate_pagination_params(&params) {
-        Ok(pagination) => pagination,
-        Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .respond()
-        }
-    };
-
+    let (page_num, _) = ParamUtils::validate_pagination_params(&params)?;
     let page =
         BlogService::find_by_tag_name(tag_name, page_num as usize, app.get_mysql_pool()).await;
-    ApiResponse::success(Some(value!(page))).respond()
+    Ok(ApiResponse::success(Some(value!(page))))
 }
 
 /**
@@ -116,31 +80,23 @@ pub async fn tag(
 pub async fn check_blog_password(
     data: Json<SearchRequest>,
     app: web::Data<AppState>,
-) -> impl Responder {
+) -> Result<ApiResponse<Value>, AppError> {
+    ParamUtils::validate_request_params(&data.0).await?;
     let blog_id = data.get_blog_id();
-
-    if blog_id <= 0 {
-        return ApiResponse::<String>::error_with_code(
-            WebErrorCode::VALIDATION_ERROR,
-            "博客ID必须大于0",
-        )
-        .respond();
-    };
-
-    let blog_info = match BlogService::find_id_detail(blog_id, app.get_mysql_pool()).await {
-        Some(info) => info,
-        None => {
-            return ApiResponse::<String>::error_with_code(WebErrorCode::NOT_FOUND, "博客不存在")
-                .respond()
-        }
-    };
-
+    let blog_info = BlogService::find_id_detail(blog_id, app.get_mysql_pool())
+        .await
+        .ok_or_else(|| WebError::NotFound(format!("BlogID:{}文章不存在", blog_id)))?;
     let password = data.get_password();
     if blog_info.password.clone().unwrap_or_default() == password {
-        ApiResponse::success_with_msg("验证成功,密码正确!", Some(value!(blog_info))).respond()
+        Ok(ApiResponse::success_with_msg(
+            "验证成功,密码正确!",
+            Some(value!(blog_info)),
+        ))
     } else {
-        ApiResponse::<String>::error_with_code(WebErrorCode::VALIDATION_ERROR, "密码错误")
-            .respond()
+        Ok(ApiResponse::<Value>::error_with_code(
+            WebErrorCode::JWT_ERROR,
+            "密码错误",
+        ))
     }
 }
 
@@ -149,22 +105,9 @@ pub async fn check_blog_password(
 pub async fn search_blog(
     query: Query<HashMap<String, String>>,
     app: web::Data<AppState>,
-) -> impl Responder {
-    let blog_title = match ParamUtils::get_string_param(&query, "query") {
-        Ok(title) => title,
-        Err(e) => {
-            return ApiResponse::<String>::error_with_code(e.error_code(), e.message().as_str())
-                .respond()
-        }
-    };
-
+) -> Result<ApiResponse<Value>, AppError> {
+    let blog_title = ParamUtils::get_string_param(&query, "query")?;
     //查找title内容的文章
-    match BlogService::search_content(blog_title, app.get_mysql_pool()).await {
-        Ok(result) => ApiResponse::success(Some(value!(result))).respond(),
-        Err(e) => ApiResponse::<String>::error_with_code(
-            WebErrorCode::DATABASE_ERROR,
-            e.to_string().as_str(),
-        )
-        .respond(),
-    }
+    let result = BlogService::search_content(blog_title, app.get_mysql_pool()).await?;
+    Ok(ApiResponse::success(Some(value!(result))))
 }

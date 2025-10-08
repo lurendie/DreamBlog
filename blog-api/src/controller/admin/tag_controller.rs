@@ -2,15 +2,15 @@ use std::collections::HashMap;
 
 use crate::{
     app::AppState,
-    error::WebErrorCode,
+    common::ParamUtils,
+    error::AppError,
     middleware::AppClaims,
-    model::ApiResponse,
-    model::{SearchRequest, TagDTO},
+    model::{ApiResponse, SearchRequest, TagDTO},
     service::TagService,
 };
 use actix_jwt_session::Authenticated;
-use actix_web::{routes, web, Responder};
-use rbs::value;
+use actix_web::{routes, web};
+use rbs::{value, Value};
 
 #[routes]
 #[get("/tags")]
@@ -18,27 +18,15 @@ pub async fn get_all_tags(
     _: Authenticated<AppClaims>,
     params: web::Query<SearchRequest>,
     app: web::Data<AppState>,
-) -> impl Responder {
-    if params.get_page_num() <= 0 || params.get_page_size() <= 0 {
-        return ApiResponse::<String>::error_with_code(
-            WebErrorCode::VALIDATION_ERROR,
-            "参数有误!",
-        )
-        .respond();
-    }
-
+) -> Result<ApiResponse<Value>, AppError> {
+    ParamUtils::validate_request_params(&params).await?;
     let tags_result = TagService::get_tags_by_page(
         params.get_page_num(),
         params.get_page_size(),
         app.get_mysql_pool(),
     )
-    .await;
-    match tags_result {
-        Ok(value_map) => ApiResponse::success(Some( value!(value_map))).respond(),
-        Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).respond()
-        }
-    }
+    .await?;
+    Ok(ApiResponse::success(Some(value!(tags_result))))
 }
 
 #[routes]
@@ -48,39 +36,19 @@ pub async fn insert_or_update(
     _: Authenticated<AppClaims>,
     tag: web::Json<TagDTO>,
     app: web::Data<AppState>,
-) -> impl Responder {
-    let tag_result = TagService::insert_or_update(tag.into_inner(), app.get_mysql_pool()).await;
-    match tag_result {
-        Ok(_) => ApiResponse::<String>::success_with_msg("操作成功！", None).respond(),
-        Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).respond()
-        }
-    }
+) -> Result<ApiResponse<Value>, AppError> {
+    TagService::insert_or_update(tag.into_inner(), app.get_mysql_pool()).await?;
+    Ok(ApiResponse::<Value>::success_with_msg("操作成功！", None))
 }
 
 #[routes]
 #[delete("/tag")]
 pub async fn delete_by_id(
     _: Authenticated<AppClaims>,
-    query: web::Query<HashMap<String, i64>>,
+    query: web::Query<HashMap<String, String>>,
     app: web::Data<AppState>,
-) -> impl Responder {
-    let id = {
-        match query.get("id") {
-            Some(id) => id.to_owned(),
-            None => {
-                return ApiResponse::<String>::error_with_code(
-                    WebErrorCode::VALIDATION_ERROR,
-                    "参数有误!",
-                )
-                .respond()
-            }
-        }
-    };
-    match TagService::delete_by_id(id, app.get_mysql_pool()).await {
-        Ok(_) => ApiResponse::<String>::success_with_msg("操作成功！", None).respond(),
-        Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).respond()
-        }
-    }
+) -> Result<ApiResponse<Value>, AppError> {
+    let id = ParamUtils::get_i64_param(&query, "id")?;
+    TagService::delete_by_id(id, app.get_mysql_pool()).await?;
+    Ok(ApiResponse::<Value>::success_with_msg("操作成功！", None))
 }

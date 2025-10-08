@@ -20,7 +20,7 @@ use rbs::value;
 use rbs::value::map::ValueMap;
 use rbs::Value;
 use sea_orm::{
-    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbBackend, DbErr, EntityTrait,
+    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbBackend, EntityTrait,
     FromQueryResult, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, QueryTrait, Statement,
     TransactionTrait,
 };
@@ -543,7 +543,10 @@ impl BlogService {
     /**
      * 获取id的文章 -后台
      */
-    pub(crate) async fn find_by_id(id: u16, db: &DatabaseConnection) -> Result<BlogDTO, DbErr> {
+    pub(crate) async fn find_by_id(
+        id: i64,
+        db: &DatabaseConnection,
+    ) -> Result<BlogDTO, DataBaseError> {
         match blog::Entity::find_by_id(id).one(db).await {
             Ok(Some(blog)) => {
                 let mut blog_dto = BlogDTO::from(blog.clone());
@@ -553,8 +556,8 @@ impl BlogService {
                 blog_dto.related_handle(blog, db).await;
                 Ok(blog_dto)
             }
-            Ok(None) => Err(DbErr::Custom("没有检索到文章".to_string())),
-            Err(e) => Err(e),
+            Ok(None) => Err(DataBaseError::Custom("没有检索到文章".to_string())),
+            Err(e) => Err(DataBaseError::MySQLError(e)),
         }
     }
 

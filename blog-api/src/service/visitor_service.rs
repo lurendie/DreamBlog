@@ -1,11 +1,13 @@
+use sea_orm::ActiveValue::Set;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel,
+    PaginatorTrait, QueryFilter, QueryOrder,
 };
 
 use crate::constant::RedisKeyConstant;
 use crate::entity::visitor;
 use crate::error::DataBaseError;
-use crate::model::Visitor;
+use crate::model::{Visitor, VisitorQuery};
 use crate::service::RedisService;
 
 pub struct VisitorService;
@@ -68,12 +70,49 @@ impl VisitorService {
     /**
      * 根据id删除访客
      */
-    pub async fn _delete_visitor(id: i64, db: &DatabaseConnection) {
-        match visitor::Entity::delete_by_id(id).exec(db).await {
-            Ok(_) => (),
-            Err(e) => {
-                log::error!("delete visitor error: {e}");
-            }
+    pub async fn delete_visitor(
+        id: i64,
+        uuid: &str,
+        db: &DatabaseConnection,
+    ) -> Result<(), DataBaseError> {
+        let delete_visitor = visitor::ActiveModel {
+            id: Set(id),
+            uuid: Set(uuid.to_string()),
+            ..Default::default()
         };
+        visitor::Entity::delete(delete_visitor).exec(db).await?;
+        Ok(())
+    }
+
+    pub async fn get_visitor_list(
+        query: VisitorQuery,
+        db: &DatabaseConnection,
+    ) -> Result<(Vec<Visitor>, u64), DataBaseError> {
+        let page_num = query.page_num.unwrap_or(1);
+        let page_size = query.page_size.unwrap_or(10);
+        // 构建查询条件
+        let mut query_builder = visitor::Entity::find();
+
+        if let Some(ip) = &query.ip {
+            query_builder = query_builder.filter(visitor::Column::Ip.contains(ip));
+        }
+
+        if let Some(ip_source) = &query.ip_source {
+            query_builder = query_builder.filter(visitor::Column::IpSource.contains(ip_source));
+        }
+
+        // 获取分页数据
+        let paginator = query_builder
+            .order_by_desc(visitor::Column::Id)
+            .paginate(db, page_size as u64);
+
+        let total = paginator.num_items().await.unwrap_or(0);
+        let visitor_models = paginator.fetch_page((page_num - 1) as u64).await?;
+
+        let mut visitors = vec![];
+        visitor_models.into_iter().for_each(|item| {
+            visitors.push(Visitor::from(item));
+        });
+        Ok((visitors, total))
     }
 }

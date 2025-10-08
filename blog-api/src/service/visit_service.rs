@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::error::DataBaseError;
+use crate::model::{VisitLog, VisitLogQuery};
 use crate::{
     app::AppState,
     common::{IpRegion, UserAgentInfo},
@@ -9,8 +10,10 @@ use crate::{
     service::BlogService,
 };
 use actix_web::web::{Data, Query};
-use sea_orm::DatabaseConnection;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
+};
 
 pub struct VisitService;
 
@@ -150,5 +153,46 @@ impl VisitService {
             log::error!("保存访问日志失败: {}", e);
         }
         Ok(())
+    }
+
+    pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> Result<(), DataBaseError> {
+        visit_log::Entity::delete_by_id(id).exec(db).await?;
+        Ok(())
+    }
+
+    pub async fn get_visit_log_list(
+        query: VisitLogQuery,
+        db: &DatabaseConnection,
+        page_num: i64,
+        page_size: i64,
+    ) -> Result<(Vec<VisitLog>,u64), DataBaseError> {
+        // 构建查询条件
+        let mut query_builder = visit_log::Entity::find();
+
+        if let Some(uri) = &query.uri {
+            query_builder = query_builder.filter(visit_log::Column::Uri.contains(uri));
+        }
+
+        if let Some(ip) = &query.ip {
+            query_builder = query_builder.filter(visit_log::Column::Ip.contains(ip));
+        }
+
+        if let Some(behavior) = &query.behavior {
+            query_builder = query_builder.filter(visit_log::Column::Behavior.contains(behavior));
+        }
+
+        // 获取分页数据
+        let paginator = query_builder
+            .order_by_desc(visit_log::Column::Id)
+            .paginate(db, page_size as u64);
+
+        let total = paginator.num_items().await.unwrap_or(0);
+        let log_models = paginator.fetch_page((page_num - 1) as u64).await?;
+        
+        let mut logs = vec![];
+        log_models.into_iter().for_each(|item| {
+            logs.push(VisitLog::from(item));
+        });
+        Ok((logs, total))
     }
 }

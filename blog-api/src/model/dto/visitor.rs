@@ -59,3 +59,18 @@ impl From<visitor::Model> for Visitor {
         }
     }
 }
+
+
+#[derive(Debug, Deserialize)]
+pub struct VisitorQuery {
+    pub page_num: Option<u32>,
+    pub page_size: Option<u32>,
+    pub ip: Option<String>,
+    pub ip_source: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct VisitorDeleteParam {
+    pub id: i64,
+    pub uuid: String,
+}

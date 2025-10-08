@@ -2,6 +2,8 @@
 
 use sea_orm::entity::prelude::*;
 
+use crate::model::User;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "user")]
 pub struct Model {
@@ -21,3 +23,19 @@ pub struct Model {
 pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl From<User> for Model {
+    fn from(user: User) -> Self {
+        Model {
+            id: user.get_id(),
+            username: user.get_username(),
+            password: user.get_password(),
+            nickname: user.get_nickname(),
+            avatar: user.get_avatar(),
+            email: user.get_email(),
+            create_time: user.get_create_time(),
+            update_time: user.get_update_time(),
+            role: user.get_role(),
+        }
+    }
+}

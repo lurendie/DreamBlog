@@ -41,3 +41,17 @@ impl From<visit_log::Model> for VisitLog {
         }
     }
 }
+
+#[derive(Debug, Deserialize)]
+pub struct VisitLogQuery {
+    pub page_num: Option<u32>,
+    pub page_size: Option<u32>,
+    pub uri: Option<String>,
+    pub ip: Option<String>,
+    pub behavior: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LogIdParam {
+    pub id: i64,
+}

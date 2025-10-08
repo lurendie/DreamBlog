@@ -1,4 +1,6 @@
-use bcrypt::{hash, verify, BcryptError, DEFAULT_COST};
+use bcrypt::{hash, verify, DEFAULT_COST};
+
+use crate::error::WebError;
 
 pub struct UserBcrypt;
 
@@ -6,13 +8,19 @@ impl UserBcrypt {
     /**
      * 验证密码
      */
-    pub fn verify_password(hashed: &str, password: &str) -> Result<bool, BcryptError> {
-        verify(password, hashed)
+    pub fn verify_password(hashed: &str, password: &str) -> Result<bool, WebError> {
+        match verify(password, hashed) {
+            Ok(result) => Ok(result),
+            Err(err) => Err(WebError::Jwt(err.to_string())),
+        }
     }
 
-    pub fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
+    pub fn hash_password(password: &str) -> Result<String, WebError> {
         // 使用默认成本因子（12）进行哈希
-        hash(password, DEFAULT_COST)
+        match hash(password, DEFAULT_COST) {
+            Ok(result) => Ok(result),
+            Err(err) => Err(WebError::Jwt(err.to_string())),
+        }
     }
 }
 

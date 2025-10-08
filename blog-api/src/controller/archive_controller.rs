@@ -5,27 +5,20 @@
  * @LastEditTime: 2024-05-18 09:58:55
  */
 use crate::app::AppState;
-use crate::error::WebErrorCode;
+use crate::error::{AppError};
 use crate::model::ApiResponse;
 use crate::service::BlogService;
-use actix_web::{get, web, Responder};
-use rbs::value;
+use actix_web::{get, web};
 use rbs::value::map::ValueMap;
+use rbs::{value, Value};
 
 #[get("/archives")]
-pub(crate) async fn archives(app: web::Data<AppState>) -> impl Responder {
+pub(crate) async fn archives(app: web::Data<AppState>) -> Result<ApiResponse<Value>, AppError> {
     let mut data = ValueMap::new();
     let connection = app.get_mysql_pool();
-    let result = BlogService::find_archives(connection).await;
-    match result {
-        Ok(blog_map) => {
-            let count = BlogService::find_archives_count(connection).await;
-            data.insert(value!("blogMap"), value!(blog_map));
-            data.insert(value!("count"), value!(count.unwrap_or_default()));
-            ApiResponse::success(Some(value!(data))).respond()
-        }
-        Err(e) => {
-            ApiResponse::<String>::error_with_code(WebErrorCode::DATABASE_ERROR, e.to_string().as_str()).respond()
-        }
-    }
+    let result = BlogService::find_archives(connection).await?;
+    let count = BlogService::find_archives_count(connection).await;
+    data.insert(value!("blogMap"), value!(result));
+    data.insert(value!("count"), value!(count.unwrap_or_default()));
+    Ok(ApiResponse::success(Some(value!(data))))
 }

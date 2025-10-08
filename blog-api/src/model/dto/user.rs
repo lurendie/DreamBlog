@@ -55,6 +55,13 @@ impl User {
     pub fn get_email(&self) -> String {
         self.email.clone()
     }
+
+    pub fn get_create_time(&self) -> NaiveDateTime {
+        self.create_time
+    }
+    pub fn get_update_time(&self) -> NaiveDateTime {
+        self.update_time
+    }
 }
 
 impl From<user::Model> for User {
