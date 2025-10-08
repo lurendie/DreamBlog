@@ -102,45 +102,6 @@ jobs:
           name: ${{ matrix.archive-name }}
           path: archive/${{ matrix.archive-name }}
 
-  build-frontend:
-    name: Build Frontend (Vue.js)
-    runs-on: ubuntu-latest
-    needs: build-backend
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install CMS dependencies
-        run: cd blog-cms && npm install
-
-      - name: Build CMS
-        run: cd blog-cms && npm run build
-
-      - name: Install View dependencies
-        run: cd blog-view && npm install
-
-      - name: Build View
-        run: cd blog-view && npm run build
-
-      - name: Create frontend archive
-        run: |
-          mkdir frontend-dist
-          cp -r blog-cms/dist frontend-dist/cms
-          cp -r blog-view/dist frontend-dist/view
-          tar -czf frontend-dist.tar.gz -C frontend-dist .
-
-      - name: Upload frontend archive
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist.tar.gz
-          path: frontend-dist.tar.gz
-
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
