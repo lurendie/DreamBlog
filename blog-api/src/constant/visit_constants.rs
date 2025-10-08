@@ -53,19 +53,19 @@ pub enum VisitBehaviorType {
 impl From<&str> for VisitBehaviorType {
     fn from(behavior: &str) -> Self {
         match behavior {
-            "/blogs" => Self::INDEX,
-            "/archives" => Self::ARCHIVE,
-            "/moments" => Self::MOMENT,
-            "/friends" => Self::FRIEND,
-            "/about" => Self::ABOUT,
-            "/category" => Self::CATEGORY,
-            "/tag" => Self::TAG,
-            "/searchBlog" => Self::SEARCH,
-            "/friend" => Self::ClickFriend,
-            "/checkBlogPassword" => Self::CheckPassword,
-             "/blog" => Self::BLOG,
+            "/blog/blogs" => Self::INDEX,
+            "/blog/archives" => Self::ARCHIVE,
+            "/blog/moments" => Self::MOMENT,
+            "/blog/friends" => Self::FRIEND,
+            "/blog/about" => Self::ABOUT,
+            "/blog/category" => Self::CATEGORY,
+            "/blog/tag" => Self::TAG,
+            "/blog/searchBlog" => Self::SEARCH,
+            "/blog/friend" => Self::ClickFriend,
+            "/blog/checkBlogPassword" => Self::CheckPassword,
+            "/blog/blog" => Self::BLOG,
             _ => {
-                if behavior.contains("moment/like") {
+                if behavior.contains("/blog/moment/like") {
                     Self::LikeMoment
                 } else {
                     Self::UNKNOWN
