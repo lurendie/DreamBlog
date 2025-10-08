@@ -105,6 +105,9 @@ impl ParamUtils {
         Ok((page.max(1), page_size.max(1)))
     }
 
+    /**
+     * 验证搜索请求参数 返回SearchParams 此结构体经过验证
+     */
     pub async fn validate_request_params(param: &SearchRequest) -> Result<SearchParams, WebError> {
         let mut search_params = SearchParams::new();
         if let Some(page_num) = param.get_page_num() {
@@ -112,6 +115,8 @@ impl ParamUtils {
                 return Err(WebError::Validation("页码不能为0".to_string()));
             }
             search_params.page_num = page_num;
+        } else {
+            search_params.page_num = 1;
         }
         if let Some(page_size) = param.get_page_size() {
             if matches!(page_size, 0) {
