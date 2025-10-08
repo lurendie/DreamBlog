@@ -65,17 +65,34 @@ jobs:
         run: |
           mkdir archive
           cp LICENSE README.MD archive/
-          cp -r blog-api/config archive/
+          # 检查目录是否存在并复制
+          if [ -d "blog-api/config" ]; then
+            cp -r blog-api/config archive/
+          fi
           cd archive
           if [ "${{ matrix.build }}" = "windows" ]; then
+            # Windows 环境下使用更兼容的命令
             cp "../blog-api/target/${{ matrix.target }}/release/blog_api.exe" ./
-            cp -r "../blog-api/config" ./
-            cp -r "../blog-api/data" ./
+            # 检查目录是否存在并复制，使用更兼容的路径处理
+            if [ -d "../blog-api/config" ]; then
+              mkdir -p ./config
+              (cd "../blog-api/config" && tar -cf - .) | (cd ./config && tar -xf -)
+            fi
+            if [ -d "../blog-api/data" ]; then
+              mkdir -p ./data
+              (cd "../blog-api/data" && tar -cf - .) | (cd ./data && tar -xf -)
+            fi
+            # 使用 7z 创建归档文件，确保路径存在
             7z a "${{ matrix.archive-name }}" LICENSE README.MD config data blog_api.exe
           else
             cp "../blog-api/target/${{ matrix.target }}/release/blog_api" ./
-            cp -r "../blog-api/config" ./
-            cp -r "../blog-api/data" ./
+            # 检查目录是否存在并复制
+            if [ -d "../blog-api/config" ]; then
+              cp -r "../blog-api/config" ./
+            fi
+            if [ -d "../blog-api/data" ]; then
+              cp -r "../blog-api/data" ./
+            fi
             tar -czf "${{ matrix.archive-name }}" LICENSE README.MD config data blog_api
           fi
 
