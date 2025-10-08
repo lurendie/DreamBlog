@@ -105,7 +105,7 @@ jobs:
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend]
+    needs: [build-backend]
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -128,6 +128,5 @@ jobs:
             artifacts/blog-api-linux.tar.gz/blog-api-linux.tar.gz
             artifacts/blog-api-macos.tar.gz/blog-api-macos.tar.gz
             artifacts/blog-api-windows.7z/blog-api-windows.7z
-            artifacts/frontend-dist.tar.gz/frontend-dist.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
