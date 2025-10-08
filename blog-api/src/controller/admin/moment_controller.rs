@@ -33,16 +33,12 @@ pub async fn moments(
     mut query: web::Query<SearchRequest>,
     app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    //查询所有moments
-    ParamUtils::validate_request_params(&query).await?;
     query.0.set_page_size(Some(5));
+    //查询所有moments
+    let query = ParamUtils::validate_request_params(&query).await?;
     //分页查询
-    let value_map = MomentService::get_moments(
-        query.0.get_page_num(),
-        query.0.get_page_size(),
-        app.get_mysql_pool(),
-    )
-    .await?;
+    let value_map =
+        MomentService::get_moments(query.page_num, query.page_size, app.get_mysql_pool()).await?;
     Ok(ApiResponse::success(Some(value!(value_map))))
 }
 

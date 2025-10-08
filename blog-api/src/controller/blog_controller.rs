@@ -22,10 +22,10 @@ pub async fn blogs(
     app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
     //提供默认值page_num
-    let page_num = params.get_page_num().max(1);
+    let query = ParamUtils::validate_request_params(&params.0).await?;
     let db_conn = app.get_mysql_pool();
 
-    let data = BlogService::find_list_by_page(page_num, db_conn).await?;
+    let data = BlogService::find_list_by_page(query.page_num, db_conn).await?;
     Ok(ApiResponse::success(Some(value!(data))))
 }
 #[routes]
@@ -78,15 +78,14 @@ pub async fn tag(
 #[routes]
 #[post("/checkBlogPassword")]
 pub async fn check_blog_password(
-    data: Json<SearchRequest>,
+    query: Json<SearchRequest>,
     app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    ParamUtils::validate_request_params(&data.0).await?;
-    let blog_id = data.get_blog_id();
-    let blog_info = BlogService::find_id_detail(blog_id, app.get_mysql_pool())
+    let query = ParamUtils::validate_request_params(&query.0).await?;
+    let blog_info = BlogService::find_id_detail(query.blog_id, app.get_mysql_pool())
         .await
-        .ok_or_else(|| WebError::NotFound(format!("BlogID:{}文章不存在", blog_id)))?;
-    let password = data.get_password();
+        .ok_or_else(|| WebError::NotFound(format!("BlogID:{}文章不存在", query.blog_id)))?;
+    let password = query.password;
     if blog_info.password.clone().unwrap_or_default() == password {
         Ok(ApiResponse::success_with_msg(
             "验证成功,密码正确!",

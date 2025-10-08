@@ -40,20 +40,20 @@ impl Default for SearchRequest {
 }
 
 impl SearchRequest {
-    pub fn get_page_num(&self) -> u64 {
-        self.page_num.unwrap_or_default()
+    pub fn get_page_num(&self) -> Option<u64> {
+        self.page_num
     }
-    pub fn get_page_size(&self) -> u64 {
-        self.page_size.unwrap_or_default()
+    pub fn get_page_size(&self) -> Option<u64> {
+        self.page_size
     }
-    pub fn get_blog_id(&self) -> i64 {
-        self.blog_id.unwrap_or_default()
+    pub fn get_blog_id(&self) -> Option<i64> {
+        self.blog_id
     }
-    pub fn get_page(&self) -> u8 {
-        self.page.unwrap_or_default()
+    pub fn get_page(&self) -> Option<u8> {
+        self.page
     }
-    pub fn get_password(&self) -> String {
-        self.password.clone().unwrap_or_default()
+    pub fn get_password(&self) -> Option<String> {
+        self.password.clone()
     }
     pub fn get_title(&self) -> Option<String> {
         self.title.clone()
@@ -89,5 +89,29 @@ impl SearchRequest {
 
     pub fn get_category_id(&self) -> Option<i64> {
         self.category_id.clone().unwrap_or_default().parse().ok()
+    }
+}
+
+pub struct SearchParams {
+    pub page_num: u64,
+    pub page_size: u64,
+    pub page: u8,
+    pub blog_id: i64,
+    pub password: String,
+    pub title: String,
+    pub category_id: i64,
+}
+
+impl SearchParams {
+    pub fn new() -> Self {
+        Self {
+            page_num: 0,
+            page_size: 0,
+            page: 0,
+            blog_id: 0,
+            category_id: 0,
+            password: "".to_string(),
+            title: "".to_string(),
+        }
     }
 }

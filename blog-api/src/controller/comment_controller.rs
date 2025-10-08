@@ -14,32 +14,20 @@ use rbs::Value;
 
 #[get("/comments")]
 pub(crate) async fn get_comments(
-    data: Query<SearchRequest>,
+    query: Query<SearchRequest>,
     app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    let page_request = data.into_inner();
-    ParamUtils::validate_request_params(&page_request).await?;
+    let query = ParamUtils::validate_request_params(&query.0).await?;
     let connect = app.get_mysql_pool();
-    let list = CommentService::find_by_id_comments(
-        page_request.get_page_num(),
-        page_request.get_blog_id(),
-        page_request.get_page(),
-        connect,
-    )
-    .await?;
+    let list =
+        CommentService::find_by_id_comments(query.page_num, query.blog_id, query.page, connect)
+            .await?;
     let mut data = ValueMap::new();
     data.insert("comments".into(), value!(list));
 
-    let all_comment =
-        CommentService::get_all_count(page_request.get_blog_id(), page_request.get_page(), connect)
-            .await?;
+    let all_comment = CommentService::get_all_count(query.blog_id, query.page, connect).await?;
     data.insert("allComment".into(), value!(all_comment));
-    let close_count = CommentService::get_close_count(
-        page_request.get_blog_id(),
-        page_request.get_page(),
-        connect,
-    )
-    .await?;
+    let close_count = CommentService::get_close_count(query.blog_id, query.page, connect).await?;
     data.insert("closeComment".into(), value!(close_count));
 
     Ok(ApiResponse::success_with_msg(

@@ -4,7 +4,10 @@
  * @LastEditors: lurendie
  * @LastEditTime: 2024-05-15 19:14:37
  */
-use crate::{error::WebError, model::SearchRequest};
+use crate::{
+    error::WebError,
+    model::{SearchParams, SearchRequest},
+};
 use actix_web::web::Query;
 use std::collections::HashMap;
 
@@ -102,23 +105,50 @@ impl ParamUtils {
         Ok((page.max(1), page_size.max(1)))
     }
 
-    pub async fn validate_request_params(param: &SearchRequest) -> Result<(), WebError> {
-        if param.get_page_num() == 0 {
-            return Err(WebError::Validation("页码不能为0".to_string()));
-        } else if param.get_page_size() == 0 {
-            return Err(WebError::Validation("每页大小不能为0".to_string()));
-        } else if param.get_blog_id() == 0 {
-            return Err(WebError::Validation("博客ID不能为0".to_string()));
-        } else if param.get_category_id().unwrap_or_default() == 0 {
-            return Err(WebError::Validation("分类ID不能为0".to_string()));
-        } else if param.get_password().contains("") {
-            return Err(WebError::Validation("密码错误".to_string()));
-        } else if param.get_page() >= 3 {
-            return Err(WebError::Validation("页面类型错误".to_string()));
-        } else if param.get_title().unwrap_or_default().eq("") {
-            return Err(WebError::Validation("标题不能为空".to_string()));
+    pub async fn validate_request_params(param: &SearchRequest) -> Result<SearchParams, WebError> {
+        let mut search_params = SearchParams::new();
+        if let Some(page_num) = param.get_page_num() {
+            if matches!(page_num, 0) {
+                return Err(WebError::Validation("页码不能为0".to_string()));
+            }
+            search_params.page_num = page_num;
         }
-
-        Ok(())
+        if let Some(page_size) = param.get_page_size() {
+            if matches!(page_size, 0) {
+                return Err(WebError::Validation("每页大小不能为0".to_string()));
+            }
+            search_params.page_size = page_size;
+        }
+        if let Some(blog_id) = param.get_blog_id() {
+            if matches!(blog_id, 0) {
+                return Err(WebError::Validation("博客ID不能为0".to_string()));
+            }
+            search_params.blog_id = blog_id;
+        }
+        if let Some(category_id) = param.get_category_id() {
+            if matches!(category_id, 0) {
+                return Err(WebError::Validation("分类ID不能为0".to_string()));
+            }
+            search_params.category_id = category_id;
+        }
+        if let Some(password) = param.get_password() {
+            if password.contains("") || password.is_empty() {
+                return Err(WebError::Validation("密码错误".to_string()));
+            }
+            search_params.password = password;
+        }
+        if let Some(page_type) = param.get_page() {
+            if page_type >= 3 {
+                return Err(WebError::Validation("页面类型错误".to_string()));
+            }
+            search_params.page = page_type;
+        }
+        if let Some(title) = param.get_title() {
+            if title.contains("") || title.is_empty() {
+                return Err(WebError::Validation("标题不能为空".to_string()));
+            }
+            search_params.title = title;
+        }
+        Ok(search_params)
     }
 }

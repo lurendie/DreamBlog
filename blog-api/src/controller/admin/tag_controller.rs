@@ -16,16 +16,12 @@ use rbs::{value, Value};
 #[get("/tags")]
 pub async fn get_all_tags(
     _: Authenticated<AppClaims>,
-    params: web::Query<SearchRequest>,
+    qeury: web::Query<SearchRequest>,
     app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    ParamUtils::validate_request_params(&params).await?;
-    let tags_result = TagService::get_tags_by_page(
-        params.get_page_num(),
-        params.get_page_size(),
-        app.get_mysql_pool(),
-    )
-    .await?;
+    let qeury = ParamUtils::validate_request_params(&qeury).await?;
+    let tags_result =
+        TagService::get_tags_by_page(qeury.page_num, qeury.page_size, app.get_mysql_pool()).await?;
     Ok(ApiResponse::success(Some(value!(tags_result))))
 }
 

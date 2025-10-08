@@ -470,11 +470,11 @@ impl BlogService {
             .apply_if(search.get_category_id(), |query, value| {
                 query.filter(blog::Column::CategoryId.eq(value))
             })
-            .paginate(db, search.get_page_size() as u64);
+            .paginate(db, search.get_page_size().unwrap_or_default() as u64);
 
         let mut map: ValueMap = ValueMap::new();
         let page_list = page
-            .fetch_page(search.get_page_num() as u64 - 1)
+            .fetch_page(search.get_page_num().unwrap_or_default() as u64 - 1)
             .await
             .unwrap_or_default();
         let mut blog_list = vec![];

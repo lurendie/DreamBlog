@@ -24,13 +24,14 @@ pub async fn find_comments(
     query: web::Query<SearchRequest>,
 ) -> Result<ApiResponse<Value>, AppError> {
     //验证请求参数
-    ParamUtils::validate_request_params(&query.0).await?;
-    let page_num = query.get_page_num();
-    let page_size = query.get_page_size();
-    let page_type = query.get_page();
-    let comments =
-        CommentService::find_comment_dto(page_num, page_size, page_type, app.get_mysql_pool())
-            .await?;
+    let query = ParamUtils::validate_request_params(&query.0).await?;
+    let comments = CommentService::find_comment_dto(
+        query.page_num,
+        query.page_size,
+        query.page,
+        app.get_mysql_pool(),
+    )
+    .await?;
     Ok(ApiResponse::success_with_msg(
         "请求成功！",
         Some(value!(comments)),

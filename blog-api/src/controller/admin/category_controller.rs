@@ -24,10 +24,10 @@ pub async fn categories(
     params: web::Query<SearchRequest>,
     app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    ParamUtils::validate_request_params(&params.0).await?;
+    let params = ParamUtils::validate_request_params(&params.0).await?;
     let data = CategoryService::get_page_categories(
-        params.get_page_num() as u64,
-        params.get_page_size() as u64,
+        params.page_num,
+        params.page_size,
         app.get_mysql_pool(),
     )
     .await?;

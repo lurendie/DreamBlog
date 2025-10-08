@@ -31,3 +31,4 @@ pub use introduction::Introduction;
 pub use search_blog::SearchBlog;
 pub use search_request::SearchRequest;
 pub use serise::Serise;
+pub use search_request::SearchParams;
