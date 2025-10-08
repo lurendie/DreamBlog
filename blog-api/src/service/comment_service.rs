@@ -59,12 +59,20 @@ impl CommentService {
         page_num: u64,
         page_size: u64,
         page_type: u8,
+        blog_id: i64,
         db: &DatabaseConnection,
     ) -> Result<ValueMap, DataBaseError> {
         let mut map = ValueMap::new();
-        let page = comment::Entity::find()
-            .filter(comment::Column::Page.eq(page_type))
-            .paginate(db, page_size);
+        let select = comment::Entity::find().filter(comment::Column::Page.eq(page_type));
+        let page = {
+            if !matches!(blog_id, 0) {
+                select
+                    .filter(comment::Column::BlogId.eq(blog_id))
+                    .paginate(db, page_size)
+            } else {
+                select.paginate(db, page_size)
+            }
+        };
         let models = page.fetch_page(page_num - 1).await?;
         let mut comments = vec![];
         for model in models.into_iter() {

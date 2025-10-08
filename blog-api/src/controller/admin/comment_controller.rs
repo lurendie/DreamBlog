@@ -28,7 +28,7 @@ pub async fn find_comments(
     let comments = CommentService::find_comment_dto(
         query.page_num,
         query.page_size,
-        query.page,
+        query.page,query.blog_id,
         app.get_mysql_pool(),
     )
     .await?;
