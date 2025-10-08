@@ -69,13 +69,13 @@ jobs:
           cd archive
           if [ "${{ matrix.build }}" = "windows" ]; then
             cp "../blog-api/target/${{ matrix.target }}/release/blog_api.exe" ./
-            cp "../blog-api/config" ./
-            cp "../blog-api/data" ./
+            cp -r "../blog-api/config" ./
+            cp -r "../blog-api/data" ./
             7z a "${{ matrix.archive-name }}" LICENSE README.MD config data blog_api.exe
           else
             cp "../blog-api/target/${{ matrix.target }}/release/blog_api" ./
-            cp "../blog-api/config" ./
-            cp "../blog-api/data" ./
+            cp -r "../blog-api/config" ./
+            cp -r "../blog-api/data" ./
             tar -czf "${{ matrix.archive-name }}" LICENSE README.MD config data blog_api
           fi
 
