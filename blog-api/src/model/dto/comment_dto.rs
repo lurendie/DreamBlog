@@ -29,6 +29,8 @@ pub struct CommentDTO {
     pub(crate) qq: String,
     #[serde(rename(serialize = "blog"))]
     pub(crate) blog_id_and_title: Option<BlogIdAndTitle>,
+     #[serde(rename(deserialize = "blogId"))]
+    pub(crate) blog_id: i64,
     pub(crate) content: String,
     #[serde(rename = "parentCommentId", default = "default_parent_comment_id")]
     pub(crate) parent_comment_id: i64,
@@ -55,6 +57,7 @@ impl From<comment::Model> for CommentDTO {
             blog_id_and_title: None,
             content: model.content,
             parent_comment_id: model.parent_comment_id,
+            blog_id: model.blog_id.unwrap_or_default(),
         }
     }
 }

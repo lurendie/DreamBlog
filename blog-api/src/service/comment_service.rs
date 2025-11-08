@@ -216,13 +216,14 @@ impl CommentService {
                 let parent_model_dto = CommentDTO::from(parent_model);
                 let err = EmailService::send_guest_email(db, model, parent_model_dto).await;
                 if let Err(e) = err {
-                    return Err(DataBaseError::Custom(e.to_string()));
+                    //发送邮件失败 不返回异常 否则 页面提示邮件异常 但是实际上评论成功 只是未发送邮件
+                    log::error!("评论成功,发送邮件失败:{e}");
                 }
             } else if model.is_notice && model.parent_comment_id == -1 && !model.is_admin_comment {
                 let owenr_user = UserService::find_admin_role(db).await?;
                 let err = EmailService::send_owenr_email(model, db, owenr_user.get_email()).await;
                 if let Err(e) = err {
-                    return Err(DataBaseError::Custom(e.to_string()));
+                      log::error!("评论成功,发送邮件失败:{e}");
                 }
             };
         };
