@@ -451,7 +451,6 @@ impl BlogService {
             item.password = None;
             //转HTML
             item.description = MarkdownParser::parser_html(item.description.clone());
-            item.create_time = item.create_time;
         }
     }
 
@@ -813,7 +812,7 @@ impl BlogService {
             Ok(blog_info)
         } else {
             Err(DataBaseError::Custom(format!(
-                "没有检索到文章ID{blog_id}的关联评论"
+                "没有检索到文章ID:{blog_id}的关联评论"
             )))
         }
     }

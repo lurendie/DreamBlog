@@ -147,7 +147,6 @@ impl ScheduleJobService {
                 active_job.cron = Set(job.cron.clone());
                 active_job.status = Set(job.status);
                 active_job.remark = Set(job.remark.clone());
-
                 active_job.update(db).await?;
                 Ok(())
             }

@@ -34,19 +34,19 @@ impl From<CommentDTO> for Model {
         Self {
             id: dto.id,
             nickname: dto.nickname,
-            email: dto.email.unwrap_or_default(),
+            email: dto.email,
             content: dto.content,
             avatar: dto.avatar,
-            is_published: dto.published.unwrap_or_default(),
+            is_published: dto.published,
             create_time: Some(dto.create_time),
-            ip: dto.ip,
-            is_notice: dto.is_notice.unwrap_or_default(),
-            page: dto.page.unwrap_or_default(),
+            ip: Some(dto.ip),
+            is_notice: dto.is_notice,
+            page: dto.page,
             blog_id: dto.blog_id_and_title.map(|b| b.id),
-            parent_comment_id: 0,
+            parent_comment_id: dto.parent_comment_id,
             is_admin_comment: false,
-            website: dto.website,
-            qq: dto.qq,
+            website: Some(dto.website),
+            qq: Some(dto.qq),
         }
     }
 }

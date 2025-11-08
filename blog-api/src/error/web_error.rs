@@ -23,19 +23,19 @@ pub enum WebError {
     Unauthorized(String),
 
     /// 内部服务器错误
-    #[error("内部服务器错误: {0}")]
+    #[error("内部服务器异常: {0}")]
     Internal(String),
 
     /// 业务逻辑错误
-    #[error("业务逻辑错误: {0}")]
+    #[error("业务逻辑异常: {0}")]
     Business(String),
 
     /// JWT错误
-    #[error("JWT错误: {0}")]
+    #[error("JWT异常: {0}")]
     Jwt(String),
 
     /// 自定义错误
-    #[error("自定义错误: {0}")]
+    #[error("{0}")]
     Custom(String),
 }
 

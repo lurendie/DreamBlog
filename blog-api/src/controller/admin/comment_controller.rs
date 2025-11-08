@@ -4,12 +4,13 @@ use actix_jwt_session::Authenticated;
 use actix_web::{
     routes,
     web::{self, Data},
+    HttpRequest,
 };
 use rbs::{value, Value};
 
 use crate::{
     app::AppState,
-    common::ParamUtils,
+    common::{IpRegion, ParamUtils},
     error::AppError,
     middleware::AppClaims,
     model::{ApiResponse, CommentDTO, SearchRequest},
@@ -28,7 +29,8 @@ pub async fn find_comments(
     let comments = CommentService::find_comment_dto(
         query.page_num,
         query.page_size,
-        query.page,query.blog_id,
+        query.page,
+        query.blog_id,
         app.get_mysql_pool(),
     )
     .await?;
@@ -55,8 +57,10 @@ pub async fn update_comment(
     _: Authenticated<AppClaims>,
     app: Data<AppState>,
     comment: web::Json<CommentDTO>,
+    req: HttpRequest,
 ) -> Result<ApiResponse<Value>, AppError> {
-    CommentService::save_comment(comment.into_inner(), app.get_mysql_pool()).await?;
+    let ip = IpRegion::get_real_client_ip(&req);
+    CommentService::save_comment(comment.0, &app.get_mysql_pool(), ip).await?;
     Ok(ApiResponse::<Value>::success_with_msg("更新成功！", None))
 }
 

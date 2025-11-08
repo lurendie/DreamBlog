@@ -12,3 +12,4 @@ pub use app_error::AppError;
 pub use data_base_error::DataBaseError;
 pub use error_code::WebErrorCode;
 pub use web_error::WebError;
+pub use app_error::EmailServerError;

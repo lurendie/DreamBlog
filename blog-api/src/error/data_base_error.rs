@@ -4,28 +4,28 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum DataBaseError {
-    #[error("redis 异常原因：{0}")]
+    #[error("RedisError异常消息：{0}")]
     RedisError(#[from] deadpool_redis::redis::RedisError),
 
-    #[error("MySQL 异常原因：{0}")]
+    #[error("MySQLError异常消息：{0}")]
     MySQLError(#[from] DbErr),
 
-    #[error("serde_json 异常原因是：{0}")]
+    #[error("SerdeJsonError异常消息：{0}")]
     SerdeJsonError(#[from] serde_json::Error),
 
-    #[error("serde_yaml 异常原因是：{0}")]
+    #[error("SerdeYamlError异常消息：{0}")]
     SerdeYamlError(#[from] serde_yaml::Error),
 
-    #[error("Redis连接池异常原因：{0}")]
+    #[error("RedisPoolError异常消息: {0}")]
     PoolError(#[from] PoolError),
 
-    #[error("MySQL事物异常原因 : {0}")]
+    #[error("MySQLTransactionError异常消息: {0}")]
     TransactionError(#[from] TransactionError<DbErr>),
 
-    #[error("正则表达式异常原因 : {0}")]
+    #[error("RegexError异常消息: {0}")]
     RegexError(#[from] regex::Error),
 
-    #[error("异常原因：{0}")]
+    #[error("{0}")]
     Custom(String),
 }
 #[cfg(test)]

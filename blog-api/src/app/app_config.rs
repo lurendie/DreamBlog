@@ -16,6 +16,7 @@ pub struct AppConfig {
     mysql: MysqlConfig, //Mysql链接
     redis: RedisConfig, //Redis
     log: Option<LogConfig>,
+    email: EmailConfig,
 }
 /**
  * Redis 连接信息结构体
@@ -45,10 +46,11 @@ pub struct MysqlConfig {
  */
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct ServerConfig {
-    pub(crate) port: u16,             //端口
-    pub(crate) host: String,          //IP地址
-    pub(crate) front_adderss: String, //前端页面地址
-    pub(crate) token_expires: i64,    //token 过期时间
+    pub(crate) port: u16,          //端口
+    pub(crate) host: String,       //IP地址
+    pub(crate) view_url: String,   //前端页面地址
+    pub(crate) cms_url: String,    //前端页面地址
+    pub(crate) token_expires: i64, //token 过期时间
 }
 pub static CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {
     let args: Vec<String> = env::args().collect();
@@ -57,7 +59,7 @@ pub static CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {
     let mut server_config_path = config_path.clone();
     let mut log_yaml_path = config_path;
     //加载配置
-    server_config_path.push_str("/server_config.yaml");
+    server_config_path.push_str("/app_config.yaml");
     log_yaml_path.push_str("/log_config.yaml");
     match AppConfig::build_config(server_config_path.clone()) {
         Ok(mut config) => {
@@ -108,6 +110,10 @@ impl AppConfig {
         self.server.clone()
     }
 
+    pub fn get_email_config(&self) -> EmailConfig {
+        self.email.clone()
+    }
+
     fn build_config(path: String) -> Result<AppConfig, DataBaseError> {
         let yaml_str = match fs::read_to_string(path.clone()) {
             Ok(str) => str,
@@ -127,4 +133,11 @@ impl AppConfig {
  */
 pub fn _get_app_config() -> AppConfig {
     CONFIG.clone()
+}
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub struct EmailConfig {
+    pub(crate) host: String,
+    pub(crate) port: u16,
+    pub(crate) username: String,
+    pub(crate) password: String,
 }

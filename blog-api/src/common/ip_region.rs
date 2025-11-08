@@ -5,7 +5,7 @@ use std::io::Read;
 use std::path::Path;
 use std::sync::LazyLock;
 
-use actix_web::dev::ServiceRequest;
+use actix_web::HttpRequest;
 
 use crate::common::ip_value::ToUIntIP;
 
@@ -87,7 +87,7 @@ impl IpRegion {
     }
 
     /// 获取真实的客户端IP地址，考虑代理和转发的情况
-    pub fn get_real_client_ip(req: &ServiceRequest) -> String {
+    pub fn get_real_client_ip(req: &HttpRequest) -> String {
         // 按优先级尝试获取IP地址
         let headers = req.headers();
 

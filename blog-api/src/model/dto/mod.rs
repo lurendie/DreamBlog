@@ -3,7 +3,6 @@ mod blog_dto;
 mod blog_id_and_title;
 mod category;
 mod city_visitor;
-mod comment;
 mod comment_dto;
 mod exception_log;
 mod friend;

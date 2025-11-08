@@ -20,51 +20,51 @@ pub struct ApiResponse<T> {
     pub data: Option<T>,
 }
 
-/// API响应构建器
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ApiResponseBuilder<T> {
-    code: u16,
-    msg: String,
-    data: Option<T>,
-}
+// // API响应构建器
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct ApiResponseBuilder<T> {
+//     code: u16,
+//     msg: String,
+//     data: Option<T>,
+// }
 
-impl<T> ApiResponseBuilder<T> {
-    /// 创建新的响应构建器
-    pub fn _new() -> Self {
-        Self {
-            code: crate::error::WebErrorCode::SUCCESS,
-            msg: "成功".to_string(),
-            data: None,
-        }
-    }
+// impl<T> ApiResponseBuilder<T> {
+//     /// 创建新的响应构建器
+//     pub fn _new() -> Self {
+//         Self {
+//             code: crate::error::WebErrorCode::SUCCESS,
+//             msg: "成功".to_string(),
+//             data: None,
+//         }
+//     }
 
-    /// 设置状态码
-    pub fn _code(mut self, code: u16) -> Self {
-        self.code = code;
-        self
-    }
+//     /// 设置状态码
+//     pub fn _code(mut self, code: u16) -> Self {
+//         self.code = code;
+//         self
+//     }
 
-    /// 设置消息
-    pub fn _msg(mut self, msg: String) -> Self {
-        self.msg = msg;
-        self
-    }
+//     /// 设置消息
+//     pub fn _msg(mut self, msg: String) -> Self {
+//         self.msg = msg;
+//         self
+//     }
 
-    /// 设置数据
-    pub fn _data(mut self, data: Option<T>) -> Self {
-        self.data = data;
-        self
-    }
+//     /// 设置数据
+//     pub fn _data(mut self, data: Option<T>) -> Self {
+//         self.data = data;
+//         self
+//     }
 
-    /// 构建响应
-    pub fn _build(self) -> ApiResponse<T> {
-        ApiResponse {
-            code: self.code,
-            msg: self.msg,
-            data: self.data,
-        }
-    }
-}
+//     /// 构建响应
+//     pub fn _build(self) -> ApiResponse<T> {
+//         ApiResponse {
+//             code: self.code,
+//             msg: self.msg,
+//             data: self.data,
+//         }
+//     }
+// }
 
 impl<T: Serialize> ApiResponse<T> {
     /// 成功响应
@@ -151,20 +151,20 @@ impl Responder for WebError {
     }
 }
 
-/// 为Result<T, AppError>实现便捷方法
-pub trait ApiResponseExt<T, E> {
-    /// 成功时返回数据，失败时返回错误响应
-    fn _api_response(self) -> Result<T, WebError>;
-    /// 成功时返回数据，失败时返回错误响应（带自定义消息）
-    fn _api_response_with_msg(self, msg: String) -> Result<T, WebError>;
-}
+// 为Result<T, AppError>实现便捷方法
+// pub trait ApiResponseExt<T, E> {
+//     /// 成功时返回数据，失败时返回错误响应
+//     fn _api_response(self) -> Result<T, WebError>;
+//     /// 成功时返回数据，失败时返回错误响应（带自定义消息）
+//     fn _api_response_with_msg(self, msg: String) -> Result<T, WebError>;
+// }
 
-impl<T, E: std::fmt::Display> ApiResponseExt<T, E> for Result<T, E> {
-    fn _api_response(self) -> Result<T, WebError> {
-        self.map_err(|e| WebError::Custom(e.to_string()))
-    }
+// impl<T, E: std::fmt::Display> ApiResponseExt<T, E> for Result<T, E> {
+//     fn _api_response(self) -> Result<T, WebError> {
+//         self.map_err(|e| WebError::Custom(e.to_string()))
+//     }
 
-    fn _api_response_with_msg(self, msg: String) -> Result<T, WebError> {
-        self.map_err(|_| WebError::Custom(msg))
-    }
-}
+//     fn _api_response_with_msg(self, msg: String) -> Result<T, WebError> {
+//         self.map_err(|_| WebError::Custom(msg))
+//     }
+// }

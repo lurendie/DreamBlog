@@ -1,4 +1,5 @@
 use crate::app::AppState;
+use crate::common::IpRegion;
 use crate::common::ParamUtils;
 use crate::error::AppError;
 use crate::model::ApiResponse;
@@ -8,6 +9,7 @@ use crate::service::CommentService;
 use actix_web::get;
 use actix_web::routes;
 use actix_web::web::{self, Query};
+use actix_web::HttpRequest;
 use rbs::value;
 use rbs::value::map::ValueMap;
 use rbs::Value;
@@ -41,7 +43,9 @@ pub(crate) async fn get_comments(
 pub async fn save_comment(
     state: web::Data<AppState>,
     comment_dto: web::Json<CommentDTO>,
+    req: HttpRequest,
 ) -> Result<ApiResponse<Value>, AppError> {
-    CommentService::save_comment(comment_dto.0, &state.mysql_connection).await?;
+    let ip = IpRegion::get_real_client_ip(&req);
+    CommentService::save_comment(comment_dto.0, &state.mysql_connection,ip).await?;
     Ok(ApiResponse::<Value>::success(None))
 }

@@ -10,19 +10,32 @@ pub struct CommentDTO {
     pub(crate) nickname: String,
     #[serde(default = "Default::default")]
     pub(crate) avatar: String,
-    pub(crate) published: Option<bool>,
-    pub(crate) email: Option<String>,
-    pub(crate) ip: Option<String>,
+    #[serde(default = "Default::default")]
+    pub(crate) published: bool,
+    #[serde(default = "Default::default")]
+    pub(crate) email: String,
+    #[serde(default = "Default::default")]
+    pub(crate) ip: String,
     #[serde(rename(serialize = "createTime"), default = "Default::default")]
     pub(crate) create_time: NaiveDateTime,
-    #[serde(rename(serialize = "notice"))]
-    pub is_notice: Option<bool>,
-    pub page: Option<i8>,
-    pub(crate) website: Option<String>,
-    pub(crate) qq: Option<String>,
+
+    #[serde(rename(deserialize = "notice"), default = "Default::default")]
+    pub is_notice: bool,
+    #[serde(default = "Default::default")]
+    pub page: i8,
+    #[serde(default = "Default::default")]
+    pub(crate) website: String,
+    #[serde(default = "Default::default")]
+    pub(crate) qq: String,
     #[serde(rename(serialize = "blog"))]
     pub(crate) blog_id_and_title: Option<BlogIdAndTitle>,
     pub(crate) content: String,
+    #[serde(rename = "parentCommentId", default = "default_parent_comment_id")]
+    pub(crate) parent_comment_id: i64,
+}
+
+pub fn default_parent_comment_id() -> i64 {
+    -1
 }
 
 impl From<comment::Model> for CommentDTO {
@@ -31,16 +44,17 @@ impl From<comment::Model> for CommentDTO {
             id: model.id,
             nickname: model.nickname,
             avatar: model.avatar,
-            published: Some(model.is_admin_comment),
-            email: Some(model.email),
-            ip: Some(model.ip.unwrap_or_default()),
+            published: model.is_published,
+            email: model.email,
+            ip: model.ip.unwrap_or_default(),
             create_time: model.create_time.unwrap_or(Local::now().naive_local()),
-            is_notice: Some(model.is_notice),
-            page: Some(model.page),
-            website: model.website,
-            qq: model.qq,
+            is_notice: model.is_notice,
+            page: model.page,
+            website: model.website.unwrap_or_default(),
+            qq: model.qq.unwrap_or_default(),
             blog_id_and_title: None,
             content: model.content,
+            parent_comment_id: model.parent_comment_id,
         }
     }
 }

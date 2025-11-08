@@ -1,10 +1,12 @@
 use crate::entity::comment;
 use crate::error::DataBaseError;
 use crate::model::{CommentDTO, CommentVO};
-use crate::service::BlogService;
+use crate::service::{BlogService, EmailService, UserService};
 use chrono::Local;
+use rand::Rng;
 use rbs::value;
 use rbs::value::map::ValueMap;
+use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
     IntoActiveModel, PaginatorTrait, QueryFilter, QueryOrder, TransactionTrait,
@@ -78,7 +80,7 @@ impl CommentService {
         for model in models.into_iter() {
             let blog_id = model.blog_id.unwrap_or_default();
             let mut comment = CommentDTO::from(model);
-            if matches!(comment.page.unwrap_or(-1), 0) {
+            if matches!(comment.page, 0) {
                 comment.blog_id_and_title =
                     Some(BlogService::find_blog_id_and_title(db, blog_id).await?);
             }
@@ -101,47 +103,6 @@ impl CommentService {
 
         Ok(map)
     }
-
-    // pub(crate) async fn _find_comment_by_id(
-    //     id: i64,
-    //     db: &DatabaseConnection,
-    // ) -> Result<Vec<Comment>, DataBaseError> {
-    //     let models = comment::Entity::find()
-    //         .filter(comment::Column::ParentCommentId.eq(id))
-    //         .filter(comment::Column::IsPublished.eq(true))
-    //         .all(db)
-    //         .await?;
-
-    //     let mut futures = Vec::new();
-    //     let mut comments = vec![];
-    //     for item in models.into_iter() {
-    //         // 使用 Box::pin 来递归调用 get_comments，允许存在递归
-    //         let future = Box::pin(Self::find_comment_by_id(item.id, db));
-    //         futures.push(future);
-    //         comments.push(Comment::from(item));
-    //     }
-    //     let mut reply_comments = vec![];
-    //     // 处理子评论
-    //     for (item, future) in comments.iter_mut().zip(futures) {
-    //         if let Ok(future) = future.await.as_mut() {
-    //             // match item.parent_comment_id {
-    //             //     Some(parent_comment_id) => {
-    //             //         let parent_comment = comment::Entity::find_by_id(parent_comment_id)
-    //             //             .one(db)
-    //             //             .await?;
-    //             //         // if let Some(parent_comment) = parent_comment {
-    //             //         //     item.parent_comment_name = Some(parent_comment.nickname);
-    //             //         // }
-    //             //     }
-    //             //     None => {}
-    //             // }
-
-    //             reply_comments.push(item.to_owned());
-    //             reply_comments.append(future);
-    //         }
-    //     }
-    //     Ok(reply_comments)
-    // }
 
     pub(crate) async fn find_comment_vo_by_id(
         id: i64,
@@ -225,34 +186,58 @@ impl CommentService {
     pub async fn save_comment(
         mut comment_dto: CommentDTO,
         db: &DatabaseConnection,
+        ip: String,
     ) -> Result<(), DataBaseError> {
-        let option_model = comment::Entity::find_by_id(comment_dto.id).one(db).await?;
-        comment_dto.create_time = Local::now().naive_local(); // 设置创建时间
-        if let Some(mut model) = option_model {
-            model.avatar = comment_dto.avatar;
-            model.content = comment_dto.content;
-            model.email = comment_dto.email.unwrap_or_default();
-            model.ip = comment_dto.ip;
-            model.nickname = comment_dto.nickname;
-            model.website = comment_dto.website;
-
-            dbg!(&model);
-            model.into_active_model().update(db).await?;
+        let option_model = comment::Entity::find_by_id(comment_dto.id).one(db).await;
+        if let Ok(Some(model)) = option_model {
+            let mut active = model.into_active_model();
+            active.avatar = Set(comment_dto.avatar);
+            active.content = Set(comment_dto.content);
+            active.email = Set(comment_dto.email);
+            active.ip = Set(Some(comment_dto.ip));
+            active.nickname = Set(comment_dto.nickname);
+            active.website = Set(Some(comment_dto.website));
+            active.update(db).await?;
         } else {
-            //http://q.qlogo.cn/headimg_dl?dst_uin=QQ号码&spec=640
-            let mut model = comment::Model::from(comment_dto);
-            model.parent_comment_id = -1; // 设置默认值
-            if model.qq.is_some() {
-                model.avatar = format!(
-                    "http://q.qlogo.cn/headimg_dl?dst_uin={}&spec=640",
-                    model.qq.as_ref().unwrap()
-                );
-            } else {
-                //随机头像
-            }
-            model.into_active_model().insert(db).await?;
-        }
+            comment_dto.ip = ip;
+            let mut rng = rand::thread_rng(); //生成随机数
+            let index = rng.gen_range(1..5);
+            comment_dto.avatar = format!("/img/comment-avatar/{}.jpg", index);
+            comment_dto.published = true;
+            comment_dto.create_time = Local::now().naive_local();
+            let model = comment::Model::from(comment_dto);
+            let model = model.into_active_model().insert(db).await?;
+            //开启了订阅回复功能
+            if model.is_notice && model.parent_comment_id != -1 && !model.is_admin_comment {
+                let parent_model = Self::find_by_id(model.parent_comment_id, db).await?;
+                if parent_model.email.eq(&model.email) {
+                    return Ok(()); //如果评论者和父评论者是同一个人，则不发送邮件
+                }
+                let parent_model_dto = CommentDTO::from(parent_model);
+                let err = EmailService::send_guest_email(db, model, parent_model_dto).await;
+                if let Err(e) = err {
+                    return Err(DataBaseError::Custom(e.to_string()));
+                }
+            } else if model.is_notice && model.parent_comment_id == -1 && !model.is_admin_comment {
+                let owenr_user = UserService::find_admin_role(db).await?;
+                let err = EmailService::send_owenr_email(model, db, owenr_user.get_email()).await;
+                if let Err(e) = err {
+                    return Err(DataBaseError::Custom(e.to_string()));
+                }
+            };
+        };
         Ok(())
+    }
+
+    pub async fn find_by_id(
+        id: i64,
+        db: &DatabaseConnection,
+    ) -> Result<comment::Model, DataBaseError> {
+        let model = match comment::Entity::find_by_id(id).one(db).await? {
+            Some(m) => m,
+            None => return Err(DataBaseError::Custom(format!("id:{}的评论不存在", id))),
+        };
+        Ok(model)
     }
 
     /// 在事务内部删除评论的辅助方法

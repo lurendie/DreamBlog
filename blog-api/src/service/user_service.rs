@@ -214,4 +214,17 @@ impl UserService {
         }
         Ok(())
     }
+
+    pub async fn find_admin_role(
+        db: &DatabaseConnection,
+    ) -> Result<User, DataBaseError> {
+        let user = user::Entity::find()
+            .filter(user::Column::Role.eq("ROLE_admin"))
+            .one(db)
+            .await?;
+        if let Some(user) = user {
+            return Ok(User::from(user));
+        }
+        Err(DataBaseError::Custom("没有检索到该用户".to_string()))
+    }
 }

@@ -2,7 +2,8 @@
 server:
   host: "127.0.0.1"
   port: 8089
-  front_adderss: "http://localhost:8080" ## 前端页面地址 用于跨域访问
+  view_url: "http://localhost:8080/" ## 前端页面地址 用于跨域访问
+  cms_url: "http://localhost:8080/" ## 后台页面地址 用于跨域访问
   token_expires: 7 # token 过期时间 单位:天
 mysql:
   host: "127.0.0.1"
@@ -18,3 +19,8 @@ redis:
   password: ""
   #KEY 过期时间 单位:秒  -1:不过期
   ttl: -1
+email:
+  host: "smtp.qq.com"  #邮件服务器
+  port: 465 #邮件端口
+  username: "xxx@qq.com" 
+  password: "xxxxxxx"  #授权码 
