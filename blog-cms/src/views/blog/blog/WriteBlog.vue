@@ -15,25 +15,29 @@
 			</el-row>
 
 			<el-form-item label="文章描述" prop="description">
-				<mavon-editor v-model="form.description"/>
+				<mavon-editor v-model="form.description" />
 			</el-form-item>
 
 			<el-form-item label="文章正文" prop="content">
-				<mavon-editor v-model="form.content"/>
+				<mavon-editor v-model="form.content" />
 			</el-form-item>
 
 			<el-row :gutter="20">
 				<el-col :span="12">
 					<el-form-item label="分类" prop="cate">
-						<el-select v-model="form.cate" placeholder="请选择分类（输入可添加新分类）" :allow-create="true" :filterable="true" style="width: 100%;">
-							<el-option :label="item.name" :value="item.id" v-for="item in categoryList" :key="item.id"></el-option>
+						<el-select v-model="form.cate" placeholder="请选择分类（输入可添加新分类）" :allow-create="true"
+							:filterable="true" style="width: 100%;">
+							<el-option :label="item.name" :value="item.id" v-for="item in categoryList"
+								:key="item.id"></el-option>
 						</el-select>
 					</el-form-item>
 				</el-col>
 				<el-col :span="12">
 					<el-form-item label="标签" prop="tagList">
-						<el-select v-model="form.tagList" placeholder="请选择标签（输入可添加新标签）" :allow-create="true" :filterable="true" :multiple="true" style="width: 100%;">
-							<el-option :label="item.name" :value="item.id" v-for="item in tagList" :key="item.id"></el-option>
+						<el-select v-model="form.tagList" placeholder="请选择标签（输入可添加新标签）" :allow-create="true"
+							:filterable="true" :multiple="true" style="width: 100%;">
+							<el-option :label="item.name" :value="item.id" v-for="item in tagList"
+								:key="item.id"></el-option>
 						</el-select>
 					</el-form-item>
 				</el-col>
@@ -47,7 +51,8 @@
 				</el-col>
 				<el-col :span="8">
 					<el-form-item label="阅读时长(分钟)" prop="readTime">
-						<el-input v-model="form.readTime" placeholder="请输入阅读时长（可选）默认 Math.round(字数 / 200)" type="number"></el-input>
+						<el-input v-model="form.readTime" placeholder="请输入阅读时长（可选）默认 Math.round(字数 / 200)"
+							type="number"></el-input>
 					</el-form-item>
 				</el-col>
 				<el-col :span="8">
@@ -58,7 +63,7 @@
 			</el-row>
 
 			<el-form-item style="text-align: right;">
-				<el-button type="primary" @click="dialogVisible=true">保存</el-button>
+				<el-button type="primary" @click="dialogVisible = true">保存</el-button>
 			</el-form-item>
 		</el-form>
 
@@ -73,10 +78,10 @@
 						<el-radio :label="3">密码保护</el-radio>
 					</el-radio-group>
 				</el-form-item>
-				<el-form-item label="密码" v-if="radio===3">
+				<el-form-item label="密码" v-if="radio === 3">
 					<el-input v-model="form.password"></el-input>
 				</el-form-item>
-				<el-form-item v-if="radio!==2">
+				<el-form-item v-if="radio !== 2">
 					<el-row>
 						<el-col :span="6">
 							<el-switch v-model="form.appreciation" active-text="赞赏"></el-switch>
@@ -95,7 +100,7 @@
 			</el-form>
 			<!--底部-->
 			<span slot="footer">
-				<el-button @click="dialogVisible=false">取 消</el-button>
+				<el-button @click="dialogVisible = false">取 消</el-button>
 				<el-button type="primary" @click="submit">保存</el-button>
 			</span>
 		</el-dialog>
@@ -104,11 +109,11 @@
 
 <script>
 	import Breadcrumb from "@/components/Breadcrumb";
-	import {getCategoryAndTag, saveBlog, getBlogById, updateBlog} from '@/api/blog'
+	import { getCategoryAndTag, saveBlog, getBlogById, updateBlog } from '@/api/blog'
 
 	export default {
 		name: "WriteBlog",
-		components: {Breadcrumb},
+		components: { Breadcrumb },
 		data() {
 			return {
 				categoryList: [],
@@ -122,8 +127,8 @@
 					content: '',
 					cate: null,
 					tagList: [],
-					words: null,
-					readTime: null,
+					words: 0,
+					readTime: 0,
 					views: 0,
 					appreciation: false,
 					recommend: false,
@@ -133,11 +138,11 @@
 					password: '',
 				},
 				formRules: {
-					title: [{required: true, message: '请输入标题', trigger: 'change'}],
-					firstPicture: [{required: true, message: '请输入首图链接', trigger: 'change'}],
-					cate: [{required: true, message: '请选择分类', trigger: 'change'}],
-					tagList: [{required: true, message: '请选择标签', trigger: 'change'}],
-					words: [{required: true, message: '请输入文章字数', trigger: 'change'}],
+					title: [{ required: true, message: '请输入标题', trigger: 'change' }],
+					firstPicture: [{ required: true, message: '请输入首图链接', trigger: 'change' }],
+					cate: [{ required: true, message: '请选择分类', trigger: 'change' }],
+					tagList: [{ required: true, message: '请选择标签', trigger: 'change' }],
+					words: [{ required: true, message: '请输入文章字数', trigger: 'change' }],
 				},
 			}
 		},
@@ -214,6 +219,4 @@
 	}
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
