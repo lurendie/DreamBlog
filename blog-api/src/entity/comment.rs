@@ -42,7 +42,7 @@ impl From<CommentDTO> for Model {
             ip: Some(dto.ip),
             is_notice: dto.is_notice,
             page: dto.page,
-            blog_id: Some(dto.blog_id),
+            blog_id:dto.blog_id,
             parent_comment_id: dto.parent_comment_id,
             is_admin_comment: false,
             website: Some(dto.website),
