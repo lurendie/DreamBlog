@@ -27,9 +27,9 @@ pub struct CommentDTO {
     pub(crate) website: String,
     #[serde(default = "Default::default")]
     pub(crate) qq: String,
-    #[serde(rename(serialize = "blog"))]
+    #[serde(rename(serialize = "blog"), default = "Default::default")]
     pub(crate) blog_id_and_title: Option<BlogIdAndTitle>,
-     #[serde(rename(deserialize = "blogId"))]
+    #[serde(rename(deserialize = "blogId"), default = "Default::default")]
     pub(crate) blog_id: i64,
     pub(crate) content: String,
     #[serde(rename = "parentCommentId", default = "default_parent_comment_id")]

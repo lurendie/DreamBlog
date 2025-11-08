@@ -187,6 +187,7 @@ impl CommentService {
         mut comment_dto: CommentDTO,
         db: &DatabaseConnection,
         ip: String,
+        is_admin: bool,
     ) -> Result<(), DataBaseError> {
         let option_model = comment::Entity::find_by_id(comment_dto.id).one(db).await;
         if let Ok(Some(model)) = option_model {
@@ -205,10 +206,17 @@ impl CommentService {
             comment_dto.avatar = format!("/img/comment-avatar/{}.jpg", index);
             comment_dto.published = true;
             comment_dto.create_time = Local::now().naive_local();
-            let model = comment::Model::from(comment_dto);
+            let mut model = comment::Model::from(comment_dto);
+            if is_admin {
+                model.is_admin_comment = true;
+                let admin_user = UserService::find_admin_role(db).await?;
+                model.email = admin_user.get_email();
+                model.nickname = admin_user.get_nickname();
+                model.avatar = admin_user.get_avatar();
+            };
             let model = model.into_active_model().insert(db).await?;
             //开启了订阅回复功能
-            if model.is_notice && model.parent_comment_id != -1 && !model.is_admin_comment {
+            if model.is_notice && model.parent_comment_id != -1 {
                 let parent_model = Self::find_by_id(model.parent_comment_id, db).await?;
                 if parent_model.email.eq(&model.email) {
                     return Ok(()); //如果评论者和父评论者是同一个人，则不发送邮件
@@ -223,7 +231,7 @@ impl CommentService {
                 let owenr_user = UserService::find_admin_role(db).await?;
                 let err = EmailService::send_owenr_email(model, db, owenr_user.get_email()).await;
                 if let Err(e) = err {
-                      log::error!("评论成功,发送邮件失败:{e}");
+                    log::error!("评论成功,发送邮件失败:{e}");
                 }
             };
         };

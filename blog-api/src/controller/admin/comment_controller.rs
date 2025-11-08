@@ -60,7 +60,7 @@ pub async fn update_comment(
     req: HttpRequest,
 ) -> Result<ApiResponse<Value>, AppError> {
     let ip = IpRegion::get_real_client_ip(&req);
-    CommentService::save_comment(comment.0, &app.get_mysql_pool(), ip).await?;
+    CommentService::save_comment(comment.0, &app.get_mysql_pool(), ip,false).await?;
     Ok(ApiResponse::<Value>::success_with_msg("更新成功！", None))
 }
 
