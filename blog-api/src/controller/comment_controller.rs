@@ -2,14 +2,11 @@ use crate::app::AppState;
 use crate::common::IpRegion;
 use crate::common::ParamUtils;
 use crate::error::AppError;
-use crate::middleware::AppClaims;
 use crate::model::ApiResponse;
 use crate::model::CommentDTO;
 use crate::model::SearchRequest;
 use crate::service::CommentService;
-use crate::service::RedisService;
 use crate::service::UserService;
-use actix_jwt_session::MaybeAuthenticated;
 use actix_web::get;
 use actix_web::routes;
 use actix_web::web::{self, Query};
@@ -17,7 +14,6 @@ use actix_web::HttpRequest;
 use rbs::value;
 use rbs::value::map::ValueMap;
 use rbs::Value;
-use sea_orm::DatabaseConnection;
 
 #[get("/comments")]
 pub(crate) async fn get_comments(
