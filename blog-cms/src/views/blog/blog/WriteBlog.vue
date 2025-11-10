@@ -184,6 +184,11 @@
 				}
 				this.$refs.formRef.validate(valid => {
 					if (valid) {
+						// 确保字段为数字类型
+						this.form.words = parseInt(this.form.words) || 0
+						this.form.readTime = parseInt(this.form.readTime) || 0
+						this.form.views = parseInt(this.form.views) || 0
+
 						if (this.radio === 2) {
 							this.form.appreciation = false
 							this.form.recommend = false
