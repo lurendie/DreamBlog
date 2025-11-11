@@ -40,7 +40,7 @@ pub struct BlogDTO {
     top: bool,
     password: Option<String>,
     user_id: Option<i64>,
-    #[serde(rename(deserialize = "category_id"), skip_serializing)]
+    //#[serde(rename(deserialize = "category_id"), skip_serializing)]
     //跳过该字段，不进行序列化操作。
     //category_id: i64,
     //#[serde(skip_deserializing)] // 跳过该字段，不进行反序列化操作。
@@ -218,13 +218,11 @@ impl BlogDTO {
         let category_model = match model.find_related(category::Entity).one(db).await {
             Ok(category_model) => category_model.unwrap_or_default(),
             Err(e) => {
-                log::error!("{:?}", e);
+                log::error!("{}", e);
                 category::Model::default()
             }
         };
-
         self.category = Some(Category::from(category_model));
-
         let tag_models = model
             .find_related(tag::Entity)
             .all(db)

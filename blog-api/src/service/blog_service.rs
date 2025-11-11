@@ -19,6 +19,7 @@ use rand::Rng;
 use rbs::value;
 use rbs::value::map::ValueMap;
 use rbs::Value;
+use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbBackend, EntityTrait,
     FromQueryResult, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, QueryTrait, Statement,
@@ -512,26 +513,28 @@ impl BlogService {
             .one(db)
             .await?;
         match blog_model {
-            Some(mut blog) => {
+            Some(blog) => {
+                let mut active_model = blog::ActiveModel::from(blog);
                 if v.get_appreciation().is_some() {
-                    blog.is_appreciation = v.get_appreciation().unwrap_or_default();
+                    active_model.is_appreciation = Set(v.get_appreciation().unwrap_or_default());
                 }
                 if v.get_published().is_some() {
-                    blog.is_published = v.get_published().unwrap_or_default();
+                    active_model.is_published = Set(v.get_published().unwrap_or_default());
                 }
                 if v.get_top().is_some() {
-                    blog.is_top = v.get_top().unwrap_or_default();
+                    active_model.is_top = Set(v.get_top().unwrap_or_default());
                 }
                 if v.get_password().is_some() {
-                    blog.password = v.get_password();
+                    active_model.password = Set(v.get_password());
                 }
                 if v.get_recommend().is_some() {
-                    blog.is_recommend = v.get_recommend().unwrap_or_default();
+                    active_model.is_recommend = Set(v.get_recommend().unwrap_or_default());
                 }
                 if v.get_comment_enabled().is_some() {
-                    blog.is_comment_enabled = v.get_comment_enabled().unwrap_or_default();
+                    active_model.is_comment_enabled =
+                        Set(v.get_comment_enabled().unwrap_or_default());
                 }
-                blog::ActiveModel::from(blog).update(db).await?;
+                active_model.update(db).await?;
                 return Ok(());
             }
             None => {
