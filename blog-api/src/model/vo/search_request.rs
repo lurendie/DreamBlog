@@ -25,6 +25,10 @@ pub struct SearchRequest {
     category_id: Option<String>,
 }
 
+// fn default_page() -> Option<u8> {
+//     Some(4)
+// }
+
 impl Default for SearchRequest {
     fn default() -> Self {
         Self {

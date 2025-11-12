@@ -12,20 +12,6 @@ use rbs::value;
 use rbs::Value;
 use std::collections::HashMap;
 
-/**
- * 创建动态
- */
-#[routes]
-#[post("/moment")]
-pub async fn create_moment(
-    moment: web::Json<MomentDTO>,
-    _: Authenticated<AppClaims>,
-    app: web::Data<AppState>,
-) -> Result<ApiResponse<Value>, AppError> {
-    MomentService::create_and_update(moment.into_inner(), app.get_mysql_pool()).await?;
-    Ok(ApiResponse::<Value>::success_with_msg("创建成功", None))
-}
-
 #[routes]
 #[get("/moments")]
 pub async fn moments(
@@ -91,8 +77,9 @@ pub async fn delete_moment(
  * 更新动态
  */
 #[routes]
+#[post("/moment")]
 #[put("/moment")]
-pub async fn update_moment(
+pub async fn create_and_update(
     moment: web::Json<MomentDTO>,
     _: Authenticated<AppClaims>,
     app: web::Data<AppState>,

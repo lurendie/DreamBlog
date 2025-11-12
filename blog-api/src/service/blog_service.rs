@@ -20,6 +20,7 @@ use rbs::value;
 use rbs::value::map::ValueMap;
 use rbs::Value;
 use sea_orm::ActiveValue::Set;
+use sea_orm::IntoActiveModel;
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbBackend, EntityTrait,
     FromQueryResult, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, QueryTrait, Statement,
@@ -552,9 +553,9 @@ impl BlogService {
         match blog::Entity::find_by_id(id).one(db).await {
             Ok(Some(blog)) => {
                 let mut blog_dto = BlogDTO::from(blog.clone());
-                if blog_dto.get_password().unwrap_or_default() == "" {
-                    blog_dto.set_password(None);
-                }
+                // if blog_dto.get_password().unwrap_or_default() == "" {
+                //     blog_dto.set_password(None);
+                // }
                 blog_dto.related_handle(blog, db).await;
                 Ok(blog_dto)
             }
@@ -622,7 +623,24 @@ impl BlogService {
                             Ok(())
                         }
                         false => {
-                            let model = blog::ActiveModel::update(blog_model, conn).await?;
+                            let mut active = blog_model.clone().into_active_model();
+                            active.is_appreciation = Set(blog_vo.appreciation);
+                            active.category_id = Set(blog_vo.category_id);
+                            active.is_comment_enabled = Set(blog_vo.comment_enabled);
+                            active.is_top = Set(blog_vo.top);
+                            active.is_published = Set(blog_vo.published);
+                            active.is_recommend = Set(blog_vo.recommend);
+                            active.views = Set(blog_vo.views);
+                            active.words = Set(blog_vo.words);
+                            active.title = Set(blog_vo.title);
+                            active.content = Set(blog_vo.content);
+                            active.password = Set(blog_vo.password);
+                            active.description = Set(blog_vo.description);
+                            active.first_picture = Set(blog_vo.first_picture);
+                            active.read_time = Set(blog_vo.read_time);
+                            active.create_time = Set(blog_vo.create_time.unwrap_or_default());
+                            active.update_time = Set(blog_vo.update_time.unwrap_or_default());
+                            let model = active.update(conn).await?;
 
                             //1.查询旧的标签
                             let blog_tag_models = blog_tag::Entity::find()

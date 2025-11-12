@@ -4,6 +4,7 @@ use crate::error::DataBaseError;
 use crate::model::Moment;
 use crate::model::MomentDTO;
 use rbs::{value, value::map::ValueMap};
+use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
 };
@@ -41,11 +42,13 @@ impl MomentService {
             .one(db)
             .await?;
         match model {
-            Some(mut model) => {
-                model.content = moment_dto.content;
-                model.likes = Some(moment_dto.likes);
-                model.create_time = moment_dto.create_time;
-                moment::ActiveModel::from(model).update(db).await?;
+            Some(model) => {
+                let mut active_model = moment::ActiveModel::from(model);
+                active_model.content = Set(moment_dto.content);
+                active_model.likes = Set(Some(moment_dto.likes));
+                active_model.create_time = Set(moment_dto.create_time);
+                 active_model.is_published = Set(moment_dto.is_published);
+                active_model.update(db).await?;
             }
             None => {
                 moment::ActiveModel::from(moment::Model::from(moment_dto))
