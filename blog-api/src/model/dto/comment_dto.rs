@@ -36,6 +36,18 @@ pub struct CommentDTO {
     pub(crate) parent_comment_id: i64,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct CommentPublishedUpdate {
+    pub id: i64,
+    pub published: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CommentNoticeUpdate {
+    pub id: i64,
+    pub notice: bool,
+}
+
 pub fn default_parent_comment_id() -> i64 {
     -1
 }

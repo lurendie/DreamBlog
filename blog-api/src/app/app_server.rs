@@ -5,6 +5,7 @@
  */
 use super::app_config::CONFIG;
 use super::app_state::{self, AppState};
+use super::JobRunner;
 use crate::controller::{
     about_controller,
     admin::{self, tag_controller},
@@ -39,6 +40,10 @@ impl AppServer {
             //,
             // CONFIG.clone(),
         );
+        let scheduler_state = app_state.clone();
+        tokio::spawn(async move {
+            JobRunner::start(scheduler_state).await;
+        });
         let (session_storage, factory) = build_session_storage().await;
         HttpServer::new(move || {
             //创建App
@@ -91,6 +96,8 @@ impl AppServer {
     fn cms_router(cfg: &mut web::ServiceConfig) {
         cfg.service(user_controller::login)
             .service(admin::dashboard_controller::dashboard) //.default_service(web::to(adminIndexController::default)),
+            .service(admin::about_controller::get_about)
+            .service(admin::about_controller::update_about)
             .service(admin::blog_controller::blogs)
             .service(admin::blog_controller::visibility)
             .service(admin::blog_controller::top)
@@ -115,6 +122,8 @@ impl AppServer {
             .service(admin::comment_controller::find_blog_id_and_title)
             .service(admin::comment_controller::delete_comment)
             .service(admin::comment_controller::update_comment)
+            .service(admin::comment_controller::update_comment_published)
+            .service(admin::comment_controller::update_comment_notice)
             .service(admin::account_controller::change_account)
             .service(admin::friend_controller::get_friend_info)
             .service(admin::friend_controller::update_friend)
@@ -122,10 +131,17 @@ impl AppServer {
             .service(admin::friend_controller::save_friend)
             .service(admin::schedule_job_controller::get_job_list)
             .service(admin::schedule_job_controller::update_job_status)
+            .service(admin::schedule_job_controller::edit_job)
             .service(admin::schedule_job_controller::delete_job_by_id)
             .service(admin::schedule_job_controller::add_job)
             .service(admin::site_setting_controller::get_site_setting_data)
             .service(admin::site_setting_controller::update_site_settings)
+            .service(admin::exception_log_controller::get_exception_log_list)
+            .service(admin::exception_log_controller::delete_exception_log_by_id)
+            .service(admin::login_log_controller::get_login_log_list)
+            .service(admin::login_log_controller::delete_login_log_by_id)
+            .service(admin::operation_log_controller::get_operation_log_list)
+            .service(admin::operation_log_controller::delete_operation_log_by_id)
             .service(admin::visit_log_controller::get_visit_log_list)
             .service(admin::visit_log_controller::delete_visit_log_by_id)
             .service(admin::visitor_controller::get_visitor_list)

@@ -8,8 +8,11 @@ use crate::service::RedisService;
 use rbs::value;
 use rbs::value::map::ValueMap;
 use rbs::Value;
-use sea_orm::DatabaseConnection;
-use sea_orm::EntityTrait;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, IntoActiveModel,
+    QueryFilter, TransactionTrait,
+};
 use std::collections::HashMap;
 
 pub struct SiteSettingService;
@@ -28,7 +31,7 @@ impl SiteSettingService {
         }
 
         //查询数据库
-        let site_setting_list = site_setting::Entity::find().all(db).await?; // 假设这是一个 Vec 或其他可迭代集合
+        let site_setting_list = site_setting::Entity::find().all(db).await?;
         let mut map = ValueMap::new();
         let mut introduction = Introduction::new();
         let mut site_info: HashMap<String, Value> = HashMap::new();
@@ -88,7 +91,7 @@ impl SiteSettingService {
                             let arr = v
                                 .value
                                 .unwrap_or_default()
-                                .split(",")
+                                .split(',')
                                 .map(String::from)
                                 .collect();
                             introduction.roll_text = arr;
@@ -110,12 +113,12 @@ impl SiteSettingService {
                 },
                 _ => (),
             }
-            //类型3
         }
         introduction.favorites = favorites;
         map.insert(value!("introduction"), value!(introduction));
         map.insert(value!("siteInfo"), value!(site_info));
         map.insert(value!("badges"), value!(badges));
+
         //缓存数据
         RedisService::set_string(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await?;
         log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::SITE_INFO_MAP);
@@ -125,8 +128,7 @@ impl SiteSettingService {
     pub async fn get_site_info(
         db: &DatabaseConnection,
     ) -> Result<HashMap<String, Value>, DataBaseError> {
-        //查询数据库
-        let site_setting_list = site_setting::Entity::find().all(db).await?; // 假设这是一个 Vec 或其他可迭代集合
+        let site_setting_list = site_setting::Entity::find().all(db).await?;
         let mut map = HashMap::new();
         let mut site_type = vec![];
         let mut site_type2 = vec![];
@@ -150,5 +152,79 @@ impl SiteSettingService {
         map.insert("type2".to_string(), value!(site_type2));
         map.insert("type3".to_string(), value!(site_type3));
         Ok(map)
+    }
+
+    pub async fn update_site_settings(
+        db: &DatabaseConnection,
+        settings: Vec<SiteSetting>,
+        delete_ids: Vec<i64>,
+    ) -> Result<(), DataBaseError> {
+        db.transaction(|txn| {
+            let settings = settings.clone();
+            let delete_ids = delete_ids.clone();
+            Box::pin(async move {
+                if !delete_ids.is_empty() {
+                    site_setting::Entity::delete_many()
+                        .filter(site_setting::Column::Id.is_in(delete_ids))
+                        .exec(txn)
+                        .await?;
+                }
+
+                for setting in settings {
+                    let name_en = setting.name_en;
+                    let name_zh = setting.name_zh;
+                    let value = setting.value;
+                    let setting_type = setting.r#type;
+
+                    match setting.id {
+                        Some(id) if id > 0 => {
+                            let Some(model) = site_setting::Entity::find_by_id(id).one(txn).await?
+                            else {
+                                return Err(DbErr::Custom(format!(
+                                    "站点设置不存在，无法更新 id={}",
+                                    id
+                                )));
+                            };
+                            let mut active = model.into_active_model();
+                            active.name_en = Set(Some(name_en));
+                            active.name_zh = Set(Some(name_zh));
+                            active.value = Set(Some(value));
+                            active.r#type = Set(Some(setting_type));
+                            active.update(txn).await?;
+                        }
+                        _ => {
+                            let active = site_setting::ActiveModel {
+                                name_en: Set(Some(name_en)),
+                                name_zh: Set(Some(name_zh)),
+                                value: Set(Some(value)),
+                                r#type: Set(Some(setting_type)),
+                                ..Default::default()
+                            };
+                            site_setting::Entity::insert(active).exec(txn).await?;
+                        }
+                    }
+                }
+
+                Ok(())
+            })
+        })
+        .await?;
+
+        // 更新后清理缓存
+        RedisService::_del_key(RedisKeyConstant::SITE_INFO_MAP).await?;
+
+        Ok(())
+    }
+
+    pub async fn get_web_title_suffix(db: &DatabaseConnection) -> Result<String, DataBaseError> {
+        let model = site_setting::Entity::find()
+            .filter(site_setting::Column::NameEn.eq("webTitleSuffix"))
+            .one(db)
+            .await?;
+
+        Ok(model
+            .and_then(|m| m.value)
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or_else(|| " - ZeroBlog".to_string()))
     }
 }

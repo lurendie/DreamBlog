@@ -64,3 +64,37 @@ div:focus {
 .app-container {
   padding: 20px;
 }
+
+@media screen and (max-width: 768px) {
+  .app-container {
+    padding: 12px;
+  }
+
+  .app-main {
+    padding: 12px !important;
+  }
+
+  .el-dialog {
+    width: 95% !important;
+    margin-top: 10vh !important;
+  }
+
+  .el-form--inline .el-form-item {
+    display: block;
+    margin-right: 0;
+  }
+
+  .el-table__header-wrapper,
+  .el-table__body-wrapper {
+    overflow-x: auto;
+  }
+
+  .el-pagination {
+    white-space: normal;
+  }
+
+  .el-pagination__sizes,
+  .el-pagination__jump {
+    display: none !important;
+  }
+}

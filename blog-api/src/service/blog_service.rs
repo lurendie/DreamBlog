@@ -117,8 +117,7 @@ impl BlogService {
         let blog_models = blog::Entity::find()
             .filter(blog::Column::IsPublished.eq(true))
             .all(db)
-            .await
-            .unwrap_or_default();
+            .await?;
         let mut blog_info_list = Vec::new();
         for item in blog_models {
             blog_info_list.push(BlogInfo::from(item));
@@ -185,8 +184,7 @@ impl BlogService {
         let blog_models = blog::Entity::find()
             .filter(blog::Column::IsPublished.eq(true))
             .all(db)
-            .await
-            .unwrap_or_default();
+            .await?;
         let mut blog_info_list = Vec::new();
         for item in blog_models {
             blog_info_list.push(BlogInfo::from(item));
@@ -340,8 +338,7 @@ impl BlogService {
             .filter(blog::Column::IsPublished.eq(true))
             .order_by_desc(blog::Column::CreateTime)
             .all(db)
-            .await
-            .unwrap_or_default()
+            .await?
             .into_iter()
             .for_each(|model| {
                 let date = model.create_time.date();
@@ -352,7 +349,11 @@ impl BlogService {
             });
 
         for (key, value) in dates {
-            let date_time = NaiveDate::from_str(value.as_str().unwrap_or_default()).unwrap();
+            let date_str = value
+                .as_str()
+                .ok_or_else(|| DataBaseError::Custom("归档日期缺失".to_string()))?;
+            let date_time = NaiveDate::from_str(date_str)
+                .map_err(|e| DataBaseError::Custom(format!("归档日期解析失败:{e}")))?;
             let sql = Statement::from_sql_and_values(
                 DbBackend::MySql,
                 r#"SELECT id,title,CONCAT(DAY(create_time),"日") as `day`,password
@@ -363,8 +364,7 @@ impl BlogService {
             );
             let mut blogs = BlogArchive::find_by_statement(sql)
                 .all(db)
-                .await
-                .unwrap_or_default();
+            .await?;
 
             for model in blogs.iter_mut() {
                 if model.password.is_none() {
@@ -536,6 +536,7 @@ impl BlogService {
                         Set(v.get_comment_enabled().unwrap_or_default());
                 }
                 active_model.update(db).await?;
+                Self::clear_blog_cache().await?;
                 return Ok(());
             }
             None => {
@@ -672,6 +673,7 @@ impl BlogService {
                                 }
                                 if !delete_tag_ids.is_empty() {
                                     blog_tag::Entity::delete_many()
+                                        .filter(blog_tag::Column::BlogId.eq(model.id))
                                         .filter(blog_tag::Column::TagId.is_in(delete_tag_ids))
                                         .exec(conn)
                                         .await?;
@@ -699,6 +701,8 @@ impl BlogService {
                 })
             })
             .await?;
+        Self::clear_blog_cache().await?;
+        RedisService::_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await?;
         Ok(ok)
     }
 
@@ -736,7 +740,17 @@ impl BlogService {
             })
             .await?;
 
+        Self::clear_blog_cache().await?;
+        RedisService::_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await?;
         Ok(result)
+    }
+
+    async fn clear_blog_cache() -> Result<(), DataBaseError> {
+        RedisService::_del_key(RedisKeyConstant::HOME_BLOG_INFO_LIST).await?;
+        RedisService::_del_key(RedisKeyConstant::RANDOM_BLOG_LIST).await?;
+        RedisService::_del_key(RedisKeyConstant::NEW_BLOG_LIST).await?;
+        RedisService::_del_key(RedisKeyConstant::ARCHIVE_BLOG_MAP).await?;
+        Ok(())
     }
 
     /**
@@ -983,7 +997,11 @@ mod tests {
 
     //     for (key, value) in dates {
     //         println!("{} : {}", key, value);
-    //         let date_time = NaiveDate::from_str(value.as_str().unwrap_or_default()).unwrap();
+    //         let date_str = value
+    //             .as_str()
+    //             .ok_or_else(|| DataBaseError::Custom("归档日期缺失".to_string()))?;
+    //         let date_time = NaiveDate::from_str(date_str)
+    //             .map_err(|e| DataBaseError::Custom(format!("归档日期解析失败:{e}")))?;
     //         let sql = Statement::from_sql_and_values(
     //             DbBackend::MySql,
     //             r#"SELECT id,title,DAY(create_time) as `day`,password
@@ -1002,3 +1020,5 @@ mod tests {
     //     //2.查询每月的文章数量
     // }
 }
+
+

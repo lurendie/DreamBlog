@@ -81,11 +81,13 @@ impl FriendService {
         let mut active_friend: friend::ActiveModel = friend_model.into();
         active_friend.is_published = Set(friend.published);
         active_friend.update(db).await?;
+        RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
         Ok(())
     }
 
     pub async fn delete_friend(id: i64, db: &DatabaseConnection) -> Result<(), DataBaseError> {
         friend::Entity::delete_by_id(id).exec(db).await?;
+        RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
         Ok(())
     }
 
@@ -109,6 +111,7 @@ impl FriendService {
             None => return Err(DataBaseError::Custom("友链不存在".to_string())),
         }
 
+        RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
         Ok(())
     }
 
@@ -129,6 +132,7 @@ impl FriendService {
         };
 
         new_friend.insert(db).await?;
+        RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
         Ok(())
     }
 
@@ -164,5 +168,60 @@ impl FriendService {
             friends.push(Friend::from(item));
         });
         Ok((friends, total))
+    }
+    pub async fn update_friend_comment_enabled(
+        enabled: bool,
+        db: &DatabaseConnection,
+    ) -> Result<(), DataBaseError> {
+        let value = if enabled { "1" } else { "0" };
+        Self::upsert_friend_setting(
+            "friendCommentEnabled",
+            "友链页面评论开关",
+            value.to_string(),
+            db,
+        )
+        .await
+    }
+
+    pub async fn update_friend_content(
+        content: String,
+        db: &DatabaseConnection,
+    ) -> Result<(), DataBaseError> {
+        Self::upsert_friend_setting("friendContent", "友链页面信息", content, db).await
+    }
+
+    async fn upsert_friend_setting(
+        name_en: &str,
+        name_zh: &str,
+        value: String,
+        db: &DatabaseConnection,
+    ) -> Result<(), DataBaseError> {
+        let existing = site_setting::Entity::find()
+            .filter(site_setting::Column::NameEn.eq(name_en))
+            .one(db)
+            .await?;
+        match existing {
+            Some(model) => {
+                let old_name_zh = model.name_zh.clone();
+                let old_type = model.r#type;
+                let mut active: site_setting::ActiveModel = model.into();
+                active.name_zh = Set(old_name_zh.or_else(|| Some(name_zh.to_string())));
+                active.value = Set(Some(value));
+                active.r#type = Set(old_type.or(Some(4)));
+                active.update(db).await?;
+            }
+            None => {
+                let active = site_setting::ActiveModel {
+                    name_en: Set(Some(name_en.to_string())),
+                    name_zh: Set(Some(name_zh.to_string())),
+                    value: Set(Some(value)),
+                    r#type: Set(Some(4)),
+                    ..Default::default()
+                };
+                site_setting::Entity::insert(active).exec(db).await?;
+            }
+        }
+        RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
+        Ok(())
     }
 }

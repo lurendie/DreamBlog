@@ -14,6 +14,7 @@ use sea_orm::{ActiveModelTrait, ActiveValue::Set};
 use sea_orm::{
     ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
 };
+use chrono::NaiveDateTime;
 
 pub struct VisitService;
 
@@ -180,6 +181,15 @@ impl VisitService {
         if let Some(behavior) = &query.behavior {
             query_builder = query_builder.filter(visit_log::Column::Behavior.contains(behavior));
         }
+        if let Some(uuid) = &query.uuid {
+            query_builder = query_builder.filter(visit_log::Column::Uuid.contains(uuid));
+        }
+        if let Some(date) = query.date.as_deref() {
+            if let Some((start, end)) = parse_date_range(date) {
+                query_builder =
+                    query_builder.filter(visit_log::Column::CreateTime.between(start, end));
+            }
+        }
 
         // 获取分页数据
         let paginator = query_builder
@@ -195,4 +205,13 @@ impl VisitService {
         });
         Ok((logs, total))
     }
+}
+
+fn parse_date_range(date: &str) -> Option<(NaiveDateTime, NaiveDateTime)> {
+    let mut parts = date.split(',');
+    let start = parts.next()?;
+    let end = parts.next()?;
+    let start_dt = NaiveDateTime::parse_from_str(start, "%Y-%m-%d %H:%M:%S").ok()?;
+    let end_dt = NaiveDateTime::parse_from_str(end, "%Y-%m-%d %H:%M:%S").ok()?;
+    Some((start_dt, end_dt))
 }

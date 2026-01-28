@@ -13,7 +13,7 @@ use crate::{
     common::{IpRegion, ParamUtils},
     error::AppError,
     middleware::AppClaims,
-    model::{ApiResponse, CommentDTO, SearchRequest},
+    model::{ApiResponse, CommentDTO, CommentNoticeUpdate, CommentPublishedUpdate, SearchRequest},
     service::{BlogService, CommentService},
 };
 
@@ -60,7 +60,29 @@ pub async fn update_comment(
     req: HttpRequest,
 ) -> Result<ApiResponse<Value>, AppError> {
     let ip = IpRegion::get_real_client_ip(&req);
-    CommentService::save_comment(comment.0, &app.get_mysql_pool(), ip,false).await?;
+    CommentService::save_comment(comment.0, &app.get_mysql_pool(), ip, false).await?;
+    Ok(ApiResponse::<Value>::success_with_msg("更新成功！", None))
+}
+
+#[routes]
+#[put("/comment/published")]
+pub async fn update_comment_published(
+    _: Authenticated<AppClaims>,
+    app: Data<AppState>,
+    query: web::Query<CommentPublishedUpdate>,
+) -> Result<ApiResponse<Value>, AppError> {
+    CommentService::update_published(query.id, query.published, app.get_mysql_pool()).await?;
+    Ok(ApiResponse::<Value>::success_with_msg("更新成功！", None))
+}
+
+#[routes]
+#[put("/comment/notice")]
+pub async fn update_comment_notice(
+    _: Authenticated<AppClaims>,
+    app: Data<AppState>,
+    query: web::Query<CommentNoticeUpdate>,
+) -> Result<ApiResponse<Value>, AppError> {
+    CommentService::update_notice(query.id, query.notice, app.get_mysql_pool()).await?;
     Ok(ApiResponse::<Value>::success_with_msg("更新成功！", None))
 }
 

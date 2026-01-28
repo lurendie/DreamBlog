@@ -45,17 +45,23 @@
 		<el-dialog title="添加任务" width="50%" :visible.sync="addDialogVisible" :close-on-click-modal="false" @close="addDialogClosed">
 			<!--内容主体-->
 			<el-form :model="addForm" :rules="formRules" ref="addFormRef" label-width="80px">
-				<el-form-item label="bean" prop="beanName">
-					<el-input v-model="addForm.beanName"></el-input>
+				<el-form-item label="类型" prop="beanName">
+					<el-select v-model="addForm.beanName" placeholder="请选择任务类型" style="width: 100%">
+						<el-option label="本地任务(local)" value="local"></el-option>
+						<el-option label="HTTP(http)" value="http"></el-option>
+						<el-option label="HTTP GET(http:get)" value="http:get"></el-option>
+						<el-option label="HTTP POST(http:post)" value="http:post"></el-option>
+						<el-option label="Shell(shell)" value="shell"></el-option>
+					</el-select>
 				</el-form-item>
-				<el-form-item label="方法名" prop="methodName">
-					<el-input v-model="addForm.methodName"></el-input>
+				<el-form-item label="目标" prop="methodName">
+					<el-input v-model="addForm.methodName" :placeholder="methodPlaceholder(addForm.beanName)"></el-input>
 				</el-form-item>
 				<el-form-item label="参数" prop="params">
-					<el-input v-model="addForm.params"></el-input>
+					<el-input v-model="addForm.params" :placeholder="paramsPlaceholder(addForm.beanName)"></el-input>
 				</el-form-item>
 				<el-form-item label="cron" prop="cron">
-					<el-input v-model="addForm.cron"></el-input>
+					<el-input v-model="addForm.cron" placeholder="例如: */5 * * * * 或 */10 * * * * *"></el-input>
 				</el-form-item>
 				<el-form-item label="备注" prop="remark">
 					<el-input v-model="addForm.remark"></el-input>
@@ -72,17 +78,23 @@
 		<el-dialog title="编辑任务" width="50%" :visible.sync="editDialogVisible" :close-on-click-modal="false" @close="editDialogClosed">
 			<!--内容主体-->
 			<el-form :model="editForm" :rules="formRules" ref="editFormRef" label-width="80px">
-				<el-form-item label="Bean" prop="beanName">
-					<el-input v-model="editForm.beanName"></el-input>
+				<el-form-item label="类型" prop="beanName">
+					<el-select v-model="editForm.beanName" placeholder="请选择任务类型" style="width: 100%">
+						<el-option label="本地任务(local)" value="local"></el-option>
+						<el-option label="HTTP(http)" value="http"></el-option>
+						<el-option label="HTTP GET(http:get)" value="http:get"></el-option>
+						<el-option label="HTTP POST(http:post)" value="http:post"></el-option>
+						<el-option label="Shell(shell)" value="shell"></el-option>
+					</el-select>
 				</el-form-item>
-				<el-form-item label="方法名" prop="methodName">
-					<el-input v-model="editForm.methodName"></el-input>
+				<el-form-item label="目标" prop="methodName">
+					<el-input v-model="editForm.methodName" :placeholder="methodPlaceholder(editForm.beanName)"></el-input>
 				</el-form-item>
 				<el-form-item label="参数" prop="params">
-					<el-input v-model="editForm.params"></el-input>
+					<el-input v-model="editForm.params" :placeholder="paramsPlaceholder(editForm.beanName)"></el-input>
 				</el-form-item>
 				<el-form-item label="Cron" prop="cron">
-					<el-input v-model="editForm.cron"></el-input>
+					<el-input v-model="editForm.cron" placeholder="例如: */5 * * * * 或 */10 * * * * *"></el-input>
 				</el-form-item>
 				<el-form-item label="备注" prop="remark">
 					<el-input v-model="editForm.remark"></el-input>
@@ -115,7 +127,7 @@
 				addDialogVisible: false,
 				editDialogVisible: false,
 				addForm: {
-					beanName: '',
+					beanName: 'local',
 					methodName: '',
 					params: '',
 					cron: '',
@@ -123,8 +135,8 @@
 				},
 				editForm: {},
 				formRules: {
-					beanName: [{required: true, message: '请输入bean名称', trigger: 'blur'}],
-					methodName: [{required: true, message: '请输入方法名', trigger: 'blur'}],
+					beanName: [{required: true, message: '请选择任务类型', trigger: 'change'}],
+					methodName: [{required: true, message: '请输入目标', trigger: 'blur'}],
 					cron: [{required: true, message: '请输入cron表达式', trigger: 'blur'}],
 				}
 			}
@@ -219,6 +231,34 @@
 			},
 			goLogPage() {
 				this.$router.push('/log/job')
+			},
+			methodPlaceholder(beanName) {
+				switch (beanName) {
+					case 'local':
+						return '例如: cache.clear_all';
+					case 'shell':
+						return '例如: echo';
+					case 'http':
+					case 'http:get':
+					case 'http:post':
+						return '例如: https://example.com/api';
+					default:
+						return '请输入目标';
+				}
+			},
+			paramsPlaceholder(beanName) {
+				switch (beanName) {
+					case 'local':
+						return '本地任务一般无需参数';
+					case 'shell':
+						return '例如: hello world';
+					case 'http':
+					case 'http:get':
+					case 'http:post':
+						return 'JSON字符串或留空';
+					default:
+						return '请输入参数';
+				}
 			}
 		}
 	}

@@ -56,7 +56,7 @@ UI 框架为 [Element UI](https://github.com/ElemeFE/element)
 1. `git clone` 项目
 2. 创建 MySQL 数据库 `blog_api`，并执行 `sql` 文件初始化表数据
 3. 安装 Redis 并启动
-4. 修改配置文件 `config.yaml` 确认 MySQL 和 Redis 数据库用户密码
+4. 修改后端配置文件 `blog-api/config/app_config.yaml`（推荐：复制 `blog-api/config/app_config.local.yaml.example` 为 `blog-api/config/app_config.local.yaml` 填入本地私密信息）确认 MySQL、Redis 等配置
 5. `cargo run` 启动后端服务
 6. 分别在 `blog-cms` 和 `blog-view` 目录下执行 `npm install` 安装依赖
 7. 分别在 `blog-cms` 和 `blog-view` 目录下执行 `npm run serve` 启动前后台页面

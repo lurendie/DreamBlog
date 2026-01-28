@@ -102,6 +102,7 @@ impl TagService {
             active.id = NotSet;
         }
         active.reset_all().save(db).await?;
+        RedisService::_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await?;
         Ok(())
     }
 
@@ -137,6 +138,7 @@ impl TagService {
             true => return Err(DataBaseError::Custom("标签下有文章，不能删除".to_string())),
             false => {
                 tag::Entity::delete_by_id(id).exec(db).await?;
+                RedisService::_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await?;
                 Ok(())
             }
         }

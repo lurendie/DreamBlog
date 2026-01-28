@@ -1,10 +1,19 @@
+use crate::app::AppState;
 use crate::error::AppError;
 use crate::middleware::AppClaims;
+use crate::model::{ApiResponse, SiteSetting};
 use crate::service::SiteSettingService;
-use crate::{app::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
 use actix_web::{routes, web};
 use rbs::{value, Value};
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct SiteSettingUpdateRequest {
+    settings: Vec<SiteSetting>,
+    #[serde(rename = "deleteIds", default)]
+    delete_ids: Vec<i64>,
+}
 
 #[routes]
 #[get("/siteSettings")]
@@ -23,11 +32,17 @@ pub async fn get_site_setting_data(
 #[post("/siteSettings")]
 pub async fn update_site_settings(
     _: Authenticated<AppClaims>,
-    _app: web::Data<AppState>,
-    //  _request: web::Json<SiteSettingUpdateRequest>,
+    app: web::Data<AppState>,
+    request: web::Json<SiteSettingUpdateRequest>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    // 这里需要实现更新站点设置的逻辑
-    // 由于服务层没有提供更新方法，这里先返回一个占位响应
+    let request = request.into_inner();
+    SiteSettingService::update_site_settings(
+        app.get_mysql_pool(),
+        request.settings,
+        request.delete_ids,
+    )
+    .await?;
+
     Ok(ApiResponse::<Value>::success_with_msg(
         "站点设置更新成功",
         None,
@@ -38,12 +53,11 @@ pub async fn update_site_settings(
 #[get("/webTitleSuffix")]
 pub async fn get_web_title_suffix(
     _: Authenticated<AppClaims>,
-    //  app: web::Data<AppState>,
+    app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    // 这里需要实现获取网站标题后缀的逻辑
-    // 由于服务层没有提供专门获取标题后缀的方法，这里先返回一个占位响应
+    let suffix = SiteSettingService::get_web_title_suffix(app.get_mysql_pool()).await?;
     Ok(ApiResponse::success_with_msg(
         "获取网站标题后缀成功",
-        Some(value!(" - ZeroBlog")),
+        Some(value!(suffix)),
     ))
 }

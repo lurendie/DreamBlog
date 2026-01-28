@@ -35,6 +35,7 @@ log4rs = "1.0"
 mime = "0.3.17"
 rand = "0.8"                                                      #随机数
 rbs = { version = "4.5" }
+cron = "0.12.1"
 #redis = { version = "0.25.3", features = ["tokio-comp", "json"] } #redis 异步IO
 deadpool-redis = { version = "0.14.0", features = ["serde","rt_tokio_1"] }
 actix-jwt-session = {git="https://github.com/lurendie/actix-jwt-session-test",branch = "master"}
@@ -48,3 +49,5 @@ async-trait="0.1.72"
 jsonwebtoken="8.3.0"
 bcrypt = "0.15"
 lettre = "0.11.19"
+reqwest = { version = "0.12.7", features = ["json", "rustls-tls"] }
+tokio = { version = "1.41.1", features = ["process", "rt", "macros", "time"] }

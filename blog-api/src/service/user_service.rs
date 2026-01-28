@@ -212,6 +212,8 @@ impl UserService {
         if let Err(e) = active_user.update(db).await {
             return Err(DataBaseError::Custom(format!("更新用户信息失败:{}", e)).into());
         }
+        RedisService::_del_key(&format!("{}_{}", RedisKeyConstant::LOGIN_USER_INFO, username))
+            .await?;
         Ok(())
     }
 

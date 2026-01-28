@@ -36,9 +36,20 @@ pub struct FriendUpdatePublished {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct FriendCommentEnabledUpdate {
+    #[serde(rename = "commentEnabled")]
+    pub comment_enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FriendContentUpdate {
+    pub content: String,
+}
+#[derive(Debug, Deserialize)]
 pub struct FriendQuery {
     pub page_num: Option<u32>,
     pub page_size: Option<u32>,
     pub nickname: Option<String>,
     pub is_published: Option<bool>,
 }
+

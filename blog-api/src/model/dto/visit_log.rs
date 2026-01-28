@@ -12,11 +12,14 @@ pub struct VisitLog {
     pub content: Option<String>,
     pub remark: Option<String>,
     pub ip: Option<String>,
+    #[serde(rename = "ipSource")]
     pub ip_source: Option<String>,
     pub os: Option<String>,
     pub browser: Option<String>,
     pub times: i32,
+    #[serde(rename = "createTime")]
     pub create_time: NaiveDateTime,
+    #[serde(rename = "userAgent")]
     pub user_agent: Option<String>,
 }
 
@@ -44,11 +47,15 @@ impl From<visit_log::Model> for VisitLog {
 
 #[derive(Debug, Deserialize)]
 pub struct VisitLogQuery {
+    #[serde(rename = "pageNum")]
     pub page_num: Option<u32>,
+    #[serde(rename = "pageSize")]
     pub page_size: Option<u32>,
     pub uri: Option<String>,
     pub ip: Option<String>,
     pub behavior: Option<String>,
+    pub uuid: Option<String>,
+    pub date: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

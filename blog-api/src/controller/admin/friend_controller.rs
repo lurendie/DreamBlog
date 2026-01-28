@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::common::ParamUtils;
 use crate::error::AppError;
 use crate::middleware::AppClaims;
-use crate::model::{Friend, FriendQuery, FriendUpdatePublished};
+use crate::model::{Friend, FriendCommentEnabledUpdate, FriendContentUpdate, FriendQuery, FriendUpdatePublished};
 use crate::service::FriendService;
 use crate::{app::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
@@ -19,7 +19,7 @@ pub async fn get_friends_by_query(
     let db = app.get_mysql_pool();
     let page_num = query.page_num.unwrap_or(1);
     let page_size = query.page_size.unwrap_or(10);
-    let page_num = (page_num - 1) * page_size;
+    let page_num = page_num.saturating_sub(1).saturating_mul(page_size);
     let data = FriendService::friends_by_query(db, page_num, page_size, query.into_inner()).await?;
     let mut result = HashMap::new();
     result.insert("total".to_string(), value!(data.1));
@@ -65,7 +65,9 @@ pub async fn update_friend(
     friend_form: web::Json<Friend>,
 ) -> Result<ApiResponse<Value>, AppError> {
     let db = app.get_mysql_pool();
-    let friend_id = friend_form.id.unwrap();
+    let friend_id = friend_form
+        .id
+        .ok_or_else(|| AppError::Custom("友链ID不能为空".to_string()))?;
     FriendService::update_friend(friend_id, friend_form.0, db).await?;
     Ok(ApiResponse::<Value>::success_with_msg("更新友链成功", None))
 }
@@ -100,10 +102,11 @@ pub async fn get_friend_info(
 #[put("/friendInfo/commentEnabled")]
 pub async fn update_friend_comment_enabled(
     _: Authenticated<AppClaims>,
-    _app: web::Data<AppState>,
+    app: web::Data<AppState>,
+    payload: web::Json<FriendCommentEnabledUpdate>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    // 这里需要实现更新友链评论启用状态的逻辑
-    // 由于服务层没有提供相应方法，这里先返回一个占位响应
+    FriendService::update_friend_comment_enabled(payload.comment_enabled, app.get_mysql_pool())
+        .await?;
     Ok(ApiResponse::<Value>::success_with_msg(
         "更新友链评论启用状态成功",
         None,
@@ -114,13 +117,13 @@ pub async fn update_friend_comment_enabled(
 #[put("/friendInfo/content")]
 pub async fn update_friend_content(
     _: Authenticated<AppClaims>,
-    _app: web::Data<AppState>,
-    // _content_update: web::Json<FriendContentUpdate>,
+    app: web::Data<AppState>,
+    payload: web::Json<FriendContentUpdate>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    // 这里需要实现更新友链内容的逻辑
-    // 由于服务层没有提供相应方法，这里先返回一个占位响应
+    FriendService::update_friend_content(payload.content.clone(), app.get_mysql_pool()).await?;
     Ok(ApiResponse::<Value>::success_with_msg(
         "更新友链内容成功",
         None,
     ))
 }
+

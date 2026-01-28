@@ -4,14 +4,19 @@ use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct ScheduleJobLog {
+    #[serde(rename = "logId")]
     pub log_id: i64,
+    #[serde(rename = "jobId")]
     pub job_id: i64,
+    #[serde(rename = "beanName")]
     pub bean_name: Option<String>,
+    #[serde(rename = "methodName")]
     pub method_name: Option<String>,
     pub params: Option<String>,
     pub status: bool,
     pub error: Option<String>,
     pub times: i32,
+    #[serde(rename = "createTime")]
     pub create_time: Option<NaiveDateTime>,
 }
 

@@ -149,6 +149,7 @@ impl CategoryService {
         }
         .insert(db)
         .await?;
+        RedisService::_del_key(RedisKeyConstant::CATEGORY_NAME_LIST).await?;
         Ok(())
     }
 
@@ -162,6 +163,7 @@ impl CategoryService {
         }
         .update(db)
         .await?;
+        RedisService::_del_key(RedisKeyConstant::CATEGORY_NAME_LIST).await?;
         Ok(())
     }
 
@@ -177,6 +179,7 @@ impl CategoryService {
             return Err(DataBaseError::Custom("分类下有文章，不能删除".to_string()));
         }
         let result = category::Entity::delete_by_id(id).exec(db).await?;
+        RedisService::_del_key(RedisKeyConstant::CATEGORY_NAME_LIST).await?;
         Ok(result.rows_affected)
     }
 }

@@ -239,6 +239,40 @@ impl CommentService {
         Ok(())
     }
 
+    pub async fn update_published(
+        id: i64,
+        published: bool,
+        db: &DatabaseConnection,
+    ) -> Result<(), DataBaseError> {
+        let model = comment::Entity::find_by_id(id).one(db).await?;
+        match model {
+            Some(comment_model) => {
+                let mut active: comment::ActiveModel = comment_model.into();
+                active.is_published = Set(published);
+                active.update(db).await?;
+                Ok(())
+            }
+            None => Err(DataBaseError::Custom("评论不存在".to_string())),
+        }
+    }
+
+    pub async fn update_notice(
+        id: i64,
+        notice: bool,
+        db: &DatabaseConnection,
+    ) -> Result<(), DataBaseError> {
+        let model = comment::Entity::find_by_id(id).one(db).await?;
+        match model {
+            Some(comment_model) => {
+                let mut active: comment::ActiveModel = comment_model.into();
+                active.is_notice = Set(notice);
+                active.update(db).await?;
+                Ok(())
+            }
+            None => Err(DataBaseError::Custom("评论不存在".to_string())),
+        }
+    }
+
     pub async fn find_by_id(
         id: i64,
         db: &DatabaseConnection,

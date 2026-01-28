@@ -54,7 +54,6 @@ impl EmailService {
     ) -> Result<(), EmailServerError> {
         let (title, post_url) = Self::get_title_and_url(db, &model).await?;
         //找出父评论 发送邮件给父评论
-        // TODO: 发送邮件通知
         let email_type =
             EmailType::get_type(model.is_notice, matches!(model.parent_comment_id, -1))?;
         let guest = GuestReply::new(

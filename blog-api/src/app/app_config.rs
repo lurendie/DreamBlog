@@ -7,7 +7,8 @@
 use crate::error::DataBaseError;
 use chrono::Local;
 use serde::{Deserialize, Serialize};
-use std::{env, fs, panic, sync::LazyLock};
+use std::path::{Path, PathBuf};
+use std::{env, fs, sync::LazyLock};
 
 //配置文件结构体
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -52,20 +53,33 @@ pub struct ServerConfig {
     pub(crate) cms_url: String,    //前端页面地址
     pub(crate) token_expires: i64, //token 过期时间
 }
+
 pub static CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {
-    let args: Vec<String> = env::args().collect();
-    //尝试获取 配置路径 命令行参数 如没有指定配置文件路径则默认路径是./config
-    let config_path = args.get(1).unwrap_or(&"./config".to_string()).to_string();
-    let mut server_config_path = config_path.clone();
-    let mut log_yaml_path = config_path;
-    //加载配置
-    server_config_path.push_str("/app_config.yaml");
-    log_yaml_path.push_str("/log_config.yaml");
-    match AppConfig::build_config(server_config_path.clone()) {
+    // 尝试获取 配置目录 命令行参数：如没有指定则默认 ./config
+    let config_dir = env::args().nth(1).unwrap_or_else(|| "./config".to_string());
+    let config_dir = PathBuf::from(config_dir);
+
+    // 加载配置：优先使用本地覆盖文件（不应提交到 git）
+    let local_config_path = config_dir.join("app_config.local.yaml");
+    let default_config_path = config_dir.join("app_config.yaml");
+    let app_config_path = if local_config_path.exists() {
+        local_config_path
+    } else {
+        default_config_path
+    };
+
+    let log_yaml_path = config_dir.join("log_config.yaml");
+
+    match AppConfig::build_config(&app_config_path) {
         Ok(mut config) => {
-            let log_config = LogConfig::init_path(log_yaml_path).unwrap();
+            let log_config =
+                LogConfig::init_path(log_yaml_path.to_string_lossy().into_owned()).unwrap();
             config.log = Some(log_config);
-            return config;
+            log::info!(
+                "Loaded config from: {}",
+                app_config_path.to_string_lossy().into_owned()
+            );
+            config
         }
         Err(e) => {
             panic!("{e}")
@@ -114,13 +128,13 @@ impl AppConfig {
         self.email.clone()
     }
 
-    fn build_config(path: String) -> Result<AppConfig, DataBaseError> {
-        let yaml_str = match fs::read_to_string(path.clone()) {
+    fn build_config(path: &Path) -> Result<AppConfig, DataBaseError> {
+        let yaml_str = match fs::read_to_string(path) {
             Ok(str) => str,
             Err(_) => {
                 return Err(DataBaseError::Custom(format!(
                     "无法从路径:{:?} 中加载配置，请检查！",
-                    path
+                    path.display()
                 )));
             }
         };

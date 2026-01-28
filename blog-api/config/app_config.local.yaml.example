@@ -1,4 +1,6 @@
-## 服务器配置
+## 本地私密配置（不要提交到 git）
+## 用法：复制为 app_config.local.yaml，然后填入本机真实配置/密码。
+
 server:
   host: "127.0.0.1"
   port: 8089
@@ -9,8 +11,8 @@ mysql:
   host: "127.0.0.1"
   port: 3306
   data_base: "zero_api"
-  user_name: "root"
-  password: "root"
+  user_name: "CHANGE_ME"
+  password: "CHANGE_ME"
 redis:
   host: "127.0.0.1"
   port: 6379
@@ -22,5 +24,5 @@ redis:
 email:
   host: "smtp.qq.com"  #邮件服务器
   port: 465 #邮件端口
-  username: "xxxxx@qq.com"
-  password: "xxxxxx"  #授权码
+  username: "CHANGE_ME"
+  password: "CHANGE_ME"  #授权码

@@ -9,3 +9,8 @@
 
 blog-view/package-lock.json
 blog-cms/package-lock.json
+
+# Local config and key material
+blog-api/config/app_config.local.yaml
+blog-api/config/jwt-encoding.bin
+blog-api/config/jwt-decoding.bin
