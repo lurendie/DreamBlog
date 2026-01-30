@@ -1,7 +1,7 @@
 use crate::app::AppState;
 use crate::common::IpRegion;
 use crate::common::ParamUtils;
-use crate::error::AppError;
+use crate::error::{AppError, WebError};
 use crate::model::ApiResponse;
 use crate::model::CommentDTO;
 use crate::model::SearchRequest;
@@ -67,8 +67,45 @@ pub async fn save_comment(
             false
         }
     };
+    if !is_admin_comment {
+        validate_comment_input(&comment_dto)?;
+    } else if comment_dto.content.trim().is_empty() {
+        return Err(WebError::Validation("评论内容不能为空".to_string()).into());
+    }
     let ip = IpRegion::get_real_client_ip(&req);
     CommentService::save_comment(comment_dto.0, &state.mysql_connection, ip, is_admin_comment)
         .await?;
     Ok(ApiResponse::<Value>::success(None))
+}
+
+fn validate_comment_input(comment: &CommentDTO) -> Result<(), WebError> {
+    if comment.nickname.trim().is_empty() {
+        return Err(WebError::Validation("昵称不能为空".to_string()));
+    }
+    if comment.email.trim().is_empty() {
+        return Err(WebError::Validation("邮箱不能为空".to_string()));
+    }
+    if !is_basic_email(&comment.email) {
+        return Err(WebError::Validation("邮箱格式不正确".to_string()));
+    }
+    if comment.content.trim().is_empty() {
+        return Err(WebError::Validation("评论内容不能为空".to_string()));
+    }
+    if comment.content.chars().count() > 250 {
+        return Err(WebError::Validation("评论内容不可多于250个字符".to_string()));
+    }
+    Ok(())
+}
+
+fn is_basic_email(email: &str) -> bool {
+    let email = email.trim();
+    let parts: Vec<&str> = email.split('@').collect();
+    if parts.len() != 2 {
+        return false;
+    }
+    let (local, domain) = (parts[0], parts[1]);
+    if local.is_empty() || domain.is_empty() {
+        return false;
+    }
+    domain.contains('.') && !domain.starts_with('.') && !domain.ends_with('.')
 }

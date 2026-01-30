@@ -19,7 +19,7 @@ pub struct CommentDTO {
     #[serde(rename(serialize = "createTime"), default = "Default::default")]
     pub(crate) create_time: NaiveDateTime,
 
-    #[serde(rename(deserialize = "notice"), default = "Default::default")]
+    #[serde(rename = "notice", default = "Default::default")]
     pub is_notice: bool,
     #[serde(default = "Default::default")]
     pub page: i8,
