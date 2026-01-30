@@ -137,7 +137,7 @@ impl ParamUtils {
             search_params.category_id = category_id;
         }
         if let Some(password) = param.get_password() {
-            if password.contains("") || password.is_empty() {
+            if password.is_empty() {
                 return Err(WebError::Validation("密码错误".to_string()));
             }
             search_params.password = password;

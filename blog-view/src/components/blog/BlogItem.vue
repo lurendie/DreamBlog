@@ -33,6 +33,10 @@
 					<router-link :to="`/category/${item.category.name}`" class="ui orange large ribbon label">
 						<i class="small folder open icon"></i><span class="m-text-500">{{ item.category.name }}</span>
 					</router-link>
+					<!--封面图-->
+					<div class="row m-padded-tb-small" v-if="item.firstPicture">
+						<div class="blog-cover" :style="{ backgroundImage: 'url(' + item.firstPicture + ')' }"></div>
+					</div>
 					<!--文章Markdown描述-->
 					<div class="typo m-padded-tb-small line-numbers match-braces rainbow-braces" v-lazy-container="{selector: 'img'}" v-viewer v-html="item.description"></div>
 					<!--阅读全文按钮-->
@@ -71,5 +75,19 @@
 </script>
 
 <style scoped>
+.blog-cover {
+	width: 100%;
+	height: 220px;
+	border-radius: 8px;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+}
 
+@media (max-width: 768px) {
+	.blog-cover {
+		height: 160px;
+		border-radius: 0;
+	}
+}
 </style>
