@@ -37,8 +37,14 @@
 					<div class="row m-padded-tb-small" v-if="item.firstPicture">
 						<div class="blog-cover" :style="{ backgroundImage: 'url(' + item.firstPicture + ')' }"></div>
 					</div>
-					<!--文章Markdown描述-->
-					<div class="typo m-padded-tb-small line-numbers match-braces rainbow-braces" v-lazy-container="{selector: 'img'}" v-viewer v-html="item.description"></div>
+					<!--文章Markdown描述（无封面图时显示）-->
+					<div
+						class="typo m-padded-tb-small line-numbers match-braces rainbow-braces"
+						v-if="!item.firstPicture"
+						v-lazy-container="{selector: 'img'}"
+						v-viewer
+						v-html="item.description"
+					></div>
 					<!--阅读全文按钮-->
 					<div class="row m-padded-tb-small m-margin-top">
 						<a href="javascript:;" @click.prevent="toBlog(item)" class="color-btn">阅读全文</a>

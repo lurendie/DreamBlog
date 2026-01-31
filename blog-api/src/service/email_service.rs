@@ -65,7 +65,8 @@ impl EmailService {
             model.content,
             Local::now().naive_local(),
         );
-        EmailServer::send_email(guest, email_type, model.email.as_str()).await?;
+        // 回复邮件应发送给父评论者
+        EmailServer::send_email(guest, email_type, parent_model.email.as_str()).await?;
         Ok(())
     }
 
