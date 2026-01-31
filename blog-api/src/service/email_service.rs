@@ -18,7 +18,8 @@ impl EmailService {
         model: &comment::Model,
     ) -> Result<(String, String), EmailServerError> {
         let view_url = CONFIG.get_server_config().view_url;
-        let mut post_url = format!("{}", view_url);
+        let view_root = ensure_trailing_slash(&view_url);
+        let mut post_url = view_root.clone();
         let mut title = String::new();
         match model.page {
             0 => {
@@ -33,7 +34,7 @@ impl EmailService {
                         return Err(EmailServerError::Custom(e.to_string()));
                     }
                 };
-                post_url.push_str(blog_title.id.to_string().as_str());
+                post_url.push_str(format!("blog/{}", blog_title.id).as_str());
                 title.push_str(blog_title.title.as_str());
             }
             1 => {
@@ -73,7 +74,7 @@ impl EmailService {
     pub async fn send_owenr_email(
         model: comment::Model,
         db: &DatabaseConnection,
-        owenr_email:String,
+        owenr_email: String,
     ) -> Result<(), EmailServerError> {
         let manage_url = CONFIG.get_server_config().cms_url;
         let (title, post_url) = Self::get_title_and_url(db, &model).await?;
@@ -92,5 +93,13 @@ impl EmailService {
             EmailType::get_type(model.is_notice, matches!(model.parent_comment_id, -1))?;
         EmailServer::send_email(owenr, email_type, owenr_email.as_str()).await?;
         Ok(())
+    }
+}
+
+fn ensure_trailing_slash(url: &str) -> String {
+    if url.ends_with('/') {
+        url.to_string()
+    } else {
+        format!("{}/", url)
     }
 }

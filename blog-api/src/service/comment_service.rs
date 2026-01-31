@@ -218,7 +218,8 @@ impl CommentService {
             let model = model.into_active_model().insert(db).await?;
             //开启了订阅回复功能
             if model.is_notice && model.parent_comment_id != -1 {
-                let parent_model = Self::find_by_id(model.parent_comment_id, db).await?;
+                // 情况1：回复评论 -> 发给父评论者
+                let parent_model: comment::Model = Self::find_by_id(model.parent_comment_id, db).await?;
                 if parent_model.email.eq(&model.email) {
                     return Ok(()); //如果评论者和父评论者是同一个人，则不发送邮件
                 }
@@ -228,8 +229,12 @@ impl CommentService {
                     //发送邮件失败 不返回异常 否则 页面提示邮件异常 但是实际上评论成功 只是未发送邮件
                     log::error!("评论成功,发送邮件失败:{e}");
                 }
-            } else if model.is_notice && model.parent_comment_id == -1 && !model.is_admin_comment {
+            } else if model.is_notice && model.parent_comment_id == -1 {
+                // 情况2：回复博文(根评论) -> 发给博主
                 let owenr_user = UserService::find_admin_role(db).await?;
+                if owenr_user.get_email().eq(&model.email) {
+                    return Ok(()); //避免给自己发邮件
+                }
                 let err = EmailService::send_owenr_email(model, db, owenr_user.get_email()).await;
                 if let Err(e) = err {
                     log::error!("评论成功,发送邮件失败:{e}");
