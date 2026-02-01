@@ -39,6 +39,7 @@ pub async fn categories(
  */
 #[routes]
 #[put("/category")]
+#[post("/category")]
 pub async fn update_category(
     _: Authenticated<AppClaims>,
     form: web::Json<Category>,

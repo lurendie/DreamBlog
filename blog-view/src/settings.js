@@ -5,7 +5,7 @@ module.exports = {
 	 */
 	bg1: './img/bg1.webp',
 	bg2: './img/bg2.webp',
-	bg3: '.img/bg3.webp',
+	bg3: './img/bg3.webp',
 
 	/**
 	 * @type {string}

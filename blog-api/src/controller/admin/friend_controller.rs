@@ -23,6 +23,7 @@ pub async fn get_friends_by_query(
     let data = FriendService::friends_by_query(db, page_num, page_size, query.into_inner()).await?;
     let mut result = HashMap::new();
     result.insert("total".to_string(), value!(data.1));
+    result.insert("list".to_string(), value!(data.0));
     result.insert("records".to_string(), value!(data.0));
     Ok(ApiResponse::<Value>::success_with_msg(
         "获取友链列表成功",
@@ -103,7 +104,7 @@ pub async fn get_friend_info(
 pub async fn update_friend_comment_enabled(
     _: Authenticated<AppClaims>,
     app: web::Data<AppState>,
-    payload: web::Json<FriendCommentEnabledUpdate>,
+    payload: web::Query<FriendCommentEnabledUpdate>,
 ) -> Result<ApiResponse<Value>, AppError> {
     FriendService::update_friend_comment_enabled(payload.comment_enabled, app.get_mysql_pool())
         .await?;

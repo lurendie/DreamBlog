@@ -2,6 +2,7 @@ use crate::entity::category;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Category {
+    #[serde(default)]
     id: i64,
     // #[serde(rename(deserialize = "category_name"))]
     name: String,

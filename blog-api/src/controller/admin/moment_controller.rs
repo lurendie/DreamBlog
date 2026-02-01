@@ -19,7 +19,6 @@ pub async fn moments(
     mut query: web::Query<SearchRequest>,
     app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    query.0.set_page_size(Some(5));
     //查询所有moments
     let query = ParamUtils::validate_request_params(&query).await?;
     //分页查询
