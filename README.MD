@@ -60,6 +60,7 @@ UI 框架为 [Element UI](https://github.com/ElemeFE/element)
 5. `cargo run` 启动后端服务
 6. 分别在 `blog-cms` 和 `blog-view` 目录下执行 `npm install` 安装依赖
 7. 分别在 `blog-cms` 和 `blog-view` 目录下执行 `npm run serve` 启动前后台页面
+8. （可选）后台“定时任务”中开启 `local / stats.aggregate_visit`，用于定期聚合 PV/UV 与城市访客统计
 
 ## 项目进度
 
