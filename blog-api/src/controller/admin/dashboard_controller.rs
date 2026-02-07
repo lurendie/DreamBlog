@@ -14,14 +14,13 @@ pub async fn dashboard(
     app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
     let mut map = ValueMap::new();
-    let today_pv = 0;
-    let today_uv = 0;
+    let (today_pv, today_uv) = DashboardService::get_today_pv_uv(app.get_mysql_pool()).await;
     let blog_count = DashboardService::get_blog_count(app.get_mysql_pool()).await;
     let comment_count = DashboardService::get_comment_count(app.get_mysql_pool()).await;
     let category_blog_count_map = DashboardService::get_categorys_count(app.get_mysql_pool()).await;
     let tag_blog_count_map = DashboardService::get_tags_count(app.get_mysql_pool()).await;
-    let visit_record_map = ValueMap::new();
-    let city_visitor_list = ValueMap::new();
+    let visit_record_map = DashboardService::get_visit_record_chart(app.get_mysql_pool()).await;
+    let city_visitor_list = DashboardService::get_city_visitor_list(app.get_mysql_pool()).await;
     map.insert(value!("pv"), value!(today_pv));
     map.insert(value!("uv"), value!(today_uv));
     map.insert(value!("blogCount"), value!(blog_count));

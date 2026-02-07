@@ -15,7 +15,7 @@ use crate::{
     entity::{schedule_job, schedule_job_log},
     error::DataBaseError,
     model::{JobLogQuery, JobQuery, JobStatusUpdate, ScheduleJob, ScheduleJobLog},
-    service::RedisService,
+    service::{RedisService, VisitStatsService},
 };
 
 pub struct ScheduleJobService;
@@ -183,7 +183,7 @@ impl ScheduleJobService {
         db: &DatabaseConnection,
     ) -> Result<(), DataBaseError> {
         let start = Instant::now();
-        let result = execute_job_action(&job_model).await;
+        let result = execute_job_action(&job_model, db).await;
         let duration = start.elapsed().as_millis().min(i32::MAX as u128) as i32;
 
         let (status, error) = match result {
@@ -212,7 +212,10 @@ impl ScheduleJobService {
     }
 }
 
-async fn execute_job_action(job_model: &schedule_job::Model) -> Result<(), String> {
+async fn execute_job_action(
+    job_model: &schedule_job::Model,
+    db: &DatabaseConnection,
+) -> Result<(), String> {
     let bean_name = job_model
         .bean_name
         .clone()
@@ -228,7 +231,7 @@ async fn execute_job_action(job_model: &schedule_job::Model) -> Result<(), Strin
         return execute_shell_job(&method_name, &params).await;
     }
     if bean_name == "local" {
-        return execute_local_job(&method_name, &params).await;
+        return execute_local_job(&method_name, &params, db).await;
     }
     Err(format!("不支持的任务类型: {}", bean_name))
 }
@@ -293,7 +296,11 @@ async fn execute_shell_job(command: &str, params: &str) -> Result<(), String> {
     }
 }
 
-async fn execute_local_job(method_name: &str, _params: &str) -> Result<(), String> {
+async fn execute_local_job(
+    method_name: &str,
+    _params: &str,
+    db: &DatabaseConnection,
+) -> Result<(), String> {
     match method_name {
         "cache.clear_all" => {
             clear_all_cache().await.map_err(|e| e.to_string())?;
@@ -335,6 +342,12 @@ async fn execute_local_job(method_name: &str, _params: &str) -> Result<(), Strin
         }
         "cache.clear_blog_views" => {
             RedisService::_del_key(RedisKeyConstant::BLOG_VIEWS_MAP)
+                .await
+                .map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        "stats.aggregate_visit" => {
+            VisitStatsService::aggregate_visit_stats(db)
                 .await
                 .map_err(|e| e.to_string())?;
             Ok(())
