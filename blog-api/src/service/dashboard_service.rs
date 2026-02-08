@@ -1,5 +1,8 @@
 use rbs::value::map::ValueMap;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
+    QuerySelect,
+};
 use chrono::Local;
 
 use crate::entity::{blog, comment, city_visitor, visit_record};

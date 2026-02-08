@@ -20,7 +20,7 @@ pub async fn get_visitor_list(
     let map = VisitorService::get_visitor_list(query.0, db).await?;
     let mut result = HashMap::new();
     result.insert("total".to_string(), value!(map.1));
-    result.insert("list".to_string(), value!(map.0));
+    result.insert("list".to_string(), value!(map.0.clone()));
     result.insert("records".to_string(), value!(map.0));
     Ok(ApiResponse::success_with_msg(
         "获取访客列表成功",

@@ -23,7 +23,7 @@ pub async fn get_friends_by_query(
     let data = FriendService::friends_by_query(db, page_num, page_size, query.into_inner()).await?;
     let mut result = HashMap::new();
     result.insert("total".to_string(), value!(data.1));
-    result.insert("list".to_string(), value!(data.0));
+    result.insert("list".to_string(), value!(data.0.clone()));
     result.insert("records".to_string(), value!(data.0));
     Ok(ApiResponse::<Value>::success_with_msg(
         "获取友链列表成功",
@@ -127,4 +127,3 @@ pub async fn update_friend_content(
         None,
     ))
 }
-

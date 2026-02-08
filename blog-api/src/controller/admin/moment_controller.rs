@@ -16,7 +16,7 @@ use std::collections::HashMap;
 #[get("/moments")]
 pub async fn moments(
     _: Authenticated<AppClaims>,
-    mut query: web::Query<SearchRequest>,
+    query: web::Query<SearchRequest>,
     app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
     //查询所有moments
