@@ -1,7 +1,7 @@
 use chrono::{Local, NaiveDateTime, NaiveTime};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait,
-    QueryFilter, Statement, TransactionTrait, TryGetable,
+    QueryFilter, Statement, TransactionTrait,
 };
 
 use crate::entity::{city_visitor, visit_record};

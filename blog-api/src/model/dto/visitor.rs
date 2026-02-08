@@ -1,7 +1,7 @@
 use crate::entity::visitor;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Visitor {
     pub id: i64,
     pub uuid: String,
