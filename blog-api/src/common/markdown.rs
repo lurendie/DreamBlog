@@ -4,12 +4,15 @@ use comrak::{
     nodes::Sourcepos,
     Options, Plugins,
 };
+use regex::Regex;
 use std::io::{self, Write};
 pub struct MarkdownParser;
 impl MarkdownParser {
     pub fn parser_html(markdown: String) -> String {
         let adapter = CustomHeadingAdapter::new();
-        let options = Options::default();
+        let markdown = preprocess_markdown(markdown);
+        let mut options = Options::default();
+        options.render.unsafe_ = true;
         let mut plugins = Plugins::default();
         plugins.render.heading_adapter = Some(&adapter);
         markdown_to_html_with_plugins(markdown.as_str(), &options, &plugins)
@@ -90,4 +93,13 @@ impl HeadingAdapter for CustomHeadingAdapter {
     fn exit(&self, output: &mut dyn Write, heading: &HeadingMeta) -> io::Result<()> {
         write!(output, "</h{}>", heading.level)
     }
+}
+
+fn preprocess_markdown(markdown: String) -> String {
+    let heimu_re = Regex::new(r"(?s)@@(.*?)@@").unwrap();
+    let cover_re = Regex::new(r"(?s)%%(.*?)%%").unwrap();
+    let markdown = heimu_re.replace_all(&markdown, r#"<span class="m-text-heimu">$1</span>"#);
+    cover_re
+        .replace_all(&markdown, r#"<span class="m-text-cover">$1</span>"#)
+        .into_owned()
 }
