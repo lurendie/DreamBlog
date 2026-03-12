@@ -1,5 +1,8 @@
 use chrono::NaiveDateTime;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder};
+use sea_orm::{
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait,
+    PaginatorTrait, QueryFilter, QueryOrder,
+};
 
 use crate::{
     entity::operation_log,
@@ -10,6 +13,42 @@ use crate::{
 pub struct OperationLogService;
 
 impl OperationLogService {
+    #[allow(clippy::too_many_arguments)]
+    pub async fn save_operation_log(
+        db: &DatabaseConnection,
+        username: String,
+        uri: String,
+        method: String,
+        param: Option<String>,
+        description: Option<String>,
+        ip: Option<String>,
+        ip_source: Option<String>,
+        os: Option<String>,
+        browser: Option<String>,
+        times: i32,
+        create_time: chrono::NaiveDateTime,
+        user_agent: Option<String>,
+    ) -> Result<(), DataBaseError> {
+        let new_log = operation_log::ActiveModel {
+            username: Set(username),
+            uri: Set(uri),
+            method: Set(method),
+            param: Set(param),
+            description: Set(description),
+            ip: Set(ip),
+            ip_source: Set(ip_source),
+            os: Set(os),
+            browser: Set(browser),
+            times: Set(times),
+            create_time: Set(create_time),
+            user_agent: Set(user_agent),
+            ..Default::default()
+        };
+
+        new_log.save(db).await?;
+        Ok(())
+    }
+
     pub async fn get_operation_log_list(
         query: OperationLogQuery,
         db: &DatabaseConnection,

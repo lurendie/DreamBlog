@@ -13,7 +13,7 @@ use crate::controller::{
     moment_controller, user_controller,
 };
 use crate::middleware::build_session_storage;
-use crate::middleware::VisiLog;
+use crate::middleware::{OperationLog, VisiLog};
 use actix_jwt_session::{Duration, JwtTtl, RefreshTtl};
 use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
@@ -59,6 +59,7 @@ impl AppServer {
                 )
                 .service(
                     web::scope("/admin")
+                        .wrap(OperationLog::default())
                         .wrap(factory.clone())
                         .configure(Self::cms_router),
                 )
