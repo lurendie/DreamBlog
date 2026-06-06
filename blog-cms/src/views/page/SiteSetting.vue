@@ -4,8 +4,28 @@
 			<el-tab-pane label="基础设置" name="basic">
 				<el-card>
 					<el-form label-position="right" label-width="100px">
-						<el-form-item :label="item.nameZh" v-for="item in typeMap.type1" :key="item.id">
+						<el-form-item :label="item.nameZh" v-for="item in basicSettings" :key="item.id">
 							<el-input v-model="item.value" size="mini"></el-input>
+						</el-form-item>
+					</el-form>
+				</el-card>
+			</el-tab-pane>
+			<el-tab-pane label="SEO设置" name="seo">
+				<el-card>
+					<el-form label-position="right" label-width="110px">
+						<el-form-item label="网站描述">
+							<el-input
+								v-model="seoSettings.siteDescription.value"
+								type="textarea"
+								:rows="4"
+								placeholder="用于首页和默认页面的 meta description，不填则前台输出空"
+							></el-input>
+						</el-form-item>
+						<el-form-item label="网站关键词">
+							<el-input
+								v-model="seoSettings.siteKeywords.value"
+								placeholder="多个关键词用英文逗号分隔，不填则前台输出空"
+							></el-input>
 						</el-form-item>
 					</el-form>
 				</el-card>
@@ -76,19 +96,54 @@
 				activeTab: "basic",
 				deleteIds: [],
 				typeMap: {},
+				seoSettings: {
+					siteDescription: this.createSetting('siteDescription', '网站描述'),
+					siteKeywords: this.createSetting('siteKeywords', '网站关键词')
+				}
 			}
 		},
 		created() {
 			this.getData()
 		},
+		computed: {
+			basicSettings() {
+				return (this.typeMap.type1 || []).filter(item => !['siteDescription', 'siteKeywords'].includes(item.nameEn))
+			}
+		},
 		methods: {
 			getData() {
 				getSiteSettingData().then(res => {
 					this.typeMap = res.data
+					this.ensureSeoSettings()
 					res.data.type3.forEach(item => {
 						item.value = JSON.parse(item.value)
 					})
 				})
+			},
+			createSetting(nameEn, nameZh) {
+				return {
+					key: nameEn,
+					nameEn,
+					nameZh,
+					type: 1,
+					value: ''
+				}
+			},
+			ensureSeoSettings() {
+				this.seoSettings = {
+					siteDescription: this.createSetting('siteDescription', '网站描述'),
+					siteKeywords: this.createSetting('siteKeywords', '网站关键词')
+				}
+				const type1 = this.typeMap.type1 || []
+				Object.keys(this.seoSettings).forEach(key => {
+					const setting = type1.find(item => item.nameEn === key)
+					if (setting) {
+						this.seoSettings[key] = setting
+					} else {
+						type1.push(this.seoSettings[key])
+					}
+				})
+				this.typeMap.type1 = type1
 			},
 			addFavorite() {
 				this.typeMap.type2.push({

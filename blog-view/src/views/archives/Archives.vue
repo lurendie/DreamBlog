@@ -58,7 +58,8 @@
 						this.count = res.data.count
 						updateSeo({
 							title: '归档',
-							description: `按时间线浏览全部文章归档，当前共 ${this.count} 篇日志。`,
+							description: this.$store.state.siteInfo?.siteDescription || '',
+							keywords: this.$store.state.siteInfo?.siteKeywords || '',
 							path: this.$route.fullPath,
 						})
 					} else {

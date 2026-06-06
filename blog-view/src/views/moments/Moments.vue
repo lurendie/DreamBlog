@@ -73,7 +73,8 @@
 						this.totalPage = res.data.totalPage
 						updateSeo({
 							title: '动态',
-							description: `查看最新动态内容，当前第 ${this.pageNum} 页。`,
+							description: this.$store.state.siteInfo?.siteDescription || '',
+							keywords: this.$store.state.siteInfo?.siteKeywords || '',
 							path: this.$route.fullPath,
 						})
 					} else {

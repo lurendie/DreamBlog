@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import store from '@/store'
 import { updateSeo } from '@/util/seo'
 
 Vue.use(VueRouter)
@@ -10,7 +11,6 @@ const routes = [
 		component: () => import('@/views/Login'),
 		meta: {
 			title: '登录',
-			description: '登录后台管理或使用博主身份参与站点互动。',
 			noindex: true,
 		}
 	},
@@ -25,7 +25,6 @@ const routes = [
 				component: () => import('@/views/home/Home'),
 				meta: {
 					title: '首页',
-					description: '浏览最新博客文章、精选内容与站点概览。',
 				}
 			},
 			{
@@ -34,7 +33,6 @@ const routes = [
 				component: () => import('@/views/archives/Archives'),
 				meta: {
 					title: '归档',
-					description: '按时间归档浏览全部文章内容。',
 				}
 			},
 			{
@@ -43,7 +41,6 @@ const routes = [
 				component: () => import('@/views/blog/Blog'),
 				meta: {
 					title: '博客',
-					description: '查看博客文章正文、分类、标签与评论。',
 				}
 			},
 			{
@@ -52,7 +49,6 @@ const routes = [
 				component: () => import('@/views/tag/Tag'),
 				meta: {
 					title: '标签',
-					description: '按标签聚合浏览相关博客文章。',
 				}
 			},
 			{
@@ -61,7 +57,6 @@ const routes = [
 				component: () => import('@/views/category/Category'),
 				meta: {
 					title: '分类',
-					description: '按分类聚合浏览相关博客文章。',
 				}
 			},
 			{
@@ -70,7 +65,6 @@ const routes = [
 				component: () => import('@/views/moments/Moments'),
 				meta: {
 					title: '动态',
-					description: '查看博主发布的动态内容与日常记录。',
 				}
 			},
 			{
@@ -79,7 +73,6 @@ const routes = [
 				component: () => import('@/views/friends/Friends'),
 				meta: {
 					title: '友人帐',
-					description: '查看站点友链、站点说明与相关评论内容。',
 				}
 			},
 			{
@@ -88,7 +81,6 @@ const routes = [
 				component: () => import('@/views/about/About'),
 				meta: {
 					title: '关于我',
-					description: '了解站长介绍、个人信息与关于页面内容。',
 				}
 			}
 		]
@@ -105,7 +97,8 @@ const router = new VueRouter({
 router.beforeEach((to, from, next) => {
 	updateSeo({
 		title: to.meta.title,
-		description: to.meta.description,
+		description: store.state.siteInfo?.siteDescription || '',
+		keywords: store.state.siteInfo?.siteKeywords || '',
 		path: to.fullPath,
 		noindex: !!to.meta.noindex,
 	})

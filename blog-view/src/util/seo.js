@@ -1,9 +1,6 @@
 import store from '@/store'
 import getPageTitle from '@/util/get-page-title'
 
-const DEFAULT_DESCRIPTION = 'DreamBlog 是一个基于 Vue 与 Rust 的个人博客站点，包含文章、归档、分类、标签、动态、友链与关于页面。'
-const DEFAULT_KEYWORDS = 'DreamBlog,博客,技术博客,Rust,Vue,前端,后端'
-
 function ensureMeta(attr, key, content) {
 	let node = document.head.querySelector(`meta[${attr}="${key}"]`)
 	if (!node) {
@@ -66,15 +63,15 @@ function getSiteName() {
 	return suffix ? suffix.replace(/^[\s\-|_]+/, '') : 'DreamBlog'
 }
 
-export function createDescription(value, fallback = DEFAULT_DESCRIPTION) {
+export function createDescription(value, fallback = '') {
 	const cleaned = truncate(stripHtml(value))
 	return cleaned || fallback
 }
 
 export function updateSeo({
 	title,
-	description = DEFAULT_DESCRIPTION,
-	keywords = DEFAULT_KEYWORDS,
+	description = '',
+	keywords = '',
 	path = window.location.pathname,
 	image,
 	type = 'website',

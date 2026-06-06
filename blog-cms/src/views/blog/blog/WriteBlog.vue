@@ -13,7 +13,6 @@
 					</el-form-item>
 				</el-col>
 			</el-row>
-
 			<el-form-item label="文章描述" prop="description">
 				<mavon-editor v-model="form.description" />
 			</el-form-item>

@@ -313,7 +313,18 @@ impl BlogService {
                 return None;
             }
         };
+        let tag_models = blog_model
+            .find_related(tag::Entity)
+            .all(db)
+            .await
+            .unwrap_or_default();
         let mut blog = BlogDetail::from(blog_model);
+        blog.tags = Some(
+            tag_models
+                .into_iter()
+                .map(crate::model::TagDTO::from)
+                .collect(),
+        );
         blog.content = MarkdownParser::parser_html(blog.content.clone());
         if let Some(views) = views {
             blog.views = views;

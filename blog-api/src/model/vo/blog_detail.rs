@@ -1,4 +1,4 @@
-use crate::entity::blog;
+use crate::{entity::blog, model::TagDTO};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 //博客详情信息
@@ -7,6 +7,7 @@ pub struct BlogDetail {
     pub(crate) id: Option<i64>,
     pub(crate) title: String,
     pub(crate) content: String,
+    pub(crate) description: String,
     pub(crate) is_appreciation: bool,
     #[serde(rename(serialize = "commentEnabled"))]
     pub(crate) is_comment_enabled: bool,
@@ -21,6 +22,7 @@ pub struct BlogDetail {
     pub(crate) is_top: bool,
 
     pub(crate) password: Option<String>,
+    pub(crate) tags: Option<Vec<TagDTO>>,
 }
 
 impl BlogDetail {
@@ -35,6 +37,7 @@ impl From<blog::Model> for BlogDetail {
             id: Some(model.id),
             title: model.title,
             content: model.content,
+            description: model.description,
             is_appreciation: model.is_appreciation,
             is_comment_enabled: model.is_comment_enabled,
             create_time: model.create_time,
@@ -44,6 +47,7 @@ impl From<blog::Model> for BlogDetail {
             read_time: model.read_time,
             is_top: model.is_top,
             password: model.password,
+            tags: None,
         }
     }
 }

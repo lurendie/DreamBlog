@@ -157,6 +157,7 @@
 						updateSeo({
 							title: this.blog.title,
 							description: createDescription(this.blog.description || this.blog.content),
+							keywords: this.createArticleKeywords(this.blog.tags),
 							path: `/blog/${id}`,
 							image: this.blog.firstPicture,
 							type: 'article',
@@ -179,6 +180,12 @@
 			},
 			changeFocusMode() {
 				this.$store.commit(SET_FOCUS_MODE, !this.focusMode)
+			},
+			createArticleKeywords(tags = []) {
+				if (!Array.isArray(tags)) {
+					return ''
+				}
+				return tags.map(tag => tag.name).filter(Boolean).join(',')
 			}
 		}
 	}

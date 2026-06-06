@@ -45,7 +45,8 @@
 						this.totalPage = res.data.totalPage
 						updateSeo({
 							title: `标签：${this.tagName}`,
-							description: `浏览标签 ${this.tagName} 下的博客文章与相关内容。`,
+							description: this.$store.state.siteInfo?.siteDescription || '',
+							keywords: this.$store.state.siteInfo?.siteKeywords || '',
 							path: this.$route.fullPath,
 						})
 						this.$nextTick(() => {

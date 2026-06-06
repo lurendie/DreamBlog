@@ -124,11 +124,14 @@
 						this.randomBlogList = res.data.randomBlogList
 						this.$store.commit(SAVE_SITE_INFO, this.siteInfo)
 						this.$store.commit(SAVE_INTRODUCTION, res.data.introduction)
-						updateSeo({
-							title: this.$route.meta.title,
-							description: `${this.siteInfo.blogName || 'DreamBlog'}，持续分享博客文章、归档内容、动态与友链信息。`,
-							path: this.$route.fullPath,
-						})
+						if (this.$route.name !== 'blog') {
+							updateSeo({
+								title: this.$route.meta.title,
+								description: this.siteInfo.siteDescription || '',
+								keywords: this.siteInfo.siteKeywords || '',
+								path: this.$route.fullPath,
+							})
+						}
 					}
 				})
 			},

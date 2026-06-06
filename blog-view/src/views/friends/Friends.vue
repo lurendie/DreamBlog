@@ -32,7 +32,7 @@
 <script>
 	import {getData, addViewsByNickname} from "@/api/friend";
 	import CommentList from "@/components/comment/CommentList";
-	import { createDescription, updateSeo } from '@/util/seo'
+	import { updateSeo } from '@/util/seo'
 
 	export default {
 		name: "Friends",
@@ -62,7 +62,8 @@
 						this.info = res.data.friendInfo
 						updateSeo({
 							title: '友人帐',
-							description: createDescription(this.info.content, '查看站点友链与友链页说明内容。'),
+							description: this.$store.state.siteInfo?.siteDescription || '',
+							keywords: this.$store.state.siteInfo?.siteKeywords || '',
 							path: this.$route.fullPath,
 						})
 					} else {
