@@ -8,7 +8,6 @@ use crate::entity::{
 use crate::common::MarkdownParser;
 use crate::common::TypeValue;
 use crate::error::DataBaseError;
-use crate::model::BlogView;
 use crate::model::{
     BlogArchive, BlogDetail, BlogInfo, BlogVO, BlogVisibility, SearchBlog, SearchRequest,
 };
@@ -33,6 +32,14 @@ use std::str::FromStr;
 pub struct BlogService;
 
 impl BlogService {
+    fn category_blog_cache_field(name: &str, page_num: usize) -> String {
+        format!("{}:{}", name, page_num)
+    }
+
+    fn tag_blog_cache_field(name: &str, page_num: usize) -> String {
+        format!("{}:{}", name, page_num)
+    }
+
     pub(crate) async fn find_list_by_page(
         page_num: u64,
         db: &DatabaseConnection,
@@ -79,12 +86,12 @@ impl BlogService {
         );
         //4.如果数据库查询不是Null 存放到Redis中
         if !blog_info_list.is_empty() {
-            let _ = RedisService::set_hash_key(
+            RedisService::try_set_hash_key(
                 RedisKeyConstant::HOME_BLOG_INFO_LIST.to_string(),
                 page_num.to_string(),
                 &map,
             )
-            .await?;
+            .await;
         }
         log::info!(
             "redis KEY:{} 缓存数据成功",
@@ -130,7 +137,7 @@ impl BlogService {
 
         if blog_info_list.len() < BlogInfoConstant::RANDOM_BLOG_LIMIT_NUM {
             if blog_info_list.len() > 0 {
-                for i in 0..(blog_info_list.len() - 1) {
+                for i in 0..blog_info_list.len() {
                     ids.push(i);
                     result.push(value!(blog_info_list[i].clone()));
                 }
@@ -147,11 +154,11 @@ impl BlogService {
         }
         if result.len() > 0 {
             //保存到Redis
-            RedisService::set_value_vec(
+            RedisService::try_set_value_vec(
                 RedisKeyConstant::RANDOM_BLOG_LIST.to_string(),
                 &value!(&result),
             )
-            .await?;
+            .await;
             log::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::RANDOM_BLOG_LIST
@@ -198,7 +205,7 @@ impl BlogService {
         //如果文章数量小于NEW_BLOG_PAGE_SIZE 则直接返回
         if blog_info_list.len() < BlogInfoConstant::NEW_BLOG_PAGE_SIZE {
             if blog_info_list.len() > 0 {
-                for i in 0..(blog_info_list.len() - 1) {
+                for i in 0..blog_info_list.len() {
                     result.push(value!(blog_info_list[i].clone()));
                 }
             }
@@ -210,11 +217,11 @@ impl BlogService {
 
         if result.len() > 0 {
             //保存到Redis
-            RedisService::set_value_vec(
+            RedisService::try_set_value_vec(
                 RedisKeyConstant::NEW_BLOG_LIST.to_string(),
                 &value!(&result),
             )
-            .await?;
+            .await;
             log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::NEW_BLOG_LIST);
         }
 
@@ -227,6 +234,21 @@ impl BlogService {
         page_num: usize,
         db: &DatabaseConnection,
     ) -> HashMap<String, Value> {
+        let cache_field = Self::category_blog_cache_field(&name, page_num);
+        let redis_cache = RedisService::get_hash_key(
+            RedisKeyConstant::CATEGORY_BLOG_LIST.to_string(),
+            cache_field.clone(),
+        )
+        .await;
+        if let Ok(redis_cache) = redis_cache {
+            log::info!(
+                "redis KEY:{} 字段:{} 获取缓存数据成功",
+                RedisKeyConstant::CATEGORY_BLOG_LIST,
+                cache_field
+            );
+            return redis_cache;
+        }
+
         let mut map: HashMap<String, Value> = HashMap::new();
         let category_model = match category::Entity::find()
             .filter(category::Column::CategoryName.eq(&name))
@@ -259,11 +281,31 @@ impl BlogService {
             "totalPage".to_string(),
             value!(page.num_pages().await.unwrap_or_default()),
         );
+        RedisService::try_set_hash_key(
+            RedisKeyConstant::CATEGORY_BLOG_LIST.to_string(),
+            cache_field,
+            &map,
+        )
+        .await;
         map
     }
 
     //根据ID查找博文
     pub(crate) async fn find_id_detail(id: i64, db: &DatabaseConnection) -> Option<BlogDetail> {
+        let mut cached_blog = RedisService::get_hash_key::<BlogDetail>(
+            RedisKeyConstant::BLOG_DETAIL_MAP.to_string(),
+            id.to_string(),
+        )
+        .await
+        .ok();
+        let views = Self::increment_blog_views(id, db).await;
+        if let Some(blog) = cached_blog.as_mut() {
+            if let Some(views) = views {
+                blog.views = views;
+            }
+            return cached_blog;
+        }
+
         let blog_model = match blog::Entity::find_by_id(id).one(db).await {
             Ok(blog) => blog.unwrap_or_default(),
             Err(e) => {
@@ -273,7 +315,15 @@ impl BlogService {
         };
         let mut blog = BlogDetail::from(blog_model);
         blog.content = MarkdownParser::parser_html(blog.content.clone());
-        BlogView::new(blog.id.unwrap_or_default(), blog.views);
+        if let Some(views) = views {
+            blog.views = views;
+        }
+        RedisService::try_set_hash_key(
+            RedisKeyConstant::BLOG_DETAIL_MAP.to_string(),
+            id.to_string(),
+            &blog,
+        )
+        .await;
         Some(blog)
     }
 
@@ -283,6 +333,21 @@ impl BlogService {
         page_num: usize,
         db: &DatabaseConnection,
     ) -> HashMap<String, Value> {
+        let cache_field = Self::tag_blog_cache_field(&name, page_num);
+        let redis_cache = RedisService::get_hash_key(
+            RedisKeyConstant::TAG_BLOG_LIST.to_string(),
+            cache_field.clone(),
+        )
+        .await;
+        if let Ok(redis_cache) = redis_cache {
+            log::info!(
+                "redis KEY:{} 字段:{} 获取缓存数据成功",
+                RedisKeyConstant::TAG_BLOG_LIST,
+                cache_field
+            );
+            return redis_cache;
+        }
+
         let mut map: HashMap<String, Value> = HashMap::new();
         let tag_model = match tag::Entity::find()
             .filter(tag::Column::TagName.eq(&name))
@@ -316,6 +381,12 @@ impl BlogService {
             "totalPage".to_string(),
             value!(page.num_pages().await.unwrap_or_default()),
         );
+        RedisService::try_set_hash_key(
+            RedisKeyConstant::TAG_BLOG_LIST.to_string(),
+            cache_field,
+            &map,
+        )
+        .await;
         map
     }
 
@@ -378,7 +449,8 @@ impl BlogService {
 
         if map.len() > 0 {
             //保存到Redis
-            RedisService::set_string(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string(), &map).await?;
+            RedisService::try_set_string(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string(), &map)
+                .await;
             log::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::ARCHIVE_BLOG_MAP
@@ -452,6 +524,32 @@ impl BlogService {
             //转HTML
             item.description = MarkdownParser::parser_html(item.description.clone());
         }
+    }
+
+    async fn increment_blog_views(id: i64, db: &DatabaseConnection) -> Option<i32> {
+        let current_views = if let Ok(views) = RedisService::get_hash_key::<i32>(
+            RedisKeyConstant::BLOG_VIEWS_MAP.to_string(),
+            id.to_string(),
+        )
+        .await
+        {
+            views
+        } else {
+            blog::Entity::find_by_id(id)
+                .one(db)
+                .await
+                .ok()
+                .flatten()
+                .map(|blog| blog.views)?
+        };
+        let new_views = current_views.saturating_add(1);
+        RedisService::try_set_hash_key(
+            RedisKeyConstant::BLOG_VIEWS_MAP.to_string(),
+            id.to_string(),
+            &new_views,
+        )
+        .await;
+        Some(new_views)
     }
 
     /**
@@ -534,7 +632,7 @@ impl BlogService {
                         Set(v.get_comment_enabled().unwrap_or_default());
                 }
                 active_model.update(db).await?;
-                Self::clear_blog_cache().await?;
+                Self::clear_blog_cache().await;
                 return Ok(());
             }
             None => {
@@ -699,8 +797,8 @@ impl BlogService {
                 })
             })
             .await?;
-        Self::clear_blog_cache().await?;
-        RedisService::_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await?;
+        Self::clear_blog_cache().await;
+        RedisService::try_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await;
         Ok(ok)
     }
 
@@ -738,17 +836,19 @@ impl BlogService {
             })
             .await?;
 
-        Self::clear_blog_cache().await?;
-        RedisService::_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await?;
+        Self::clear_blog_cache().await;
+        RedisService::try_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await;
         Ok(result)
     }
 
-    async fn clear_blog_cache() -> Result<(), DataBaseError> {
-        RedisService::_del_key(RedisKeyConstant::HOME_BLOG_INFO_LIST).await?;
-        RedisService::_del_key(RedisKeyConstant::RANDOM_BLOG_LIST).await?;
-        RedisService::_del_key(RedisKeyConstant::NEW_BLOG_LIST).await?;
-        RedisService::_del_key(RedisKeyConstant::ARCHIVE_BLOG_MAP).await?;
-        Ok(())
+    pub async fn clear_blog_cache() {
+        RedisService::try_del_key(RedisKeyConstant::HOME_BLOG_INFO_LIST).await;
+        RedisService::try_del_key(RedisKeyConstant::BLOG_DETAIL_MAP).await;
+        RedisService::try_del_key(RedisKeyConstant::CATEGORY_BLOG_LIST).await;
+        RedisService::try_del_key(RedisKeyConstant::TAG_BLOG_LIST).await;
+        RedisService::try_del_key(RedisKeyConstant::RANDOM_BLOG_LIST).await;
+        RedisService::try_del_key(RedisKeyConstant::NEW_BLOG_LIST).await;
+        RedisService::try_del_key(RedisKeyConstant::ARCHIVE_BLOG_MAP).await;
     }
 
     /**

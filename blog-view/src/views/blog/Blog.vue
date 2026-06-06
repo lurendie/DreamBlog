@@ -42,7 +42,7 @@
 						<i class="small folder open icon"></i><span class="m-text-500">{{ blog.category.name }}</span>
 					</router-link>
 					<!--文章Markdown正文-->
-					<div class="typo js-toc-content m-padded-tb-small match-braces rainbow-braces" v-lazy-container="{selector: 'img'}" v-viewer :class="{'m-big-fontsize':bigFontSize}" v-html="blog.content"></div>
+					<div class="typo js-toc-content m-padded-tb-small match-braces rainbow-braces" v-lazy-container="{selector: 'img'}" v-viewer :class="{'m-big-fontsize':bigFontSize}" v-safe-html="blog.content"></div>
 					<!--赞赏-->
 					<div style="margin: 2em auto">
 						<el-popover placement="top" width="220" trigger="click" v-if="blog.appreciation">
@@ -137,6 +137,8 @@
 				//只要路由路径有改变，且停留在当前Blog组件内，就把文章的渲染完成状态置为 false
 				this.$store.commit(SET_IS_BLOG_RENDER_COMPLETE, false)
 				next()
+			} else {
+				next()
 			}
 		},
 		created() {
@@ -162,7 +164,7 @@
 							publishedTime: this.blog.createTime,
 							modifiedTime: this.blog.updateTime,
 						})
-						//v-html渲染完毕后，渲染代码块样式
+							//富文本渲染完毕后，渲染代码块样式
 						this.$nextTick(() => {
 							Prism.highlightAll()
 							//将文章渲染完成状态置为 true

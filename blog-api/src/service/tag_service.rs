@@ -12,7 +12,7 @@ use crate::error::DataBaseError;
 use crate::model::Serise;
 use crate::model::TagDTO;
 
-use super::RedisService;
+use super::{BlogService, RedisService};
 pub struct TagService;
 impl TagService {
     pub async fn get_tags(db: &DatabaseConnection) -> Result<Vec<Value>, DataBaseError> {
@@ -45,11 +45,11 @@ impl TagService {
 
         if result.len() > 0 {
             //保存到Redis
-            RedisService::set_value_vec(
+            RedisService::try_set_value_vec(
                 RedisKeyConstant::TAG_CLOUD_LIST.to_string(),
                 &value!(&result),
             )
-            .await?;
+            .await;
             log::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::TAG_CLOUD_LIST
@@ -102,7 +102,7 @@ impl TagService {
             active.id = NotSet;
         }
         active.reset_all().save(db).await?;
-        RedisService::_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await?;
+        Self::clear_tag_cache().await;
         Ok(())
     }
 
@@ -138,9 +138,14 @@ impl TagService {
             true => return Err(DataBaseError::Custom("标签下有文章，不能删除".to_string())),
             false => {
                 tag::Entity::delete_by_id(id).exec(db).await?;
-                RedisService::_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await?;
+                Self::clear_tag_cache().await;
                 Ok(())
             }
         }
+    }
+
+    async fn clear_tag_cache() {
+        RedisService::try_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await;
+        BlogService::clear_blog_cache().await;
     }
 }

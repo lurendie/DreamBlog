@@ -7,7 +7,7 @@
 		<div class="right-menu">
 			<el-dropdown class="avatar-container" trigger="click">
 				<div class="avatar-wrapper">
-					<img :src="user.avatar" class="user-avatar">
+					<img :src="user.avatar" class="user-avatar" v-if="user">
 				</div>
 				<el-dropdown-menu slot="dropdown" class="user-dropdown">
 					<a target="_blank" href="https://github.com/Naccl/NBlog">
@@ -31,6 +31,7 @@
 	import Breadcrumb from '@/components/Breadcrumb'
 	import Hamburger from '@/components/Hamburger'
 	import SvgIcon from '@/components/SvgIcon'
+	import {clearLoginState, getStoredUser} from '@/util/storage'
 
 	export default {
 		components: {
@@ -56,14 +57,14 @@
 				this.$store.dispatch('app/toggleSideBar')
 			},
 			getUserInfo() {
-				this.user = JSON.parse(window.localStorage.getItem('user') || null)
+				this.user = getStoredUser()
 				if (!this.user) {
+					clearLoginState()
 					this.$router.push('/login')
 				}
 			},
 			logout() {
-				window.localStorage.removeItem('token')
-				window.localStorage.removeItem('user')
+				clearLoginState()
 				this.$router.push('/login')
 				this.msgSuccess('退出成功')
 			}

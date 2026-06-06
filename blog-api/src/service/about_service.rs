@@ -40,7 +40,7 @@ impl AboutService {
             });
         //缓存
         if !map.is_empty() {
-            RedisService::set_string(RedisKeyConstant::ABOUT_INFO_MAP.to_string(), &map).await?;
+            RedisService::try_set_string(RedisKeyConstant::ABOUT_INFO_MAP.to_string(), &map).await;
         }
         Ok(map)
     }
@@ -97,7 +97,7 @@ impl AboutService {
             }
         }
 
-        RedisService::_del_key(RedisKeyConstant::ABOUT_INFO_MAP).await?;
+        RedisService::try_del_key(RedisKeyConstant::ABOUT_INFO_MAP).await;
         Ok(())
     }
 

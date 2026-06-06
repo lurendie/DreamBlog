@@ -80,6 +80,7 @@
 				badges: [],
 				newBlogList: [],
 				hitokoto: {},
+				resizeHandler: null,
 			}
 		},
 		computed: {
@@ -99,12 +100,19 @@
 		},
 		mounted() {
 			//保存可视窗口大小
-			this.$store.commit(SAVE_CLIENT_SIZE, {clientHeight: document.body.clientHeight, clientWidth: document.body.clientWidth})
-			window.onresize = () => {
-				this.$store.commit(SAVE_CLIENT_SIZE, {clientHeight: document.body.clientHeight, clientWidth: document.body.clientWidth})
+			this.saveClientSize()
+			this.resizeHandler = this.saveClientSize
+			window.addEventListener('resize', this.resizeHandler)
+		},
+		beforeDestroy() {
+			if (this.resizeHandler) {
+				window.removeEventListener('resize', this.resizeHandler)
 			}
 		},
 		methods: {
+			saveClientSize() {
+				this.$store.commit(SAVE_CLIENT_SIZE, {clientHeight: document.body.clientHeight, clientWidth: document.body.clientWidth})
+			},
 			getSite() {
 				getSite().then(res => {
 					if (res.code === 200) {

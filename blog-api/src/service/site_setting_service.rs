@@ -120,7 +120,7 @@ impl SiteSettingService {
         map.insert(value!("badges"), value!(badges));
 
         //缓存数据
-        RedisService::set_string(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await?;
+        RedisService::try_set_string(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await;
         log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::SITE_INFO_MAP);
         Ok(map)
     }
@@ -211,7 +211,7 @@ impl SiteSettingService {
         .await?;
 
         // 更新后清理缓存
-        RedisService::_del_key(RedisKeyConstant::SITE_INFO_MAP).await?;
+        RedisService::try_del_key(RedisKeyConstant::SITE_INFO_MAP).await;
 
         Ok(())
     }

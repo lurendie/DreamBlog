@@ -22,15 +22,6 @@ impl RedisService {
     ) -> Result<T, DataBaseError> {
         //1.获取连接
         let mut connection = RedisClient::get_connection().await?;
-        //2.判断key是否存在
-        let exists = Self::hexists(&key, &hash).await?;
-        if !exists {
-            return Err(DataBaseError::Custom(format!(
-                "无法从 redis {} 获取字段 {} 的值",
-                key, hash
-            )));
-        }
-
         let redis_reuslt = connection
             .hget::<String, String, Option<String>>(key.to_owned(), hash.to_owned())
             .await?;
@@ -49,40 +40,6 @@ impl RedisService {
     }
 
     /**
-     * 根据hash KEY查询字符串
-     */
-    pub async fn hexists(key: &str, hash: &str) -> Result<bool, DataBaseError> {
-        //1.获取连接
-        let mut connection = RedisClient::get_connection().await?;
-        //2.判断key是否存在
-        let exists = Self::key_exists(key).await?;
-        if exists {
-            // 检查哈希字段是否存在
-            let field_exists: i32 = connection
-                .hexists::<String, String, i32>(key.to_string(), hash.to_string())
-                .await?;
-            if field_exists != 0 {
-                return Ok(true);
-            }
-        }
-        Ok(false)
-    }
-
-    /**
-     * 判断key是否存在
-     */
-    pub async fn key_exists(key: &str) -> Result<bool, DataBaseError> {
-        //1.获取连接
-        let mut connection = RedisClient::get_connection().await?;
-        //2.判断key是否存在
-        let exists: i32 = connection.exists::<String, i32>(key.to_string()).await?;
-        if exists == 0 {
-            return Ok(false);
-        }
-        Ok(true)
-    }
-
-    /**
      * 根据HashName key保存HashMap<String, Value>
      */
     pub async fn set_hash_key<T: Serialize>(
@@ -91,7 +48,7 @@ impl RedisService {
         value: &T,
     ) -> Result<(), DataBaseError> {
         //redis序列化
-        let value_str = serde_json::to_string(&value).unwrap_or_default();
+        let value_str = serde_json::to_string(&value)?;
         let mut connection = RedisClient::get_connection().await?;
 
         connection
@@ -102,6 +59,12 @@ impl RedisService {
         }
 
         Ok(())
+    }
+
+    pub async fn try_set_hash_key<T: Serialize>(key: String, hash: String, value: &T) {
+        if let Err(e) = Self::set_hash_key(key.clone(), hash.clone(), value).await {
+            log::error!("redis key: {} hash: {} 缓存写入失败:{}", key, hash, e);
+        }
     }
 
     /**
@@ -124,7 +87,7 @@ impl RedisService {
      */
     pub async fn set_string<T: Serialize>(key: String, value: &T) -> Result<(), DataBaseError> {
         //1.序列化
-        let value_str = serde_json::to_string(&value).unwrap_or_default();
+        let value_str = serde_json::to_string(&value)?;
         //2.获取连接
         let mut connection = RedisClient::get_connection().await?;
         connection
@@ -134,6 +97,12 @@ impl RedisService {
             RedisService::set_expire(key).await?;
         }
         Ok(())
+    }
+
+    pub async fn try_set_string<T: Serialize>(key: String, value: &T) {
+        if let Err(e) = Self::set_string(key.clone(), value).await {
+            log::error!("redis key: {} 缓存写入失败:{}", key, e);
+        }
     }
 
     /**
@@ -180,6 +149,12 @@ impl RedisService {
             RedisService::set_expire(key).await?;
         }
         Ok(())
+    }
+
+    pub async fn try_set_value_vec(key: String, value: &Value) {
+        if let Err(e) = Self::set_value_vec(key.clone(), value).await {
+            log::error!("redis key: {} 缓存写入失败:{}", key, e);
+        }
     }
 
     /**
@@ -253,6 +228,12 @@ impl RedisService {
             Err(e) => log::error!("redis key: {} 删除失败:{}", key, e),
         }
         Ok(())
+    }
+
+    pub async fn try_del_key(key: &str) {
+        if let Err(e) = Self::_del_key(key).await {
+            log::error!("redis key: {} 删除失败:{}", key, e);
+        }
     }
 
     /**

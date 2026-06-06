@@ -2,6 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import getPageTitle from '@/util/get-page-title'
 import Layout from '@/layout'
+import {clearLoginState, getStoredUser} from '@/util/storage'
 
 Vue.use(VueRouter)
 
@@ -247,7 +248,11 @@ router.beforeEach((to, from, next) => {
 	if (to.path !== '/login') {
 		//获取token
 		const tokenStr = window.localStorage.getItem('token')
-		if (!tokenStr) return next("/login")
+		const user = getStoredUser()
+		if (!tokenStr || !user) {
+			clearLoginState()
+			return next("/login")
+		}
 	}
 	document.title = getPageTitle(to.meta.title)
 	next()

@@ -16,7 +16,7 @@
 					<strong class="date">{{ comment.createTime | dateFormat('YYYY-MM-DD HH:mm') }}</strong>
 				</div>
 				<el-button size="mini" type="primary" @click="setReply(comment.id)">回复</el-button>
-				<div class="text" v-html="comment.content"></div>
+				<div class="text" v-safe-html="comment.content"></div>
 			</div>
 			<div class="comments" v-if="comment.replyComments.length>0">
 				<div class="comment" v-for="reply in comment.replyComments" :key="reply.id">
@@ -33,7 +33,7 @@
             <el-button size="mini" type="primary" @click="setReply(reply.id)">回复</el-button>
 						<div class="text">
 							<a :href="`#comment-${reply.parentCommentId}`">@{{ reply.parentCommentNickname }}</a>
-							<div v-html="reply.content"></div>
+							<div v-safe-html="reply.content"></div>
 						</div>
 					</div>
 					<CommentForm v-if="parentCommentId===reply.id"/>

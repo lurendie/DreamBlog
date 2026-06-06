@@ -156,6 +156,22 @@ impl AppServer {
             .service(admin::visit_log_controller::get_visit_log_list)
             .service(admin::visit_log_controller::delete_visit_log_by_id)
             .service(admin::visitor_controller::get_visitor_list)
-            .service(admin::visitor_controller::delete_visitor);
+            .service(admin::visitor_controller::delete_visitor)
+            .service(admin::picture_hosting_controller::get_configs)
+            .service(admin::picture_hosting_controller::github_user)
+            .service(admin::picture_hosting_controller::save_github_config)
+            .service(admin::picture_hosting_controller::save_upyun_config)
+            .service(admin::picture_hosting_controller::save_txyun_config)
+            .service(admin::picture_hosting_controller::delete_config)
+            .service(admin::picture_hosting_controller::github_repos)
+            .service(admin::picture_hosting_controller::github_contents)
+            .service(admin::picture_hosting_controller::github_delete)
+            .service(admin::picture_hosting_controller::github_upload)
+            .service(admin::picture_hosting_controller::upyun_contents)
+            .service(admin::picture_hosting_controller::upyun_delete)
+            .service(admin::picture_hosting_controller::upyun_upload)
+            .service(admin::picture_hosting_controller::txyun_contents)
+            .service(admin::picture_hosting_controller::txyun_delete)
+            .service(admin::picture_hosting_controller::txyun_upload);
     }
 }

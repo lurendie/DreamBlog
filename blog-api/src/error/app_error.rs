@@ -1,6 +1,7 @@
 use actix_web::{body::BoxBody, error, http::StatusCode, HttpResponse};
 use lettre::address::AddressError;
 use lettre::error::Error as EmailError;
+use sea_orm::DbErr;
 use thiserror::Error;
 
 use crate::{
@@ -14,10 +15,18 @@ pub enum AppError {
     WebError(#[from] WebError),
     #[error("DataBaseError异常消息:{0}")]
     DataBaseError(#[from] DataBaseError),
+    #[error("SerdeJsonError异常消息:{0}")]
+    SerdeJsonError(#[from] serde_json::Error),
     #[error("EmailError异常消息:{0}")]
     EmailError(#[from] EmailServerError),
     #[error("{0}")]
     Custom(String),
+}
+
+impl From<DbErr> for AppError {
+    fn from(value: DbErr) -> Self {
+        AppError::DataBaseError(DataBaseError::MySQLError(value))
+    }
 }
 
 impl error::ResponseError for AppError {

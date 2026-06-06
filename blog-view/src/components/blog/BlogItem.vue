@@ -43,7 +43,7 @@
 						v-if="!item.firstPicture"
 						v-lazy-container="{selector: 'img'}"
 						v-viewer
-						v-html="item.description"
+						v-safe-html="item.description"
 					></div>
 					<!--阅读全文按钮-->
 					<div class="row m-padded-tb-small m-margin-top">

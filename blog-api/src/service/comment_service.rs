@@ -1,7 +1,8 @@
+use crate::constant::RedisKeyConstant;
 use crate::entity::comment;
 use crate::error::DataBaseError;
 use crate::model::{CommentDTO, CommentVO};
-use crate::service::{BlogService, EmailService, UserService};
+use crate::service::{BlogService, EmailService, RedisService, UserService};
 use chrono::Local;
 use rand::Rng;
 use rbs::value;
@@ -17,6 +18,14 @@ const PAGE_SIZE: u64 = 5;
 pub struct CommentService;
 
 impl CommentService {
+    fn comment_list_cache_field(page_num: u64, blog_id: i64, page: u8) -> String {
+        format!("{}:{}:{}", page, blog_id, page_num)
+    }
+
+    fn comment_count_cache_field(kind: &str, blog_id: i64, page: u8) -> String {
+        format!("{}:{}:{}", kind, page, blog_id)
+    }
+
     //分页评论
     pub(crate) async fn find_by_id_comments(
         page_num: u64,
@@ -24,6 +33,21 @@ impl CommentService {
         page: u8,
         db: &DatabaseConnection,
     ) -> Result<ValueMap, DataBaseError> {
+        let cache_field = Self::comment_list_cache_field(page_num, blog_id, page);
+        let redis_cache = RedisService::get_hash_key(
+            RedisKeyConstant::COMMENT_LIST.to_string(),
+            cache_field.clone(),
+        )
+        .await;
+        if let Ok(redis_cache) = redis_cache {
+            log::info!(
+                "redis KEY:{} 字段:{} 获取缓存数据成功",
+                RedisKeyConstant::COMMENT_LIST,
+                cache_field
+            );
+            return Ok(redis_cache);
+        }
+
         let mut map = ValueMap::new();
         let select_sql = comment::Entity::find()
             .filter(comment::Column::IsPublished.eq(true))
@@ -52,6 +76,12 @@ impl CommentService {
             "totalPage".into(),
             rbs::Value::U64(page_list.num_pages().await?),
         );
+        RedisService::try_set_hash_key(
+            RedisKeyConstant::COMMENT_LIST.to_string(),
+            cache_field,
+            &map,
+        )
+        .await;
 
         Ok(map)
     }
@@ -150,6 +180,15 @@ impl CommentService {
         page: u8,
         db: &DatabaseConnection,
     ) -> Result<u64, DataBaseError> {
+        let cache_field = Self::comment_count_cache_field("all", blog_id, page);
+        let redis_cache = RedisService::get_hash_key(
+            RedisKeyConstant::COMMENT_COUNT_MAP.to_string(),
+            cache_field.clone(),
+        )
+        .await;
+        if let Ok(redis_cache) = redis_cache {
+            return Ok(redis_cache);
+        }
         let select = comment::Entity::find().filter(comment::Column::Page.eq(page));
         let count = match page == 0 {
             true => {
@@ -160,6 +199,12 @@ impl CommentService {
             }
             false => select.count(db).await?,
         };
+        RedisService::try_set_hash_key(
+            RedisKeyConstant::COMMENT_COUNT_MAP.to_string(),
+            cache_field,
+            &count,
+        )
+        .await;
         Ok(count)
     }
 
@@ -168,6 +213,15 @@ impl CommentService {
         page: u8,
         db: &DatabaseConnection,
     ) -> Result<u64, DataBaseError> {
+        let cache_field = Self::comment_count_cache_field("close", blog_id, page);
+        let redis_cache = RedisService::get_hash_key(
+            RedisKeyConstant::COMMENT_COUNT_MAP.to_string(),
+            cache_field.clone(),
+        )
+        .await;
+        if let Ok(redis_cache) = redis_cache {
+            return Ok(redis_cache);
+        }
         let select = comment::Entity::find()
             .filter(comment::Column::Page.eq(page))
             .filter(comment::Column::IsPublished.eq(false));
@@ -180,6 +234,12 @@ impl CommentService {
             }
             false => select.count(db).await?,
         };
+        RedisService::try_set_hash_key(
+            RedisKeyConstant::COMMENT_COUNT_MAP.to_string(),
+            cache_field,
+            &count,
+        )
+        .await;
         Ok(count)
     }
 
@@ -220,27 +280,27 @@ impl CommentService {
                 // 情况1：回复评论 -> 发给父评论者
                 let parent_model: comment::Model =
                     Self::find_by_id(model.parent_comment_id, db).await?;
-                if parent_model.email.eq(&model.email) {
-                    return Ok(()); //如果评论者和父评论者是同一个人，则不发送邮件
-                }
-                let parent_model_dto = CommentDTO::from(parent_model);
-                let err = EmailService::send_guest_email(db, model, parent_model_dto).await;
-                if let Err(e) = err {
-                    //发送邮件失败 不返回异常 否则 页面提示邮件异常 但是实际上评论成功 只是未发送邮件
-                    log::error!("评论成功,发送邮件失败:{e}");
+                if !parent_model.email.eq(&model.email) {
+                    let parent_model_dto = CommentDTO::from(parent_model);
+                    let err = EmailService::send_guest_email(db, model, parent_model_dto).await;
+                    if let Err(e) = err {
+                        //发送邮件失败 不返回异常 否则 页面提示邮件异常 但是实际上评论成功 只是未发送邮件
+                        log::error!("评论成功,发送邮件失败:{e}");
+                    }
                 }
             } else if model.is_notice && model.parent_comment_id == -1 {
                 // 情况2：回复博文(根评论) -> 发给博主
                 let owenr_user = UserService::find_admin_role(db).await?;
-                if owenr_user.get_email().eq(&model.email) {
-                    return Ok(()); //避免给自己发邮件
-                }
-                let err = EmailService::send_owenr_email(model, db, owenr_user.get_email()).await;
-                if let Err(e) = err {
-                    log::error!("评论成功,发送邮件失败:{e}");
+                if !owenr_user.get_email().eq(&model.email) {
+                    let err =
+                        EmailService::send_owenr_email(model, db, owenr_user.get_email()).await;
+                    if let Err(e) = err {
+                        log::error!("评论成功,发送邮件失败:{e}");
+                    }
                 }
             };
         };
+        Self::clear_comment_cache().await;
         Ok(())
     }
 
@@ -255,6 +315,7 @@ impl CommentService {
                 let mut active: comment::ActiveModel = comment_model.into();
                 active.is_published = Set(published);
                 active.update(db).await?;
+                Self::clear_comment_cache().await;
                 Ok(())
             }
             None => Err(DataBaseError::Custom("评论不存在".to_string())),
@@ -272,6 +333,7 @@ impl CommentService {
                 let mut active: comment::ActiveModel = comment_model.into();
                 active.is_notice = Set(notice);
                 active.update(db).await?;
+                Self::clear_comment_cache().await;
                 Ok(())
             }
             None => Err(DataBaseError::Custom("评论不存在".to_string())),
@@ -350,6 +412,12 @@ impl CommentService {
                 })
             })
             .await?;
+        Self::clear_comment_cache().await;
         Ok(result)
+    }
+
+    async fn clear_comment_cache() {
+        RedisService::try_del_key(RedisKeyConstant::COMMENT_LIST).await;
+        RedisService::try_del_key(RedisKeyConstant::COMMENT_COUNT_MAP).await;
     }
 }

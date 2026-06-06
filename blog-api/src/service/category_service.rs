@@ -16,7 +16,7 @@ use crate::error::DataBaseError;
 use crate::model::Categorie;
 use crate::model::Category;
 use crate::model::Serise;
-use crate::service::RedisService;
+use crate::service::{BlogService, RedisService};
 
 pub struct CategoryService;
 
@@ -54,11 +54,11 @@ impl CategoryService {
 
         if result.len() > 0 {
             //3.保存Redis
-            RedisService::set_value_vec(
+            RedisService::try_set_value_vec(
                 RedisKeyConstant::CATEGORY_NAME_LIST.to_string(),
                 &value!(&result),
             )
-            .await?;
+            .await;
             log::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::CATEGORY_NAME_LIST
@@ -147,7 +147,7 @@ impl CategoryService {
         }
         .insert(db)
         .await?;
-        RedisService::_del_key(RedisKeyConstant::CATEGORY_NAME_LIST).await?;
+        Self::clear_category_cache().await;
         Ok(())
     }
 
@@ -161,7 +161,7 @@ impl CategoryService {
         }
         .update(db)
         .await?;
-        RedisService::_del_key(RedisKeyConstant::CATEGORY_NAME_LIST).await?;
+        Self::clear_category_cache().await;
         Ok(())
     }
 
@@ -177,7 +177,12 @@ impl CategoryService {
             return Err(DataBaseError::Custom("分类下有文章，不能删除".to_string()));
         }
         let result = category::Entity::delete_by_id(id).exec(db).await?;
-        RedisService::_del_key(RedisKeyConstant::CATEGORY_NAME_LIST).await?;
+        Self::clear_category_cache().await;
         Ok(result.rows_affected)
+    }
+
+    async fn clear_category_cache() {
+        RedisService::try_del_key(RedisKeyConstant::CATEGORY_NAME_LIST).await;
+        BlogService::clear_blog_cache().await;
     }
 }

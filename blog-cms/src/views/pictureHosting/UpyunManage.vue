@@ -55,6 +55,7 @@ import {getBucketContents, delFile, upload} from "@/api/upyun";
 import {isImgExt} from "@/util/validate";
 import {randomUUID} from "@/util/uuid";
 import {copy} from "@/util/copy";
+import {getConfigs} from "@/api/pictureHosting";
 
 export default {
 	name: "UpyunManage",
@@ -101,13 +102,16 @@ export default {
 		this.hintShow1 = localStorage.getItem('upyunHintShow1') ? false : true
 		this.hintShow2 = localStorage.getItem('upyunHintShow2') ? false : true
 
-		const upyunConfig = localStorage.getItem('upyunConfig')
-		if (upyunConfig) {
-			this.upyunConfig = JSON.parse(upyunConfig)
-		} else {
-			this.msgError('请先配置又拍云')
-			this.$router.push('/pictureHosting/setting')
-		}
+		getConfigs().then(res => {
+			const upyun = (res.data || {}).upyun
+			if (upyun && upyun.configured && upyun.bucketName && upyun.domain) {
+				this.upyunConfig.bucketName = upyun.bucketName
+				this.upyunConfig.domain = upyun.domain
+			} else {
+				this.msgError('请先配置又拍云')
+				this.$router.push('/pictureHosting/setting')
+			}
+		})
 	},
 	methods: {
 		//换成懒加载

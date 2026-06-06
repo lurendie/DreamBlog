@@ -15,7 +15,7 @@ use crate::{
     entity::{schedule_job, schedule_job_log},
     error::DataBaseError,
     model::{JobLogQuery, JobQuery, JobStatusUpdate, ScheduleJob, ScheduleJobLog},
-    service::{RedisService, VisitStatsService},
+    service::{BlogService, RedisService, VisitStatsService},
 };
 
 pub struct ScheduleJobService;
@@ -307,43 +307,31 @@ async fn execute_local_job(
             Ok(())
         }
         "cache.clear_blog" => {
-            clear_blog_cache().await.map_err(|e| e.to_string())?;
+            clear_blog_cache().await;
             Ok(())
         }
         "cache.clear_site" => {
-            RedisService::_del_key(RedisKeyConstant::SITE_INFO_MAP)
-                .await
-                .map_err(|e| e.to_string())?;
+            RedisService::try_del_key(RedisKeyConstant::SITE_INFO_MAP).await;
             Ok(())
         }
         "cache.clear_about" => {
-            RedisService::_del_key(RedisKeyConstant::ABOUT_INFO_MAP)
-                .await
-                .map_err(|e| e.to_string())?;
+            RedisService::try_del_key(RedisKeyConstant::ABOUT_INFO_MAP).await;
             Ok(())
         }
         "cache.clear_friend" => {
-            RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP)
-                .await
-                .map_err(|e| e.to_string())?;
+            RedisService::try_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await;
             Ok(())
         }
         "cache.clear_tag" => {
-            RedisService::_del_key(RedisKeyConstant::TAG_CLOUD_LIST)
-                .await
-                .map_err(|e| e.to_string())?;
+            RedisService::try_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await;
             Ok(())
         }
         "cache.clear_category" => {
-            RedisService::_del_key(RedisKeyConstant::CATEGORY_NAME_LIST)
-                .await
-                .map_err(|e| e.to_string())?;
+            RedisService::try_del_key(RedisKeyConstant::CATEGORY_NAME_LIST).await;
             Ok(())
         }
         "cache.clear_blog_views" => {
-            RedisService::_del_key(RedisKeyConstant::BLOG_VIEWS_MAP)
-                .await
-                .map_err(|e| e.to_string())?;
+            RedisService::try_del_key(RedisKeyConstant::BLOG_VIEWS_MAP).await;
             Ok(())
         }
         "stats.aggregate_visit" => {
@@ -356,22 +344,21 @@ async fn execute_local_job(
     }
 }
 
-async fn clear_blog_cache() -> Result<(), DataBaseError> {
-    RedisService::_del_key(RedisKeyConstant::HOME_BLOG_INFO_LIST).await?;
-    RedisService::_del_key(RedisKeyConstant::RANDOM_BLOG_LIST).await?;
-    RedisService::_del_key(RedisKeyConstant::NEW_BLOG_LIST).await?;
-    RedisService::_del_key(RedisKeyConstant::ARCHIVE_BLOG_MAP).await?;
-    Ok(())
+async fn clear_blog_cache() {
+    BlogService::clear_blog_cache().await;
 }
 
 async fn clear_all_cache() -> Result<(), DataBaseError> {
-    clear_blog_cache().await?;
-    RedisService::_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await?;
-    RedisService::_del_key(RedisKeyConstant::CATEGORY_NAME_LIST).await?;
-    RedisService::_del_key(RedisKeyConstant::SITE_INFO_MAP).await?;
-    RedisService::_del_key(RedisKeyConstant::ABOUT_INFO_MAP).await?;
-    RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
-    RedisService::_del_key(RedisKeyConstant::BLOG_VIEWS_MAP).await?;
+    clear_blog_cache().await;
+    RedisService::try_del_key(RedisKeyConstant::TAG_CLOUD_LIST).await;
+    RedisService::try_del_key(RedisKeyConstant::CATEGORY_NAME_LIST).await;
+    RedisService::try_del_key(RedisKeyConstant::SITE_INFO_MAP).await;
+    RedisService::try_del_key(RedisKeyConstant::ABOUT_INFO_MAP).await;
+    RedisService::try_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await;
+    RedisService::try_del_key(RedisKeyConstant::BLOG_VIEWS_MAP).await;
+    RedisService::try_del_key(RedisKeyConstant::PUBLIC_MOMENT_LIST).await;
+    RedisService::try_del_key(RedisKeyConstant::COMMENT_LIST).await;
+    RedisService::try_del_key(RedisKeyConstant::COMMENT_COUNT_MAP).await;
     Ok(())
 }
 

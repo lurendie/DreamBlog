@@ -30,6 +30,10 @@ request.interceptors.response.use(
 			window.localStorage.setItem('identification', identification)
 		}
 		return config.data
+	},
+	error => {
+		NProgress.done()
+		return Promise.reject(error)
 	}
 )
 

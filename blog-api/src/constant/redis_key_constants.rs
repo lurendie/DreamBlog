@@ -7,6 +7,18 @@ impl RedisKeyConstant {
      */
     pub const HOME_BLOG_INFO_LIST: &str = "homeBlogInfoList";
     /**
+     * 博客详情key
+     */
+    pub const BLOG_DETAIL_MAP: &str = "blogDetailMap";
+    /**
+     * 分类文章分页key
+     */
+    pub const CATEGORY_BLOG_LIST: &str = "categoryBlogList";
+    /**
+     * 标签文章分页key
+     */
+    pub const TAG_BLOG_LIST: &str = "tagBlogList";
+    /**
      * 分类名列表key
      */
     pub const CATEGORY_NAME_LIST: &str = "categoryNameList";
@@ -42,6 +54,18 @@ impl RedisKeyConstant {
      * 博客访问量key
      */
     pub const BLOG_VIEWS_MAP: &str = "blogViewsMap";
+    /**
+     * 公开动态分页key
+     */
+    pub const PUBLIC_MOMENT_LIST: &str = "publicMomentList";
+    /**
+     * 评论列表分页key
+     */
+    pub const COMMENT_LIST: &str = "commentList";
+    /**
+     * 评论数量key
+     */
+    pub const COMMENT_COUNT_MAP: &str = "commentCountMap";
     /**
      * 访客标识码key
      */

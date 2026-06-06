@@ -1,4 +1,16 @@
 import Vue from 'vue'
+import {sanitizeRichHtml} from './sanitizeHtml'
+
+Vue.directive('safe-html', {
+	inserted(el, binding) {
+		el.innerHTML = sanitizeRichHtml(binding.value)
+	},
+	update(el, binding) {
+		if (binding.value !== binding.oldValue) {
+			el.innerHTML = sanitizeRichHtml(binding.value)
+		}
+	}
+})
 
 /**
  * 防抖 单位时间只触发最后一次

@@ -1,8 +1,10 @@
 use crate::common::MarkdownParser;
+use crate::constant::RedisKeyConstant;
 use crate::entity::moment;
 use crate::error::DataBaseError;
 use crate::model::Moment;
 use crate::model::MomentDTO;
+use crate::service::RedisService;
 use rbs::{value, value::map::ValueMap};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
@@ -11,6 +13,10 @@ use sea_orm::{
 pub struct MomentService;
 
 impl MomentService {
+    fn public_moment_cache_field(page_num: u64, page_size: u64) -> String {
+        format!("{}:{}", page_num, page_size)
+    }
+
     //获取所有的动态
     pub(crate) async fn get_moments(
         page_num: u64,
@@ -56,6 +62,7 @@ impl MomentService {
                     .await?;
             }
         }
+        Self::clear_public_moment_cache().await;
         Ok(())
     }
 
@@ -65,6 +72,21 @@ impl MomentService {
         page_size: u64,
         db: &DatabaseConnection,
     ) -> Result<ValueMap, DataBaseError> {
+        let cache_field = Self::public_moment_cache_field(page_num, page_size);
+        let redis_cache = RedisService::get_hash_key(
+            RedisKeyConstant::PUBLIC_MOMENT_LIST.to_string(),
+            cache_field.clone(),
+        )
+        .await;
+        if let Ok(redis_cache) = redis_cache {
+            log::info!(
+                "redis KEY:{} 字段:{} 获取缓存数据成功",
+                RedisKeyConstant::PUBLIC_MOMENT_LIST,
+                cache_field
+            );
+            return Ok(redis_cache);
+        }
+
         let page = moment::Entity::find()
             .filter(moment::Column::IsPublished.eq(true))
             .paginate(db, page_size);
@@ -81,6 +103,12 @@ impl MomentService {
         value_map.insert(value!("pages"), value!(page.num_pages().await?));
         value_map.insert(value!("total"), value!(page.num_items().await?));
         value_map.insert(value!("list"), value!(list));
+        RedisService::try_set_hash_key(
+            RedisKeyConstant::PUBLIC_MOMENT_LIST.to_string(),
+            cache_field,
+            &value_map,
+        )
+        .await;
         Ok(value_map)
     }
 
@@ -98,6 +126,7 @@ impl MomentService {
                 let mut active = moment::ActiveModel::from(model);
                 active.set(moment::Column::IsPublished, is_published.into());
                 active.update(db).await?;
+                Self::clear_public_moment_cache().await;
             }
             None => {
                 return Err(DataBaseError::Custom(format!("动态 id:{} 没有检索到", id)));
@@ -117,6 +146,7 @@ impl MomentService {
         match model {
             Some(model) => {
                 moment::ActiveModel::from(model).delete(db).await?;
+                Self::clear_public_moment_cache().await;
             }
             None => {
                 return Err(DataBaseError::Custom(format!("动态 id:{} 没有检索到 ", id)));
@@ -147,11 +177,16 @@ impl MomentService {
                 let mut active = moment::ActiveModel::from(model);
                 active.set(moment::Column::Likes, likes.into());
                 active.save(db).await?;
+                Self::clear_public_moment_cache().await;
             }
             None => {
                 return Err(DataBaseError::Custom(format!("动态 id:{} 没有检索到 ", id)));
             }
         }
         Ok(())
+    }
+
+    async fn clear_public_moment_cache() {
+        RedisService::try_del_key(RedisKeyConstant::PUBLIC_MOMENT_LIST).await;
     }
 }

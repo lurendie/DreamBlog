@@ -60,6 +60,7 @@
 	import {randomUUID} from "@/util/uuid";
 	import {copy} from "@/util/copy";
 	import {taskQueue} from "@/util/task-queue";
+	import {getConfigs} from "@/api/pictureHosting";
 
 	export default {
 		name: "GithubManage",
@@ -67,6 +68,7 @@
 		data() {
 			return {
 				reposList: [],
+				userInfo: {},
 				pathArr: [{value: '', label: '根目录'}],
 				activeRepos: '',
 				activePath: [''],//默认选中根目录
@@ -105,15 +107,16 @@
 			this.hintShow1 = localStorage.getItem('hintShow1') ? false : true
 			this.hintShow2 = localStorage.getItem('hintShow2') ? false : true
 			this.hintShow3 = localStorage.getItem('hintShow3') ? false : true
-			const token = localStorage.getItem('githubToken')
-			const userInfo = localStorage.getItem('githubUserInfo')
-			if (token && userInfo) {
-				this.userInfo = JSON.parse(userInfo)
-				this.getRepos()
-			} else {
-				this.msgError('请先配置Token')
-				this.$router.push('/pictureHosting/setting')
-			}
+			getConfigs().then(res => {
+				const github = (res.data || {}).github
+				if (github && github.configured && github.userInfo && github.userInfo.login) {
+					this.userInfo = github.userInfo
+					this.getRepos()
+				} else {
+					this.msgError('请先配置Token')
+					this.$router.push('/pictureHosting/setting')
+				}
+			})
 		},
 		methods: {
 			//获取用户仓库
@@ -213,24 +216,14 @@
 				}
 			},
 			upload(data) {
-				let reader = new FileReader()
-				reader.readAsDataURL(data.file)
-				reader.onload = (() => {
-					let base64 = reader.result.split(",")[1]
-					let fileName = data.file.name
-					if (this.nameType === '2') {
-						fileName = randomUUID() + fileName.substr(fileName.lastIndexOf("."))
-					}
-					//批量上传需要间隔时间，否则可能commit版本号冲突，返回409错误码，Status: 409 Conflict
-					taskQueue(() => this.push2Github(data, fileName, base64), 1000)
-				})
-			},
-			push2Github(data, fileName, base64) {
-				let requestData = {
-					message: "Add files via PictureHosting",
-					content: base64,
+				let fileName = data.file.name
+				if (this.nameType === '2') {
+					fileName = randomUUID() + fileName.substr(fileName.lastIndexOf("."))
 				}
-
+				//批量上传需要间隔时间，否则可能commit版本号冲突，返回409错误码，Status: 409 Conflict
+				taskQueue(() => this.push2Github(data, fileName), 1000)
+			},
+			push2Github(data, fileName) {
 				let path = this.activePath.join('/')
 				if (this.isCustomPath) {
 					if (this.customPath === '/') {
@@ -246,7 +239,7 @@
 					}
 				}
 
-				upload(this.userInfo.login, this.activeRepos, path, fileName, requestData).then(() => {
+				upload(this.userInfo.login, this.activeRepos, path, fileName, data).then(() => {
 					this.msgSuccess('上传成功')
 					data.onSuccess()
 				})

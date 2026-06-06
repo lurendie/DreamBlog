@@ -64,8 +64,11 @@ impl FriendService {
         friend_map.insert(value!("friendInfo"), value!(friend_info));
         friend_map.insert(value!("friendList"), value!(friend_list));
         if !friend_map.is_empty() {
-            RedisService::set_string(RedisKeyConstant::FRIEND_INFO_MAP.to_string(), &friend_map)
-                .await?;
+            RedisService::try_set_string(
+                RedisKeyConstant::FRIEND_INFO_MAP.to_string(),
+                &friend_map,
+            )
+            .await;
         }
         Ok(friend_map)
     }
@@ -81,13 +84,13 @@ impl FriendService {
         let mut active_friend: friend::ActiveModel = friend_model.into();
         active_friend.is_published = Set(friend.published);
         active_friend.update(db).await?;
-        RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
+        RedisService::try_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await;
         Ok(())
     }
 
     pub async fn delete_friend(id: i64, db: &DatabaseConnection) -> Result<(), DataBaseError> {
         friend::Entity::delete_by_id(id).exec(db).await?;
-        RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
+        RedisService::try_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await;
         Ok(())
     }
 
@@ -111,7 +114,7 @@ impl FriendService {
             None => return Err(DataBaseError::Custom("友链不存在".to_string())),
         }
 
-        RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
+        RedisService::try_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await;
         Ok(())
     }
 
@@ -132,7 +135,7 @@ impl FriendService {
         };
 
         new_friend.insert(db).await?;
-        RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
+        RedisService::try_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await;
         Ok(())
     }
 
@@ -221,7 +224,7 @@ impl FriendService {
                 site_setting::Entity::insert(active).exec(db).await?;
             }
         }
-        RedisService::_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await?;
+        RedisService::try_del_key(RedisKeyConstant::FRIEND_INFO_MAP).await;
         Ok(())
     }
 }

@@ -7,8 +7,8 @@
 			</div>
 			<el-row>
 				<el-col>
-					<el-input placeholder="请输入token进行初始化" v-model="githubToken" :clearable="true" @keyup.native.enter="searchGithubUser" style="min-width: 500px">
-						<el-button slot="append" icon="el-icon-search" @click="searchGithubUser">查询</el-button>
+					<el-input placeholder="请输入token进行初始化" v-model="githubToken" :clearable="true" show-password @keyup.native.enter="searchGithubUser" style="min-width: 500px">
+						<el-button slot="append" icon="el-icon-search" :disabled="!githubToken" @click="searchGithubUser">查询</el-button>
 					</el-input>
 				</el-col>
 			</el-row>
@@ -21,7 +21,7 @@
 			</el-row>
 			<el-row>
 				<el-col>
-					<el-button type="primary" size="medium" icon="el-icon-check" :disabled="!isGithubSave" @click="saveGithub(true)">保存配置</el-button>
+					<el-button type="primary" size="medium" icon="el-icon-check" :disabled="!githubToken" @click="saveGithub(true)">保存配置</el-button>
 					<el-button type="info" size="medium" icon="el-icon-close" @click="saveGithub(false)">清除配置</el-button>
 				</el-col>
 			</el-row>
@@ -36,7 +36,7 @@
 					<el-input v-model="upyunConfig.username"></el-input>
 				</el-form-item>
 				<el-form-item label="操作员密码">
-					<el-input v-model="upyunConfig.password"></el-input>
+					<el-input v-model="upyunConfig.password" show-password></el-input>
 				</el-form-item>
 				<el-form-item label="存储空间名">
 					<el-input v-model="upyunConfig.bucketName"></el-input>
@@ -55,10 +55,10 @@
 			</div>
 			<el-form :model="txyunConfig" label-width="100px">
 				<el-form-item label="secret-id">
-					<el-input v-model="txyunConfig.secretId"></el-input>
+					<el-input v-model="txyunConfig.secretId" show-password></el-input>
 				</el-form-item>
 				<el-form-item label="secret-key">
-					<el-input v-model="txyunConfig.secretKey"></el-input>
+					<el-input v-model="txyunConfig.secretKey" show-password></el-input>
 				</el-form-item>
 				<el-form-item label="存储空间名">
 					<el-input v-model="txyunConfig.bucketName"></el-input>
@@ -77,7 +77,15 @@
 </template>
 
 <script>
-import {getUserInfo} from "@/api/github";
+import {
+	deleteConfig,
+	getConfigs,
+	getGithubUser,
+	saveGithubConfig,
+	saveTxyunConfig,
+	saveUpyunConfig
+} from "@/api/pictureHosting";
+import {getStoredUser} from "@/util/storage";
 
 export default {
 	name: "Setting",
@@ -113,72 +121,90 @@ export default {
 		}
 	},
 	created() {
-		this.githubToken = localStorage.getItem("githubToken")
-		const githubUserInfo = localStorage.getItem('githubUserInfo')
-		if (this.githubToken && githubUserInfo) {
-			this.githubUserInfo = JSON.parse(githubUserInfo)
-			this.isGithubSave = true
-		} else {
-			this.githubUserInfo = {login: '未配置'}
-		}
+		this.loadConfigs()
 
-		const upyunConfig = localStorage.getItem('upyunConfig')
-		if (upyunConfig) {
-			this.upyunConfig = JSON.parse(upyunConfig)
-		}
-
-		const txyunConfig = localStorage.getItem('txyunConfig')
-		if (txyunConfig) {
-			this.txyunConfig = JSON.parse(txyunConfig)
-		}
-
-		const userJson = window.localStorage.getItem('user') || '{}'
-		const user = JSON.parse(userJson)
-		if (userJson !== '{}' && user.role !== 'ROLE_admin') {
+		const user = getStoredUser()
+		if (user && user.role !== 'ROLE_admin') {
 			//对于访客模式，增加个提示
 			this.hintShow = true
 		}
 	}
 	,
 	methods: {
+		loadConfigs() {
+			getConfigs().then(res => {
+				const configs = res.data || {}
+				if (configs.github && configs.github.configured && configs.github.userInfo) {
+					this.githubUserInfo = configs.github.userInfo
+					this.isGithubSave = true
+				} else {
+					this.githubUserInfo = {login: '未配置'}
+					this.isGithubSave = false
+				}
+				if (configs.upyun && configs.upyun.configured) {
+					this.upyunConfig.bucketName = configs.upyun.bucketName || ''
+					this.upyunConfig.domain = configs.upyun.domain || ''
+				}
+				if (configs.txyun && configs.txyun.configured) {
+					this.txyunConfig.bucketName = configs.txyun.bucketName || ''
+					this.txyunConfig.region = configs.txyun.region || ''
+					this.txyunConfig.domain = configs.txyun.domain || ''
+				}
+			})
+		},
 		// 获取用户信息
 		searchGithubUser() {
-			getUserInfo(this.githubToken).then(res => {
-				this.githubUserInfo = res
+			getGithubUser(this.githubToken).then(res => {
+				this.githubUserInfo = res.data
 				this.isGithubSave = true
 			})
 		}
 		,
 		saveGithub(save) {
 			if (save) {
-				localStorage.setItem('githubToken', this.githubToken)
-				localStorage.setItem('githubUserInfo', JSON.stringify(this.githubUserInfo))
-				this.msgSuccess('保存成功')
+				saveGithubConfig(this.githubToken).then(res => {
+					this.githubUserInfo = res.data
+					this.isGithubSave = true
+					this.githubToken = ''
+					this.msgSuccess('保存成功')
+				})
 			} else {
-				localStorage.removeItem('githubToken')
-				localStorage.removeItem('githubUserInfo')
-				this.msgSuccess('清除成功')
+				deleteConfig('github').then(() => {
+					this.githubToken = ''
+					this.githubUserInfo = {login: '未配置'}
+					this.isGithubSave = false
+					this.msgSuccess('清除成功')
+				})
 			}
 		}
 		,
 		saveUpyun(save) {
 			if (save) {
-				localStorage.setItem('upyunToken', btoa(`${this.upyunConfig.username}:${this.upyunConfig.password}`))
-				localStorage.setItem('upyunConfig', JSON.stringify(this.upyunConfig))
-				this.msgSuccess('保存成功')
+				saveUpyunConfig(this.upyunConfig).then(() => {
+					this.upyunConfig.username = ''
+					this.upyunConfig.password = ''
+					this.msgSuccess('保存成功')
+				})
 			} else {
-				localStorage.removeItem('upyunConfig')
-				this.msgSuccess('清除成功')
+				deleteConfig('upyun').then(() => {
+					this.upyunConfig = {username: '', password: '', bucketName: '', domain: ''}
+					this.msgSuccess('清除成功')
+				})
 			}
 		}
 		,
 		saveTxyun(save) {
 			if (save) {
-				localStorage.setItem('txyunConfig', JSON.stringify(this.txyunConfig))
-				this.msgSuccess('保存成功')
+				saveTxyunConfig(this.txyunConfig).then(() => {
+					this.txyunConfig.secretId = ''
+					this.txyunConfig.secretKey = ''
+					this.msgSuccess('保存成功')
+				})
 			} else {
-				localStorage.removeItem('txyunConfig')
-				this.msgSuccess('清除成功')
+				deleteConfig('txyun').then(() => {
+					this.txyunConfig = {secretId: '', secretKey: '', bucketName: '', region: '', domain: ''}
+					this.msgSuccess('清除成功')
+				})
 			}
 		}
 	}

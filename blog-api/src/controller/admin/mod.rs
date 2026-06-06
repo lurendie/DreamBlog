@@ -9,6 +9,7 @@ pub mod friend_controller;
 pub mod login_log_controller;
 pub mod moment_controller;
 pub mod operation_log_controller;
+pub mod picture_hosting_controller;
 pub mod schedule_job_controller;
 pub mod site_setting_controller;
 pub mod tag_controller;

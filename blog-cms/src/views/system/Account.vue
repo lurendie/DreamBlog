@@ -21,6 +21,7 @@
 
 <script>
 import {changeAccount} from "@/api/account";
+import {clearLoginState, getStoredUser} from "@/util/storage";
 
 export default {
 	name: "Setting",
@@ -34,7 +35,12 @@ export default {
 		}
 	},
 	created() {
-		this.user = JSON.parse(window.localStorage.getItem('user') || null)
+		this.user = getStoredUser()
+		if (!this.user) {
+			clearLoginState()
+			this.$router.push('/login')
+			return
+		}
 		this.account.username = this.user.username
 	},
 	methods: {
@@ -45,8 +51,7 @@ export default {
 			})
 		},
 		logout() {
-			window.localStorage.removeItem('token')
-			window.localStorage.removeItem('user')
+			clearLoginState()
 			this.$router.push('/login')
 		}
 	}

@@ -54,17 +54,14 @@ import SvgIcon from "@/components/SvgIcon";
 import {isImgExt} from "@/util/validate";
 import {randomUUID} from "@/util/uuid";
 import {copy} from "@/util/copy";
-import COS from 'cos-js-sdk-v5';
+import {deleteTxyunFile, getConfigs, getTxyunContents, uploadTxyunFile} from "@/api/pictureHosting";
 
 export default {
 	name: "TxyunManage",
 	components: {SvgIcon},
 	data() {
 		return {
-			cos: {},
 			txyunConfig: {
-				secretId: '',
-				secretKey: '',
 				bucketName: '',
 				region: '',
 				domain: ''
@@ -113,31 +110,23 @@ export default {
 		this.hintShow1 = localStorage.getItem('txyunHintShow1') ? false : true
 		this.hintShow2 = localStorage.getItem('txyunHintShow2') ? false : true
 
-		const txyunConfig = localStorage.getItem('txyunConfig')
-		if (txyunConfig) {
-			this.txyunConfig = JSON.parse(txyunConfig)
-			this.txyunConfig.domain = this.txyunConfig.domain.endsWith('/') ? this.txyunConfig.domain : `${this.txyunConfig.domain}/`
-
-			this.cos = new COS({
-				SecretId: this.txyunConfig.secretId,
-				SecretKey: this.txyunConfig.secretKey,
-			})
-		} else {
-			this.msgError('请先配置腾讯云')
-			this.$router.push('/pictureHosting/setting')
-		}
+		getConfigs().then(res => {
+			const txyun = (res.data || {}).txyun
+			if (txyun && txyun.configured && txyun.bucketName && txyun.region && txyun.domain) {
+				this.txyunConfig.bucketName = txyun.bucketName
+				this.txyunConfig.region = txyun.region
+				this.txyunConfig.domain = txyun.domain.endsWith('/') ? txyun.domain : `${txyun.domain}/`
+			} else {
+				this.msgError('请先配置腾讯云')
+				this.$router.push('/pictureHosting/setting')
+			}
+		})
 	},
 	methods: {
 		//换成懒加载
 		async getReposContents(arr, path) {
-			const {txyunConfig} = this
-			await this.cos.getBucket({
-				Bucket: txyunConfig.bucketName, /* 必须 */
-				Region: txyunConfig.region,     /* 存储桶所在地域，必须字段 */
-				Prefix: path,           /* 非必须 */
-				Delimiter: '/'
-			}).then(data => {
-				data.CommonPrefixes.forEach((item) => {
+			await getTxyunContents(path).then(res => {
+				res.data.CommonPrefixes.forEach((item) => {
 					item.name = item.Prefix.replace(path, '').slice(0, -1)
 					//让所有节点都是非叶子节点
 					arr.push({value: item.name, label: item.name, leaf: false})
@@ -153,20 +142,15 @@ export default {
 			if (path != '') {
 				path = path.endsWith('/') ? path : `${path}/`
 			}
-			this.cos.getBucket({
-				Bucket: txyunConfig.bucketName, /* 必须 */
-				Region: txyunConfig.region,     /* 存储桶所在地域，必须字段 */
-				Prefix: path,           /* 非必须 */
-				Delimiter: '/'
-			}).then(data => {
-				data.Contents.filter((item) => !item.Key.endsWith('/') && isImgExt(item.Key)).forEach(item => {
+			getTxyunContents(path).then(res => {
+				res.data.Contents.filter((item) => !item.Key.endsWith('/') && isImgExt(item.Key)).forEach(item => {
 					item.path = item.Key
 					item.cdn_url = `${txyunConfig.domain}${item.path}`
 					item.name = item.Key.replace(path, '')
 					fileList.push(item)
 				})
+				this.fileList = fileList
 			})
-			this.fileList = fileList
 		},
 		noDisplay(id) {
 			localStorage.setItem(`txyunHintShow${id}`, '1')
@@ -184,17 +168,12 @@ export default {
 		},
 		// 删除文件
 		delFile(file) {
-			const {txyunConfig} = this
 			this.$confirm("此操作将永久删除该文件, 是否删除?", "提示", {
 				confirmButtonText: '确定',
 				cancelButtonText: '取消',
 				type: 'warning',
 			}).then(() => {
-				this.cos.deleteObject({
-					Bucket: txyunConfig.bucketName, /* 填写自己的bucket，必须字段 */
-					Region: txyunConfig.region,     /* 存储桶所在地域，必须字段 */
-					Key: file.path,              /* 存储在桶里的对象键（例如1.jpg，a/b/test.txt），必须字段 */
-				}).then(() => {
+				deleteTxyunFile(file.path).then(() => {
 					this.msgSuccess('删除成功')
 					this.search()
 				}).catch(() => {
@@ -222,20 +201,10 @@ export default {
 			if (this.nameType === '2') {
 				fileName = randomUUID() + fileName.substr(fileName.lastIndexOf("."))
 			}
-			const {txyunConfig} = this
 			let path = this.realPath;
 			path = path.startsWith('/') ? path.slice(1) : path
 			path = path.endsWith('/') ? path : `${path}/`
-			this.cos.uploadFile({
-				Bucket: txyunConfig.bucketName, /* 必须 */
-				Region: txyunConfig.region,     /* 存储桶所在地域，必须字段 */
-				Key: `${path}${fileName}`,              /* 存储在桶里的对象键（例如:1.jpg，a/b/test.txt，图片.jpg）支持中文，必须字段 */
-				Body: data.file, // 上传文件对象
-				SliceSize: 1024 * 1024 * 5,     /* 触发分块上传的阈值，超过5MB使用分块上传，小于5MB使用简单上传。可自行设置，非必须 */
-				onProgress: function (progressData) {
-					console.log(JSON.stringify(progressData));
-				}
-			}).then(() => {
+			uploadTxyunFile(path, fileName, data.file).then(() => {
 				this.msgSuccess('上传成功')
 				data.onSuccess()
 			})

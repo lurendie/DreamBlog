@@ -48,7 +48,10 @@ pub async fn sitemap(app: web::Data<AppState>) -> Result<HttpResponse, AppError>
 pub async fn robots() -> Result<HttpResponse, AppError> {
     let server_config = crate::app::CONFIG.get_server_config();
     let site_url = normalize_site_url(&server_config.view_url);
-    let sitemap_url = format!("{}/blog/sitemap.xml", normalize_site_url(&server_config.cms_url));
+    let sitemap_url = format!(
+        "{}/blog/sitemap.xml",
+        normalize_site_url(&server_config.cms_url)
+    );
     let body = render_robots(&site_url, &sitemap_url);
 
     Ok(HttpResponse::Ok()
@@ -130,7 +133,5 @@ fn render_sitemap(site_url: &str, entries: &[SitemapEntry]) -> String {
 
 fn render_robots(site_url: &str, sitemap_url: &str) -> String {
     let login_url = format!("{}/login", normalize_site_url(site_url));
-    format!(
-        "User-agent: *\nAllow: /\nDisallow: {login_url}\nSitemap: {sitemap_url}\n"
-    )
+    format!("User-agent: *\nAllow: /\nDisallow: {login_url}\nSitemap: {sitemap_url}\n")
 }
