@@ -10,6 +10,7 @@
 <script>
 	import BlogList from "@/components/blog/BlogList";
 	import {getBlogListByCategoryName} from "@/api/category";
+	import { updateSeo } from '@/util/seo'
 
 	export default {
 		name: "Category",
@@ -42,6 +43,11 @@
 					if (res.code === 200) {
 						this.blogList = res.data.list
 						this.totalPage = res.data.totalPage
+						updateSeo({
+							title: `分类：${this.categoryName}`,
+							description: `浏览分类 ${this.categoryName} 下的博客文章与相关内容。`,
+							path: this.$route.fullPath,
+						})
 						this.$nextTick(() => {
 							Prism.highlightAll()
 						})

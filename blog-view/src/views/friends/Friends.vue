@@ -32,6 +32,7 @@
 <script>
 	import {getData, addViewsByNickname} from "@/api/friend";
 	import CommentList from "@/components/comment/CommentList";
+	import { createDescription, updateSeo } from '@/util/seo'
 
 	export default {
 		name: "Friends",
@@ -59,6 +60,11 @@
 					if (res.code === 200) {
 						this.friendList = res.data.friendList
 						this.info = res.data.friendInfo
+						updateSeo({
+							title: '友人帐',
+							description: createDescription(this.info.content, '查看站点友链与友链页说明内容。'),
+							path: this.$route.fullPath,
+						})
 					} else {
 						this.msgError(res.msg)
 					}

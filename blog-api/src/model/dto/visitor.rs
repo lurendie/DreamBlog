@@ -60,7 +60,6 @@ impl From<visitor::Model> for Visitor {
     }
 }
 
-
 #[derive(Debug, Deserialize)]
 pub struct VisitorQuery {
     pub page_num: Option<u32>,

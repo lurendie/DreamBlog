@@ -66,11 +66,7 @@ impl AboutService {
     ) -> Result<(), DataBaseError> {
         let updates = vec![
             ("title", "标题", form.title),
-            (
-                "musicId",
-                "网易云歌曲ID",
-                form.music_id.unwrap_or_default(),
-            ),
+            ("musicId", "网易云歌曲ID", form.music_id.unwrap_or_default()),
             ("content", "正文Markdown", form.content),
             (
                 "commentEnabled",

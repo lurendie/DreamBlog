@@ -9,7 +9,7 @@ mod data_base_error;
 mod error_code;
 mod web_error;
 pub use app_error::AppError;
+pub use app_error::EmailServerError;
 pub use data_base_error::DataBaseError;
 pub use error_code::WebErrorCode;
 pub use web_error::WebError;
-pub use app_error::EmailServerError;

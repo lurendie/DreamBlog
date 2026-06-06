@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use crate::common::ParamUtils;
 use crate::error::AppError;
 use crate::middleware::AppClaims;
-use crate::model::{Friend, FriendCommentEnabledUpdate, FriendContentUpdate, FriendQuery, FriendUpdatePublished};
+use crate::model::{
+    Friend, FriendCommentEnabledUpdate, FriendContentUpdate, FriendQuery, FriendUpdatePublished,
+};
 use crate::service::FriendService;
 use crate::{app::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;

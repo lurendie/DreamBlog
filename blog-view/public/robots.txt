@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: http://localhost:8080/login
+Sitemap: http://localhost:8090/blog/sitemap.xml

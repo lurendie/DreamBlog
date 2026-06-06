@@ -212,14 +212,16 @@ impl UserService {
         if let Err(e) = active_user.update(db).await {
             return Err(DataBaseError::Custom(format!("更新用户信息失败:{}", e)).into());
         }
-        RedisService::_del_key(&format!("{}_{}", RedisKeyConstant::LOGIN_USER_INFO, username))
-            .await?;
+        RedisService::_del_key(&format!(
+            "{}_{}",
+            RedisKeyConstant::LOGIN_USER_INFO,
+            username
+        ))
+        .await?;
         Ok(())
     }
 
-    pub async fn find_admin_role(
-        db: &DatabaseConnection,
-    ) -> Result<User, DataBaseError> {
+    pub async fn find_admin_role(db: &DatabaseConnection) -> Result<User, DataBaseError> {
         let user = user::Entity::find()
             .filter(user::Column::Role.eq("ROLE_admin"))
             .one(db)

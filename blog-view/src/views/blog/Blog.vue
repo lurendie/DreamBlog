@@ -91,6 +91,7 @@
 	import CommentList from "@/components/comment/CommentList";
 	import {mapState} from "vuex";
 	import {SET_FOCUS_MODE, SET_IS_BLOG_RENDER_COMPLETE} from '@/store/mutations-types';
+	import { createDescription, updateSeo } from '@/util/seo'
 
 	export default {
 		name: "Blog",
@@ -151,7 +152,16 @@
 				getBlogById(token, id).then(res => {
 					if (res.code === 200) {
 						this.blog = res.data
-						document.title = this.blog.title + this.siteInfo.webTitleSuffix
+						updateSeo({
+							title: this.blog.title,
+							description: createDescription(this.blog.description || this.blog.content),
+							path: `/blog/${id}`,
+							image: this.blog.firstPicture,
+							type: 'article',
+							author: this.$store.state.introduction.name,
+							publishedTime: this.blog.createTime,
+							modifiedTime: this.blog.updateTime,
+						})
 						//v-html渲染完毕后，渲染代码块样式
 						this.$nextTick(() => {
 							Prism.highlightAll()

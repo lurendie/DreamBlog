@@ -10,11 +10,11 @@ use crate::{
     service::BlogService,
 };
 use actix_web::web::{Data, Query};
+use chrono::NaiveDateTime;
 use sea_orm::{ActiveModelTrait, ActiveValue::Set};
 use sea_orm::{
     ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
 };
-use chrono::NaiveDateTime;
 
 pub struct VisitService;
 
@@ -166,7 +166,7 @@ impl VisitService {
         db: &DatabaseConnection,
         page_num: i64,
         page_size: i64,
-    ) -> Result<(Vec<VisitLog>,u64), DataBaseError> {
+    ) -> Result<(Vec<VisitLog>, u64), DataBaseError> {
         // 构建查询条件
         let mut query_builder = visit_log::Entity::find();
 
@@ -198,7 +198,7 @@ impl VisitService {
 
         let total = paginator.num_items().await.unwrap_or(0);
         let log_models = paginator.fetch_page((page_num - 1) as u64).await?;
-        
+
         let mut logs = vec![];
         log_models.into_iter().for_each(|item| {
             logs.push(VisitLog::from(item));

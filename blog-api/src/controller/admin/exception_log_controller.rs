@@ -8,9 +8,9 @@ use crate::{
     app::AppState,
     error::AppError,
     middleware::AppClaims,
+    model::ApiResponse,
     model::{ExceptionLogQuery, LogIdParam},
     service::ExceptionLogService,
-    model::ApiResponse,
 };
 
 #[routes]

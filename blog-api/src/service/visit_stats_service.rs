@@ -104,7 +104,9 @@ ORDER BY uv DESC
         let rows = db.query_all(sql).await?;
         let mut result = Vec::with_capacity(rows.len());
         for row in rows {
-            let city: String = row.try_get("", "city").unwrap_or_else(|_| "未知".to_string());
+            let city: String = row
+                .try_get("", "city")
+                .unwrap_or_else(|_| "未知".to_string());
             let uv: i32 = row.try_get("", "uv").unwrap_or(0);
             result.push((city, uv));
         }

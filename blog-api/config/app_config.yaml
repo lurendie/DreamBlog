@@ -9,8 +9,8 @@ mysql:
   host: "127.0.0.1"
   port: 3306
   data_base: "zero_api"
-  user_name: "root"
-  password: "root"
+  user_name: "CHANGE_ME"
+  password: "CHANGE_ME"
 redis:
   host: "127.0.0.1"
   port: 6379

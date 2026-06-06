@@ -8,9 +8,7 @@
 
 use rbs::value::map::ValueMap;
 use rbs::{value, Value};
-use sea_orm::{
-    ActiveModelTrait, DatabaseConnection, EntityTrait, ModelTrait, PaginatorTrait,
-};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, ModelTrait, PaginatorTrait};
 
 use crate::constant::RedisKeyConstant;
 use crate::entity::{blog, category};

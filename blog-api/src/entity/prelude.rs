@@ -19,4 +19,3 @@
 // pub use super::visit_log::Entity as VisitLogEntity;
 // pub use super::visit_record::Entity as VisitRecordEntity;
 // pub use super::visitor::Entity as VisitorEntity;
-

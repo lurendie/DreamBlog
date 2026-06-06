@@ -92,7 +92,9 @@ fn validate_comment_input(comment: &CommentDTO) -> Result<(), WebError> {
         return Err(WebError::Validation("评论内容不能为空".to_string()));
     }
     if comment.content.chars().count() > 250 {
-        return Err(WebError::Validation("评论内容不可多于250个字符".to_string()));
+        return Err(WebError::Validation(
+            "评论内容不可多于250个字符".to_string(),
+        ));
     }
     Ok(())
 }

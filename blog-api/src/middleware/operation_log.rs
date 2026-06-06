@@ -16,9 +16,8 @@ use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     http::Method,
     web::Data,
-    Error,
+    Error, HttpMessage,
 };
-use actix_web::dev::Payload;
 use bytes::{Bytes, BytesMut};
 use chrono::Local;
 use futures_util::StreamExt;
@@ -109,8 +108,9 @@ where
                     let duration = end_time.signed_duration_since(start_time);
                     let times = duration.num_milliseconds() as i32;
 
-                    let username =
-                        auth_username.clone().unwrap_or_else(|| "Unknown".to_string());
+                    let username = auth_username
+                        .clone()
+                        .unwrap_or_else(|| "Unknown".to_string());
 
                     let user_agent = UserAgent::parse_user_agent(&user_agent_str).await;
                     let ip_source = IpRegion::search_by_ip::<&str>(&ip).unwrap_or_default();
@@ -154,12 +154,7 @@ async fn read_request_body(req: &mut ServiceRequest) -> Bytes {
     }
 
     let bytes = body.freeze();
-    let (mut sender, new_payload) = Payload::create(false);
-    if !bytes.is_empty() {
-        sender.feed_data(bytes.clone());
-    }
-    sender.feed_eof();
-    req.set_payload(new_payload);
+    req.set_payload(bytes.clone().into());
     bytes
 }
 
@@ -251,7 +246,10 @@ fn resolve_description(method: &Method, uri: &str) -> Option<String> {
         "/admin/exceptionLog" if method == Method::DELETE => "删除异常日志",
         "/admin/operationLog" if method == Method::DELETE => "删除操作日志",
         _ => {
-            if uri.starts_with("/admin/blog/") && uri.ends_with("/visibility") && method == Method::PUT {
+            if uri.starts_with("/admin/blog/")
+                && uri.ends_with("/visibility")
+                && method == Method::PUT
+            {
                 "更新博客可见性状态"
             } else {
                 return None;

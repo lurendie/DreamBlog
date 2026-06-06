@@ -61,6 +61,7 @@
 	import BlogPasswordDialog from "@/components/index/BlogPasswordDialog";
 	import {mapState} from 'vuex'
 	import {SAVE_CLIENT_SIZE, SAVE_INTRODUCTION, SAVE_SITE_INFO, RESTORE_COMMENT_FORM} from "@/store/mutations-types";
+	import { updateSeo } from '@/util/seo'
 
 	export default {
 		name: "Index",
@@ -115,7 +116,11 @@
 						this.randomBlogList = res.data.randomBlogList
 						this.$store.commit(SAVE_SITE_INFO, this.siteInfo)
 						this.$store.commit(SAVE_INTRODUCTION, res.data.introduction)
-						document.title = this.$route.meta.title + this.siteInfo.webTitleSuffix
+						updateSeo({
+							title: this.$route.meta.title,
+							description: `${this.siteInfo.blogName || 'DreamBlog'}，持续分享博客文章、归档内容、动态与友链信息。`,
+							path: this.$route.fullPath,
+						})
 					}
 				})
 			},

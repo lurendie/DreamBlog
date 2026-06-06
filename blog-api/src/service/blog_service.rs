@@ -362,9 +362,7 @@ impl BlogService {
               AND MONTH(create_time) = ?;"#,
                 [date_time.year().into(), date_time.month().into()],
             );
-            let mut blogs = BlogArchive::find_by_statement(sql)
-                .all(db)
-            .await?;
+            let mut blogs = BlogArchive::find_by_statement(sql).all(db).await?;
 
             for model in blogs.iter_mut() {
                 if model.password.is_none() {
@@ -1020,5 +1018,3 @@ mod tests {
     //     //2.查询每月的文章数量
     // }
 }
-
-

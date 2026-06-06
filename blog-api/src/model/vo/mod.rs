@@ -29,6 +29,6 @@ pub use favorite::Favorite;
 pub use friend_info::FriendInfo;
 pub use introduction::Introduction;
 pub use search_blog::SearchBlog;
+pub use search_request::SearchParams;
 pub use search_request::SearchRequest;
 pub use serise::Serise;
-pub use search_request::SearchParams;

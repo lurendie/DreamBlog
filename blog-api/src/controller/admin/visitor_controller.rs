@@ -37,7 +37,7 @@ pub async fn delete_visitor(
 ) -> Result<ApiResponse<Value>, AppError> {
     let db = app.get_mysql_pool();
     let id = params.id;
-     let uuid = params.uuid.as_str();
-    VisitorService::delete_visitor(id,uuid, db).await?;
+    let uuid = params.uuid.as_str();
+    VisitorService::delete_visitor(id, uuid, db).await?;
     Ok(ApiResponse::success(None))
 }

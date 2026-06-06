@@ -5,6 +5,7 @@
   "author": "Naccl <i@naccl.top>",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/generate-robots.js",
     "serve": "set NODE_OPTIONS=--openssl-legacy-provider & vue-cli-service serve",
     "build": "set NODE_OPTIONS=--openssl-legacy-provider & vue-cli-service build"
   },

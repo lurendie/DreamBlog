@@ -5,7 +5,7 @@ use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 #[derive(Clone)]
 pub struct AppState {
     pub(crate) mysql_connection: DatabaseConnection,
-   // pub(crate) redis_connection: Pool,
+    // pub(crate) redis_connection: Pool,
     // pub(crate) config: Config,
 }
 

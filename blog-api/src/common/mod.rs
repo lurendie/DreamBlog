@@ -9,7 +9,6 @@ mod email;
 mod ip_region;
 mod ip_value;
 mod markdown;
-mod pagination;
 pub mod param_utils;
 mod type_value;
 mod user_agent;

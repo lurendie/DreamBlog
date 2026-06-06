@@ -5,7 +5,7 @@
  * @LastEditTime: 2024-05-18 09:58:55
  */
 use crate::app::AppState;
-use crate::error::{AppError};
+use crate::error::AppError;
 use crate::model::ApiResponse;
 use crate::service::BlogService;
 use actix_web::{get, web};

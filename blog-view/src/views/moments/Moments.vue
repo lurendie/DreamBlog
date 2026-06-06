@@ -33,6 +33,7 @@
 
 <script>
 	import {getMomentListByPageNum, likeMoment} from "@/api/moment";
+	import { updateSeo } from '@/util/seo'
 
 	export default {
 		name: "Moments",
@@ -70,6 +71,11 @@
 					if (res.code === 200) {
 						this.momentList = res.data.list
 						this.totalPage = res.data.totalPage
+						updateSeo({
+							title: '动态',
+							description: `查看最新动态内容，当前第 ${this.pageNum} 页。`,
+							path: this.$route.fullPath,
+						})
 					} else {
 						this.msgError(res.msg)
 					}

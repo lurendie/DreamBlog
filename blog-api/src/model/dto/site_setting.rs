@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 pub struct SiteSetting {
     //#[crud_table(column: "id")]
     pub id: Option<i64>,
-      #[serde(rename = "nameEn")]
+    #[serde(rename = "nameEn")]
     pub name_en: String,
-      #[serde(rename = "nameZh")]
+    #[serde(rename = "nameZh")]
     pub name_zh: String,
     //#[crud_table(column: "value")]
     pub value: String,

@@ -10,7 +10,7 @@ use crate::controller::{
     about_controller,
     admin::{self, tag_controller},
     archive_controller, blog_controller, comment_controller, friend_controller, index_controller,
-    moment_controller, user_controller,
+    moment_controller, sitemap_controller, user_controller,
 };
 use crate::middleware::build_session_storage;
 use crate::middleware::{OperationLog, VisiLog};
@@ -83,6 +83,8 @@ impl AppServer {
             .service(moment_controller::moments)
             .service(about_controller::about)
             .service(friend_controller::get_friend)
+            .service(sitemap_controller::robots)
+            .service(sitemap_controller::sitemap)
             .service(comment_controller::get_comments)
             .service(blog_controller::check_blog_password)
             .service(user_controller::login)

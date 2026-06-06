@@ -8,8 +8,8 @@ use crate::{
     app::AppState,
     error::AppError,
     middleware::AppClaims,
-    model::{LoginLogQuery, LogIdParam},
     model::ApiResponse,
+    model::{LogIdParam, LoginLogQuery},
     service::LoginLogService,
 };
 

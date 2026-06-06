@@ -16,8 +16,6 @@ pub struct BlogVisibility {
     top: Option<bool>, // 置顶可见性，默认为false。如果设置为false，则置顶不可见。
 }
 
-
-
 impl BlogVisibility {
     // pub fn new() -> Self {
     //     Self::default()

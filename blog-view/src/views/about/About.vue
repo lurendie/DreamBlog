@@ -16,6 +16,7 @@
 <script>
 	import {getAbout} from "@/api/about";
 	import CommentList from "@/components/comment/CommentList";
+	import { createDescription, updateSeo } from '@/util/seo'
 
 	export default {
 		name: "About",
@@ -38,6 +39,11 @@
 				getAbout().then(res => {
 					if (res.code === 200) {
 						this.about = res.data
+						updateSeo({
+							title: this.about.title || '关于我',
+							description: createDescription(this.about.content, '了解站长介绍、个人经历与关于页面内容。'),
+							path: this.$route.fullPath,
+						})
 					} else {
 						this.msgError(res.msg)
 					}

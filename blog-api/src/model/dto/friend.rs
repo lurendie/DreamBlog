@@ -52,4 +52,3 @@ pub struct FriendQuery {
     pub nickname: Option<String>,
     pub is_published: Option<bool>,
 }
-

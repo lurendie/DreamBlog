@@ -1,5 +1,5 @@
-pub mod account_controller;
 pub mod about_controller;
+pub mod account_controller;
 pub mod blog_controller;
 pub mod category_controller;
 pub mod comment_controller;

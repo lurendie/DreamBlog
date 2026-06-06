@@ -12,4 +12,5 @@ pub mod comment_controller;
 pub mod friend_controller;
 pub mod index_controller;
 pub mod moment_controller;
+pub mod sitemap_controller;
 pub mod user_controller;

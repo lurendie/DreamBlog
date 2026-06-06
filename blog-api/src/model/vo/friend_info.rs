@@ -19,4 +19,3 @@ impl From<friend::Model> for FriendInfo {
         }
     }
 }
-

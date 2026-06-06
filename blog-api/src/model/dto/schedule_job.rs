@@ -33,9 +33,6 @@ impl From<Model> for ScheduleJob {
     }
 }
 
-
-
-
 #[derive(Debug, Deserialize)]
 pub struct JobQuery {
     #[serde(rename = "pageNum")]

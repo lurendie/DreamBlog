@@ -72,8 +72,7 @@ impl CommentService {
                     .filter(comment::Column::BlogId.eq(blog_id))
                     .paginate(db, page_size)
             } else {
-                select
-                    .paginate(db, page_size)
+                select.paginate(db, page_size)
             }
         };
         let models = page.fetch_page(page_num - 1).await?;
@@ -219,7 +218,8 @@ impl CommentService {
             //开启了订阅回复功能
             if model.is_notice && model.parent_comment_id != -1 {
                 // 情况1：回复评论 -> 发给父评论者
-                let parent_model: comment::Model = Self::find_by_id(model.parent_comment_id, db).await?;
+                let parent_model: comment::Model =
+                    Self::find_by_id(model.parent_comment_id, db).await?;
                 if parent_model.email.eq(&model.email) {
                     return Ok(()); //如果评论者和父评论者是同一个人，则不发送邮件
                 }

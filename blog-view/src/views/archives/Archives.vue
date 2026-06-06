@@ -30,6 +30,7 @@
 
 <script>
 	import {getArchives} from "@/api/archives";
+	import { updateSeo } from '@/util/seo'
 
 	export default {
 		name: "Archives",
@@ -55,6 +56,11 @@
 					if (res.code === 200) {
 						this.blogMap = res.data.blogMap
 						this.count = res.data.count
+						updateSeo({
+							title: '归档',
+							description: `按时间线浏览全部文章归档，当前共 ${this.count} 篇日志。`,
+							path: this.$route.fullPath,
+						})
 					} else {
 						this.msgError(res.msg);
 					}

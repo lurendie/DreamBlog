@@ -4,7 +4,7 @@ use lettre::transport::smtp::authentication::Credentials;
 use lettre::{SmtpTransport, Transport};
 
 use crate::app::CONFIG;
-use crate::error::EmailServerError; 
+use crate::error::EmailServerError;
 
 #[derive(Debug, Clone)]
 pub struct OwenrComment {
@@ -123,7 +123,6 @@ impl GuestReply {
     }
 }
 
-
 const GUEST_HTML_TEMPLATE: &str = r#"<!DOCTYPE html>
 <html lang="zh_CN">
 
@@ -222,8 +221,8 @@ impl EmailServer {
         log::info!("发送邮件给: {}", recipient_email);
         let email_config = CONFIG.get_email_config();
         let email_message_build = Message::builder()
-            .from(email_config.username.as_str().parse().unwrap())
-            .to(recipient_email.parse().unwrap());
+            .from(email_config.username.as_str().parse()?)
+            .to(recipient_email.parse()?);
         let email_message_build = match email_type {
             EmailType::GuestReply => email_message_build.subject("您在博客的评论有了新的回复~"),
             EmailType::OwenrComment => email_message_build.subject("您的博客文章收到新的评论~"),

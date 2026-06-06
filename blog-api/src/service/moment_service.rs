@@ -47,7 +47,7 @@ impl MomentService {
                 active_model.content = Set(moment_dto.content);
                 active_model.likes = Set(Some(moment_dto.likes));
                 active_model.create_time = Set(moment_dto.create_time);
-                 active_model.is_published = Set(moment_dto.is_published);
+                active_model.is_published = Set(moment_dto.is_published);
                 active_model.update(db).await?;
             }
             None => {

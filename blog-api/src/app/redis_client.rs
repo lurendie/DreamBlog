@@ -30,31 +30,31 @@ pub static REDIS_CLIENT: LazyLock<Pool> = LazyLock::new(|| {
 pub struct RedisClient;
 impl RedisClient {
     /**
- * 获取redis连接 如没有获取到连接则返回None
- */
-pub async fn get_connection() -> Result<deadpool_redis::Connection, PoolError> {
-    match REDIS_CLIENT.get().await {
-        Ok(conn) => Ok(conn),
-        Err(e) => Err(e),
+     * 获取redis连接 如没有获取到连接则返回None
+     */
+    pub async fn get_connection() -> Result<deadpool_redis::Connection, PoolError> {
+        match REDIS_CLIENT.get().await {
+            Ok(conn) => Ok(conn),
+            Err(e) => Err(e),
+        }
     }
-}
 
-/**
- * 获取redis连接 如5000ms内没有获取到连接则返回None
- */
-pub async fn _timeout_get_connection() -> Result<deadpool_redis::Connection, PoolError> {
-    match REDIS_CLIENT
-        .timeout_get(&deadpool_redis::Timeouts::wait_millis(5000))
-        .await
-    {
-        Ok(conn) => Ok(conn),
-        Err(e) => Err(e),
+    /**
+     * 获取redis连接 如5000ms内没有获取到连接则返回None
+     */
+    pub async fn _timeout_get_connection() -> Result<deadpool_redis::Connection, PoolError> {
+        match REDIS_CLIENT
+            .timeout_get(&deadpool_redis::Timeouts::wait_millis(5000))
+            .await
+        {
+            Ok(conn) => Ok(conn),
+            Err(e) => Err(e),
+        }
     }
-}
 
-pub async fn get_redis_pool() -> Pool {
-    REDIS_CLIENT.clone()
-}
+    pub async fn get_redis_pool() -> Pool {
+        REDIS_CLIENT.clone()
+    }
 }
 
 // //redis 单元测试
