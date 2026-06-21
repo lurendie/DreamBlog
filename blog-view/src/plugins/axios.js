@@ -3,7 +3,7 @@ import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
 const request = axios.create({
-	baseURL: process.env.VUE_APP_API_BASE_URL || 'http://localhost:8090/blog/',
+	baseURL: import.meta.env.VITE_API_BASE_URL || import.meta.env.VUE_APP_API_BASE_URL || 'http://localhost:8090/blog/',
 	timeout: 10000,
 })
 

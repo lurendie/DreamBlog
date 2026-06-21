@@ -5,7 +5,7 @@
 </template>
 
 <script>
-	import BlogList from "@/components/blog/BlogList";
+	import BlogList from "@/components/blog/BlogList.vue";
 	import {getBlogList} from "@/api/home";
 	import {SET_IS_BLOG_TO_HOME} from "../../store/mutations-types";
 

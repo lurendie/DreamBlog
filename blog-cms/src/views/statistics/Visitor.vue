@@ -18,17 +18,17 @@
 			<el-table-column label="操作系统" prop="os" show-overflow-tooltip></el-table-column>
 			<el-table-column label="浏览器" prop="browser" show-overflow-tooltip></el-table-column>
 			<el-table-column label="首次访问" width="170">
-				<template v-slot="scope">{{ scope.row.createTime | dateFormat }}</template>
+				<template v-slot="scope">{{ dateFormat(scope.row.createTime) }}</template>
 			</el-table-column>
 			<el-table-column width="170">
-				<template slot="header" slot-scope="scope">
+				<template #header>
 					最后访问
 					<el-tooltip effect="dark" content="每日凌晨自动更新" placement="top"><i class="el-icon-question"></i></el-tooltip>
 				</template>
-				<template v-slot="scope">{{ scope.row.lastTime | dateFormat }}</template>
+				<template v-slot="scope">{{ dateFormat(scope.row.lastTime) }}</template>
 			</el-table-column>
 			<el-table-column prop="pv" width="70">
-				<template slot="header" slot-scope="scope">
+				<template #header>
 					PV
 					<el-tooltip effect="dark" content="访客总浏览量，每日凌晨自动更新" placement="top"><i class="el-icon-question"></i></el-tooltip>
 				</template>
@@ -36,8 +36,8 @@
 			<el-table-column label="操作" width="200">
 				<template v-slot="scope">
 					<el-button type="warning" icon="el-icon-view" size="mini" @click="showLog(scope.row.uuid)">查看记录</el-button>
-					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" iconColor="red" @onConfirm="deleteVisitorById(scope.row)">
-						<el-button size="mini" type="danger" icon="el-icon-delete" slot="reference">删除</el-button>
+					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" icon-color="red" @confirm="deleteVisitorById(scope.row)">
+						<template #reference><el-button size="mini" type="danger" icon="el-icon-delete">删除</el-button></template>
 					</el-popconfirm>
 				</template>
 			</el-table-column>
@@ -127,3 +127,4 @@
 		margin-bottom: 0;
 	}
 </style>
+

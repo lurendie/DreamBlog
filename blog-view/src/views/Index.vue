@@ -51,14 +51,14 @@
 
 <script>
 	import {getHitokoto, getSite} from '@/api/index'
-	import Nav from "@/components/index/Nav";
-	import Header from "@/components/index/Header";
-	import Footer from "@/components/index/Footer";
-	import Introduction from "@/components/sidebar/Introduction";
-	import Tags from "@/components/sidebar/Tags";
-	import RandomBlog from "@/components/sidebar/RandomBlog";
-	import Tocbot from "@/components/sidebar/Tocbot";
-	import BlogPasswordDialog from "@/components/index/BlogPasswordDialog";
+	import Nav from "@/components/index/Nav.vue";
+	import Header from "@/components/index/Header.vue";
+	import Footer from "@/components/index/Footer.vue";
+	import Introduction from "@/components/sidebar/Introduction.vue";
+	import Tags from "@/components/sidebar/Tags.vue";
+	import RandomBlog from "@/components/sidebar/RandomBlog.vue";
+	import Tocbot from "@/components/sidebar/Tocbot.vue";
+	import BlogPasswordDialog from "@/components/index/BlogPasswordDialog.vue";
 	import {mapState} from 'vuex'
 	import {SAVE_CLIENT_SIZE, SAVE_INTRODUCTION, SAVE_SITE_INFO, RESTORE_COMMENT_FORM} from "@/store/mutations-types";
 	import { updateSeo } from '@/util/seo'
@@ -104,7 +104,7 @@
 			this.resizeHandler = this.saveClientSize
 			window.addEventListener('resize', this.resizeHandler)
 		},
-		beforeDestroy() {
+		beforeUnmount() {
 			if (this.resizeHandler) {
 				window.removeEventListener('resize', this.resizeHandler)
 			}

@@ -2,7 +2,7 @@
 	<div>
 		<el-form :model="form" label-position="top">
 			<el-form-item label="动态内容" prop="content">
-				<mavon-editor v-model="form.content"/>
+				<MdEditor v-model="form.content"/>
 			</el-form-item>
 
 			<el-form-item label="点赞数" prop="likes" style="width: 50%">
@@ -70,3 +70,4 @@
 <style scoped>
 
 </style>
+

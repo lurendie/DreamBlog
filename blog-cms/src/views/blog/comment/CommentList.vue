@@ -39,7 +39,7 @@
 				</template>
 			</el-table-column>
 			<el-table-column label="发表时间" width="170">
-				<template v-slot="scope">{{ scope.row.createTime | dateFormat }}</template>
+				<template v-slot="scope">{{ dateFormat(scope.row.createTime) }}</template>
 			</el-table-column>
 			<el-table-column label="是否公开" width="80">
 				<template v-slot="scope">
@@ -68,7 +68,7 @@
 		</el-pagination>
 
 		<!--编辑评论对话框-->
-		<el-dialog title="编辑评论" width="50%" :visible.sync="editDialogVisible" :close-on-click-modal="false"
+		<el-dialog title="编辑评论" width="50%" v-model="editDialogVisible" :close-on-click-modal="false"
 			@close="editDialogClosed">
 			<!--内容主体-->
 			<el-form :model="editForm" :rules="formRules" ref="editFormRef" label-width="80px">
@@ -93,10 +93,10 @@
 				</el-form-item>
 			</el-form>
 			<!--底部-->
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="editDialogVisible=false">取 消</el-button>
 				<el-button type="primary" @click="editComment">确 定</el-button>
-			</span>
+			</template>
 		</el-dialog>
 	</div>
 </template>
@@ -281,3 +281,4 @@
 </script>
 
 <style scoped></style>
+

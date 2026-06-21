@@ -9,18 +9,18 @@
 				<div class="avatar-wrapper">
 					<img :src="user.avatar" class="user-avatar" v-if="user">
 				</div>
-				<el-dropdown-menu slot="dropdown" class="user-dropdown">
+				<template #dropdown><el-dropdown-menu class="user-dropdown">
 					<a target="_blank" href="https://github.com/Naccl/NBlog">
 						<el-dropdown-item>
 							<SvgIcon icon-class="github" class-name="svg"/>
 							<span>GitHub</span>
 						</el-dropdown-item>
 					</a>
-					<el-dropdown-item @click.native="logout">
+					<el-dropdown-item @click="logout">
 						<SvgIcon icon-class="logout" class-name="svg"/>
 						<span>退出</span>
 					</el-dropdown-item>
-				</el-dropdown-menu>
+				</el-dropdown-menu></template>
 			</el-dropdown>
 		</div>
 	</div>
@@ -161,3 +161,5 @@
 		border: 0 !important;
 	}
 </style>
+
+

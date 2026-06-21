@@ -33,13 +33,13 @@
 						name="password"
 						tabindex="2"
 						auto-complete="on"
-						@keyup.enter.native="handleLogin"
+						@keyup.enter="handleLogin"
 				/>
 				<span class="show-pwd" @click="showPwd">
           <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'"/>
         </span>
 			</el-form-item>
-			<el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">Login</el-button>
+			<el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.prevent="handleLogin">Login</el-button>
 		</el-form>
 	</div>
 </template>
@@ -110,7 +110,7 @@
 		}
 	}
 
-	/* reset element-ui css */
+	/* reset element-plus css */
 	.login-container {
 		.el-input {
 			display: inline-block;
@@ -205,3 +205,5 @@
 		}
 	}
 </style>
+
+

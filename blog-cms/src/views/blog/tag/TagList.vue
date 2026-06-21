@@ -19,8 +19,8 @@
 			<el-table-column label="操作">
 				<template v-slot="scope">
 					<el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row)">编辑</el-button>
-					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" iconColor="red" @onConfirm="deleteTagById(scope.row.id)">
-						<el-button size="mini" type="danger" icon="el-icon-delete" slot="reference">删除</el-button>
+					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" icon-color="red" @confirm="deleteTagById(scope.row.id)">
+						<template #reference><el-button size="mini" type="danger" icon="el-icon-delete">删除</el-button></template>
 					</el-popconfirm>
 				</template>
 			</el-table-column>
@@ -33,7 +33,7 @@
 		</el-pagination>
 
 		<!--添加标签对话框-->
-		<el-dialog title="添加标签" width="50%" :visible.sync="addDialogVisible" :close-on-click-modal="false" @close="addDialogClosed">
+		<el-dialog title="添加标签" width="50%" v-model="addDialogVisible" :close-on-click-modal="false" @close="addDialogClosed">
 			<!--内容主体-->
 			<el-form :model="addForm" :rules="formRules" ref="addFormRef" label-width="80px">
 				<el-form-item label="标签名称" prop="name">
@@ -50,14 +50,14 @@
 				</el-form-item>
 			</el-form>
 			<!--底部-->
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="addDialogVisible=false">取 消</el-button>
 				<el-button type="primary" @click="addTag">确 定</el-button>
-			</span>
+			</template>
 		</el-dialog>
 
 		<!--编辑标签对话框-->
-		<el-dialog title="编辑标签" width="50%" :visible.sync="editDialogVisible" :close-on-click-modal="false" @close="editDialogClosed">
+		<el-dialog title="编辑标签" width="50%" v-model="editDialogVisible" :close-on-click-modal="false" @close="editDialogClosed">
 			<!--内容主体-->
 			<el-form :model="editForm" :rules="formRules" ref="editFormRef" label-width="80px">
 				<el-form-item label="标签名称" prop="name">
@@ -74,10 +74,10 @@
 				</el-form-item>
 			</el-form>
 			<!--底部-->
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="editDialogVisible=false">取 消</el-button>
 				<el-button type="primary" @click="editTag">确 定</el-button>
-			</span>
+			</template>
 		</el-dialog>
 	</div>
 </template>
@@ -195,3 +195,4 @@
 		margin-left: 10px;
 	}
 </style>
+

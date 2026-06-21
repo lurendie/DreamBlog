@@ -39,7 +39,7 @@ function truncate(value, maxLength = 160) {
 }
 
 function getOrigin() {
-	return process.env.VUE_APP_SITE_URL || window.location.origin || ''
+	return import.meta.env.VITE_SITE_URL || import.meta.env.VUE_APP_SITE_URL || window.location.origin || ''
 }
 
 function toAbsoluteUrl(path = window.location.pathname) {

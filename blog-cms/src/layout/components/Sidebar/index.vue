@@ -21,9 +21,15 @@
 
 <script>
 	import {mapGetters} from 'vuex'
+	import {routes} from '@/router'
 	import Logo from './Logo'
 	import SidebarItem from './SidebarItem'
-	import variables from '@/assets/styles/variables.scss'
+
+	const variables = {
+		menuText: '#bfcbd9',
+		menuActiveText: '#409EFF',
+		menuBg: '#304156',
+	}
 
 	export default {
 		components: {SidebarItem, Logo},
@@ -38,7 +44,7 @@
 				'sidebar'
 			]),
 			routes() {
-				return this.$router.options.routes
+				return routes
 			},
 			activeMenu() {
 				const route = this.$route
@@ -67,3 +73,4 @@
 		user-select: none;
 	}
 </style>
+

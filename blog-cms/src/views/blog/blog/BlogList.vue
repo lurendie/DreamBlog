@@ -3,11 +3,15 @@
 		<!--搜索-->
 		<el-row>
 			<el-col :span="8">
-				<el-input placeholder="请输入标题" v-model="queryInfo.title" :clearable="true" @clear="search" @keyup.native.enter="search" size="small" style="min-width: 500px">
-					<el-select v-model="queryInfo.categoryId" slot="prepend" placeholder="请选择分类" :clearable="true" @change="search" style="width: 160px">
-						<el-option :label="item.name" :value="item.id" v-for="item in categoryList" :key="item.id"></el-option>
-					</el-select>
-					<el-button slot="append" icon="el-icon-search" @click="search"></el-button>
+				<el-input placeholder="请输入标题" v-model="queryInfo.title" :clearable="true" @clear="search" @keyup.enter="search" size="small" style="min-width: 500px">
+					<template #prepend>
+						<el-select v-model="queryInfo.categoryId" placeholder="请选择分类" :clearable="true" @change="search" style="width: 160px">
+							<el-option :label="item.name" :value="item.id" v-for="item in categoryList" :key="item.id"></el-option>
+						</el-select>
+					</template>
+					<template #append>
+						<el-button icon="el-icon-search" @click="search"></el-button>
+					</template>
 				</el-input>
 			</el-col>
 		</el-row>
@@ -34,16 +38,16 @@
 				</template>
 			</el-table-column>
 			<el-table-column label="创建时间" width="170">
-				<template v-slot="scope">{{ scope.row.createTime | dateFormat }}</template>
+				<template v-slot="scope">{{ dateFormat(scope.row.createTime) }}</template>
 			</el-table-column>
 			<el-table-column label="最近更新" width="170">
-				<template v-slot="scope">{{ scope.row.updateTime | dateFormat }}</template>
+				<template v-slot="scope">{{ dateFormat(scope.row.updateTime) }}</template>
 			</el-table-column>
 			<el-table-column label="操作" width="200">
 				<template v-slot="scope">
 					<el-button type="primary" icon="el-icon-edit" size="mini" @click="goBlogEditPage(scope.row.id)">编辑</el-button>
-					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" iconColor="red" @onConfirm="deleteBlogById(scope.row.id)">
-						<el-button size="mini" type="danger" icon="el-icon-delete" slot="reference">删除</el-button>
+					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" icon-color="red" @confirm="deleteBlogById(scope.row.id)">
+						<template #reference><el-button size="mini" type="danger" icon="el-icon-delete">删除</el-button></template>
 					</el-popconfirm>
 				</template>
 			</el-table-column>
@@ -56,9 +60,9 @@
 		</el-pagination>
 
 		<!--编辑可见性状态对话框-->
-		<el-dialog title="博客可见性" width="30%" :visible.sync="dialogVisible">
+		<el-dialog title="博客可见性" width="30%" v-model="dialogVisible">
 			<!--内容主体-->
-			<el-form label-width="50px" @submit.native.prevent>
+			<el-form label-width="50px" @submit.prevent>
 				<el-form-item>
 					<el-radio-group v-model="radio">
 						<el-radio :label="1">公开</el-radio>
@@ -87,10 +91,10 @@
 				</el-form-item>
 			</el-form>
 			<!--底部-->
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="dialogVisible=false">取 消</el-button>
 				<el-button type="primary" @click="saveVisibility">保存</el-button>
-			</span>
+			</template>
 		</el-dialog>
 	</div>
 </template>
@@ -231,3 +235,4 @@
 		margin-left: 10px;
 	}
 </style>
+

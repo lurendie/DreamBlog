@@ -9,7 +9,7 @@
 		</template>
 
 		<el-submenu v-else ref="subMenu" :index="resolvePath(item.path)" popper-append-to-body>
-			<template slot="title">
+			<template #title>
 				<item v-if="item.meta" :icon="item.meta && item.meta.icon" :title="item.meta.title"/>
 			</template>
 			<sidebar-item
@@ -25,7 +25,6 @@
 </template>
 
 <script>
-	import path from 'path'
 	import {isExternal} from '@/util/validate'
 	import Item from './Item'
 	import AppLink from './Link'
@@ -52,7 +51,6 @@
 		},
 		data() {
 			// To fix https://github.com/PanJiaChen/vue-admin-template/issues/237
-			// TODO: refactor with render function
 			this.onlyOneChild = null
 			return {}
 		},
@@ -93,8 +91,10 @@
 				if (isExternal(this.basePath)) {
 					return this.basePath
 				}
-				return path.resolve(this.basePath, routePath)
+				return `/${[this.basePath, routePath].join('/').split('/').filter(Boolean).join('/')}`
 			}
 		}
 	}
 </script>
+
+

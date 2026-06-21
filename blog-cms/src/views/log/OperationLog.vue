@@ -37,12 +37,12 @@
 				</template>
 			</el-table-column>
 			<el-table-column label="操作时间" width="170">
-				<template v-slot="scope">{{ scope.row.createTime | dateFormat }}</template>
+				<template v-slot="scope">{{ dateFormat(scope.row.createTime) }}</template>
 			</el-table-column>
 			<el-table-column label="操作" width="120">
 				<template v-slot="scope">
-					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" iconColor="red" @onConfirm="deleteLogById(scope.row.id)">
-						<el-button size="mini" type="danger" icon="el-icon-delete" slot="reference">删除</el-button>
+					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" icon-color="red" @confirm="deleteLogById(scope.row.id)">
+						<template #reference><el-button size="mini" type="danger" icon="el-icon-delete">删除</el-button></template>
 					</el-popconfirm>
 				</template>
 			</el-table-column>
@@ -120,3 +120,4 @@
 		margin-bottom: 0;
 	}
 </style>
+

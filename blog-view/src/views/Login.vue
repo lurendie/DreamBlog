@@ -12,7 +12,7 @@
 				</el-form-item>
 				<el-form-item prop="password">
 					<el-input v-model="loginForm.password" prefix-icon="el-icon-lock" show-password
-						@keyup.native.enter="login"></el-input>
+						@keyup.enter="login"></el-input>
 				</el-form-item>
 				<el-form-item class="btns">
 					<el-button type="primary" @click="login">登录</el-button>

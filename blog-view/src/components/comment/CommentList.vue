@@ -6,8 +6,8 @@
 </template>
 
 <script>
-	import Comment from "./Comment";
-	import Pagination from "./Pagination";
+	import Comment from "./Comment.vue";
+	import Pagination from "./Pagination.vue";
 	import {SET_COMMENT_QUERY_PAGE, SET_COMMENT_QUERY_BLOG_ID, SET_COMMENT_QUERY_PAGE_NUM, SET_PARENT_COMMENT_ID} from "@/store/mutations-types";
 
 	export default {

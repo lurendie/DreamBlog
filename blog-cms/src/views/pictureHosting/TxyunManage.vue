@@ -28,7 +28,7 @@
 			</div>
 		</el-row>
 
-		<el-drawer title="上传文件" :visible.sync="isDrawerShow" direction="rtl" size="40%" :wrapperClosable="false" :close-on-press-escape="false">
+		<el-drawer title="上传文件" v-model="isDrawerShow" direction="rtl" size="40%" :wrapper-closable="false" :close-on-press-escape="false">
 			<el-row>
 				<el-radio v-model="nameType" label="1">使用源文件名</el-radio>
 				<el-radio v-model="nameType" label="2">使用UUID文件名</el-radio>
@@ -351,3 +351,5 @@ export default {
 	height: 80px;
 }
 </style>
+
+

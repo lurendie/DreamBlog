@@ -1,19 +1,19 @@
 import axios from 'axios'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
-import {Message} from 'element-ui'
+import {ElMessage} from 'element-plus'
 import {clearLoginState, getStoredUser} from '@/util/storage'
 import router from '@/router'
 
 const request = axios.create({
-	baseURL: process.env.VUE_APP_ADMIN_API_BASE_URL || 'http://localhost:8090/admin/',
+	baseURL: import.meta.env.VITE_ADMIN_API_BASE_URL || import.meta.env.VUE_APP_ADMIN_API_BASE_URL || 'http://localhost:8090/admin/',
 	timeout: 5000
 })
 
 let CancelToken = axios.CancelToken
 
 function redirectToLogin() {
-	if (router.currentRoute.path !== '/login') {
+	if (router.currentRoute.value.path !== '/login') {
 		router.push('/login').catch(() => {})
 	}
 }
@@ -37,7 +37,6 @@ request.interceptors.request.use(config => {
 		return config
 	},
 	error => {
-		console.info(error)
 		return Promise.reject(error)
 	}
 )
@@ -52,19 +51,18 @@ request.interceptors.response.use(response => {
 		}
 		if (res.code !== 200) {
 			let msg = res.msg || 'Error'
-			Message.error(msg)
+			ElMessage.error(msg)
 			return Promise.reject(new Error(msg))
 		}
 		return res
 	},
 	error => {
-		console.info(error)
 		NProgress.done()
 		if (error.response && (error.response.status === 401 || error.response.status === 403)) {
 			clearLoginState()
 			redirectToLogin()
 		}
-		Message.error(error.message)
+		ElMessage.error(error.message)
 		return Promise.reject(error)
 	}
 )

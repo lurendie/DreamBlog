@@ -1,14 +1,11 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import store from '@/store'
 import { updateSeo } from '@/util/seo'
-
-Vue.use(VueRouter)
 
 const routes = [
 	{
 		path: '/login',
-		component: () => import('@/views/Login'),
+		component: () => import('@/views/Login.vue'),
 		meta: {
 			title: '登录',
 			noindex: true,
@@ -16,13 +13,13 @@ const routes = [
 	},
 	{
 		path: '/',
-		component: () => import('@/views/Index'),
+		component: () => import('@/views/Index.vue'),
 		redirect: '/home',
 		children: [
 			{
 				path: '/home',
 				name: 'home',
-				component: () => import('@/views/home/Home'),
+				component: () => import('@/views/home/Home.vue'),
 				meta: {
 					title: '首页',
 				}
@@ -30,7 +27,7 @@ const routes = [
 			{
 				path: '/archives',
 				name: 'archives',
-				component: () => import('@/views/archives/Archives'),
+				component: () => import('@/views/archives/Archives.vue'),
 				meta: {
 					title: '归档',
 				}
@@ -38,7 +35,7 @@ const routes = [
 			{
 				path: '/blog/:id',
 				name: 'blog',
-				component: () => import('@/views/blog/Blog'),
+				component: () => import('@/views/blog/Blog.vue'),
 				meta: {
 					title: '博客',
 				}
@@ -46,7 +43,7 @@ const routes = [
 			{
 				path: '/tag/:name',
 				name: 'tag',
-				component: () => import('@/views/tag/Tag'),
+				component: () => import('@/views/tag/Tag.vue'),
 				meta: {
 					title: '标签',
 				}
@@ -54,7 +51,7 @@ const routes = [
 			{
 				path: '/category/:name',
 				name: 'category',
-				component: () => import('@/views/category/Category'),
+				component: () => import('@/views/category/Category.vue'),
 				meta: {
 					title: '分类',
 				}
@@ -62,7 +59,7 @@ const routes = [
 			{
 				path: '/moments',
 				name: 'moments',
-				component: () => import('@/views/moments/Moments'),
+				component: () => import('@/views/moments/Moments.vue'),
 				meta: {
 					title: '动态',
 				}
@@ -70,7 +67,7 @@ const routes = [
 			{
 				path: '/friends',
 				name: 'friends',
-				component: () => import('@/views/friends/Friends'),
+				component: () => import('@/views/friends/Friends.vue'),
 				meta: {
 					title: '友人帐',
 				}
@@ -78,7 +75,7 @@ const routes = [
 			{
 				path: '/about',
 				name: 'about',
-				component: () => import('@/views/about/About'),
+				component: () => import('@/views/about/About.vue'),
 				meta: {
 					title: '关于我',
 				}
@@ -87,9 +84,8 @@ const routes = [
 	}
 ]
 
-const router = new VueRouter({
-	mode: 'history',
-	base: process.env.BASE_URL,
+const router = createRouter({
+	history: createWebHistory(import.meta.env.BASE_URL),
 	routes
 })
 

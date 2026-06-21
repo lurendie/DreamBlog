@@ -31,7 +31,7 @@
 
 <script>
 	import {getData, addViewsByNickname} from "@/api/friend";
-	import CommentList from "@/components/comment/CommentList";
+	import CommentList from "@/components/comment/CommentList.vue";
 	import { updateSeo } from '@/util/seo'
 
 	export default {

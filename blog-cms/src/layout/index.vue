@@ -51,8 +51,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  @import "~@/assets/styles/mixin.scss";
-  @import "~@/assets/styles/variables.scss";
+  @import "@/assets/styles/mixin.scss";
+  @import "@/assets/styles/variables.scss";
 
   .app-wrapper {
     @include clearfix;
@@ -71,14 +71,14 @@ export default {
     top: 0;
     height: 100%;
     position: absolute;
-    z-index: 1702;//999 mavon-editor最高z-index: 1600
+    z-index: 1702;
   }
 
   .fixed-header {
     position: fixed;
     top: 0;
     right: 0;
-    z-index: 1701;//9 mavon-editor最高z-index: 1600
+    z-index: 1701;
     width: calc(100% - #{$sideBarWidth});
     transition: width 0.28s;
   }
@@ -91,3 +91,5 @@ export default {
     width: 100%;
   }
 </style>
+
+

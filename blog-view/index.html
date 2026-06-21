@@ -4,31 +4,32 @@
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width,initial-scale=1.0">
-	<meta name="description" content="DreamBlog 是一个基于 Vue 与 Rust 的个人博客站点，包含文章、归档、分类、标签、动态、友链与关于页面。">
-	<meta name="keywords" content="DreamBlog,博客,技术博客,Rust,Vue,前端,后端">
+	<meta name="description" content="">
+	<meta name="keywords" content="">
 	<meta name="robots" content="index,follow">
 	<meta property="og:type" content="website">
 	<meta property="og:title" content="DreamBlog">
-	<meta property="og:description" content="DreamBlog 是一个基于 Vue 与 Rust 的个人博客站点，包含文章、归档、分类、标签、动态、友链与关于页面。">
+	<meta property="og:description" content="">
 	<meta property="og:locale" content="zh_CN">
 	<meta name="twitter:card" content="summary_large_image">
-	<link rel="icon" href="<%= BASE_URL %>favicon.ico">
+	<link rel="icon" href="/favicon.ico">
 	<title>DreamBlog</title>
-    <link rel="stylesheet" href="<%= BASE_URL %>lib/css/prism.css">
+	<link rel="stylesheet" href="/lib/css/prism.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aplayer/1.10.1/APlayer.min.css">
 	<link rel="canonical" href="http://localhost:8080/">
 </head>
 <body>
 	<noscript>
-		<strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+		<strong>We're sorry but DreamBlog doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
 	</noscript>
 	<div id="app"></div>
-    <script src="<%= BASE_URL %>lib/js/prism.js" data-manual></script>
+	<script src="/lib/js/prism.js" data-manual></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/aplayer/1.10.1/APlayer.min.js"></script>
-    <script>
+	<script>
 		var meting_api='https://api.naccl.top/meting/api?server=:server&type=:type&id=:id&auth=:auth&r=:r';
-    </script>
-	<script src="<%= BASE_URL %>lib/js/Meting.min.js"></script>
+	</script>
+	<script src="/lib/js/Meting.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.6.0/tocbot.min.js"></script>
+	<script type="module" src="/src/main.js"></script>
 </body>
 </html>

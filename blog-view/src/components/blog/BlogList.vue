@@ -8,8 +8,8 @@
 </template>
 
 <script>
-	import BlogItem from "./BlogItem";
-	import Pagination from "./Pagination";
+	import BlogItem from "./BlogItem.vue";
+	import Pagination from "./Pagination.vue";
 
 	export default {
 		name: "BlogList",

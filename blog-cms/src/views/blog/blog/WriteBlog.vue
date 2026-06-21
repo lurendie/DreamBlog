@@ -14,11 +14,11 @@
 				</el-col>
 			</el-row>
 			<el-form-item label="文章描述" prop="description">
-				<mavon-editor v-model="form.description" />
+				<MdEditor v-model="form.description" />
 			</el-form-item>
 
 			<el-form-item label="文章正文" prop="content">
-				<mavon-editor v-model="form.content" />
+				<MdEditor v-model="form.content" />
 			</el-form-item>
 
 			<el-row :gutter="20">
@@ -67,9 +67,9 @@
 		</el-form>
 
 		<!--编辑可见性状态对话框-->
-		<el-dialog title="博客可见性" width="30%" :visible.sync="dialogVisible">
+		<el-dialog title="博客可见性" width="30%" v-model="dialogVisible">
 			<!--内容主体-->
-			<el-form label-width="50px" @submit.native.prevent>
+			<el-form label-width="50px" @submit.prevent>
 				<el-form-item>
 					<el-radio-group v-model="radio">
 						<el-radio :label="1">公开</el-radio>
@@ -98,10 +98,10 @@
 				</el-form-item>
 			</el-form>
 			<!--底部-->
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="dialogVisible = false">取 消</el-button>
 				<el-button type="primary" @click="submit">保存</el-button>
-			</span>
+			</template>
 		</el-dialog>
 	</div>
 </template>
@@ -224,3 +224,5 @@
 </script>
 
 <style scoped></style>
+
+

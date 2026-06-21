@@ -19,7 +19,7 @@
 			</el-row>
 
 			<el-form-item label="正文" prop="content">
-				<mavon-editor v-model="form.content"/>
+				<MdEditor v-model="form.content"/>
 			</el-form-item>
 
 			<el-form-item style="text-align: right;">
@@ -84,3 +84,4 @@
 <style scoped>
 
 </style>
+

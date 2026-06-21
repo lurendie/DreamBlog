@@ -2,13 +2,15 @@
 	<div>
 		<el-alert title="图床配置及用法请查看：https://github.com/Naccl/PictureHosting" type="warning" show-icon v-if="hintShow"></el-alert>
 		<el-card>
-			<div slot="header">
+			<template #header>
 				<span>GitHub配置</span>
-			</div>
+			</template>
 			<el-row>
 				<el-col>
-					<el-input placeholder="请输入token进行初始化" v-model="githubToken" :clearable="true" show-password @keyup.native.enter="searchGithubUser" style="min-width: 500px">
-						<el-button slot="append" icon="el-icon-search" :disabled="!githubToken" @click="searchGithubUser">查询</el-button>
+					<el-input placeholder="请输入token进行初始化" v-model="githubToken" :clearable="true" show-password @keyup.enter="searchGithubUser" style="min-width: 500px">
+						<template #append>
+							<el-button icon="el-icon-search" :disabled="!githubToken" @click="searchGithubUser">查询</el-button>
+						</template>
 					</el-input>
 				</el-col>
 			</el-row>
@@ -28,9 +30,9 @@
 		</el-card>
 
 		<el-card>
-			<div slot="header">
+			<template #header>
 				<span>又拍云存储配置</span>
-			</div>
+			</template>
 			<el-form :model="upyunConfig" label-width="100px">
 				<el-form-item label="操作员名称">
 					<el-input v-model="upyunConfig.username"></el-input>
@@ -50,9 +52,9 @@
 		</el-card>
 
 		<el-card>
-			<div slot="header">
+			<template #header>
 				<span>腾讯云存储配置</span>
-			</div>
+			</template>
 			<el-form :model="txyunConfig" label-width="100px">
 				<el-form-item label="secret-id">
 					<el-input v-model="txyunConfig.secretId" show-password></el-input>
@@ -234,3 +236,5 @@ export default {
 	margin-top: 20px;
 }
 </style>
+
+

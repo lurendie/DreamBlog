@@ -28,13 +28,13 @@
 				</template>
 			</el-table-column>
 			<el-table-column label="执行时间" width="170">
-				<template v-slot="scope">{{ scope.row.createTime | dateFormat }}</template>
+				<template v-slot="scope">{{ dateFormat(scope.row.createTime) }}</template>
 			</el-table-column>
 			<el-table-column label="操作" width="200">
 				<template v-slot="scope">
 					<el-button type="warning" icon="el-icon-view" size="mini" @click="showDetail(scope.row)">查看详情</el-button>
-					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" iconColor="red" @onConfirm="deleteJobLogByLogId(scope.row.logId)">
-						<el-button size="mini" type="danger" icon="el-icon-delete" slot="reference">删除</el-button>
+					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" icon-color="red" @confirm="deleteJobLogByLogId(scope.row.logId)">
+						<template #reference><el-button size="mini" type="danger" icon="el-icon-delete">删除</el-button></template>
 					</el-popconfirm>
 				</template>
 			</el-table-column>
@@ -47,14 +47,14 @@
 		</el-pagination>
 
 		<!-- 任务日志详情 -->
-		<el-dialog title="日志详情" append-to-body top="20px" width="80%" :visible.sync="detailDialogVisible" destroy-on-close>
+		<el-dialog title="日志详情" append-to-body top="20px" width="80%" v-model="detailDialogVisible" destroy-on-close>
 			<el-form :model="detail" ref="detailFormRef" label-width="120px" size="mini">
 				<el-row>
 					<el-col :span="12">
 						<el-form-item label="日志ID：">{{ detail.logId }}</el-form-item>
 						<el-form-item label="任务ID：">{{ detail.jobId }}</el-form-item>
 						<el-form-item label="执行耗时：">{{ detail.times }} 毫秒</el-form-item>
-						<el-form-item label="执行时间：">{{ detail.createTime | dateFormat }}</el-form-item>
+						<el-form-item label="执行时间：">{{ dateFormat(detail.createTime) }}</el-form-item>
 					</el-col>
 					<el-col :span="12">
 						<el-form-item label="Bean：">{{ detail.beanName }}</el-form-item>
@@ -74,9 +74,9 @@
 					</el-form-item>
 				</el-row>
 			</el-form>
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="detailDialogVisible=false">关 闭</el-button>
-			</span>
+			</template>
 		</el-dialog>
 	</div>
 </template>
@@ -161,3 +161,4 @@
 		margin-bottom: 0;
 	}
 </style>
+

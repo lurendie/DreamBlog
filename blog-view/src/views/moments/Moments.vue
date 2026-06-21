@@ -12,7 +12,7 @@
 					<div class="ui card">
 						<div class="content m-top">
 							<span style="font-weight: 700">{{ $store.state.introduction.name }}</span>
-							<span class="right floated">{{ moment.createTime | dateFromNow }}</span>
+							<span class="right floated">{{ dateFromNow(moment.createTime) }}</span>
 						</div>
 						<div class="content typo" :class="{'privacy':!moment.published}" v-lazy-container="{selector: 'img'}" v-viewer v-safe-html="moment.content"></div>
 						<div class="extra content">

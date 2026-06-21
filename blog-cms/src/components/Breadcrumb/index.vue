@@ -45,7 +45,6 @@
 			},
 			handleLink(item) {
 				const {redirect, path} = item
-				console.log(item)
 				if (redirect) {
 					this.$router.push(redirect)
 					return
@@ -69,3 +68,5 @@
 		}
 	}
 </style>
+
+

@@ -31,13 +31,13 @@
 			<el-table-column label="操作系统" prop="os"></el-table-column>
 			<el-table-column label="浏览器" prop="browser" show-overflow-tooltip></el-table-column>
 			<el-table-column label="操作时间" width="170">
-				<template v-slot="scope">{{ scope.row.createTime | dateFormat }}</template>
+				<template v-slot="scope">{{ dateFormat(scope.row.createTime) }}</template>
 			</el-table-column>
 			<el-table-column label="操作" width="200">
 				<template v-slot="scope">
 					<el-button type="warning" icon="el-icon-view" size="mini" @click="showDetail(scope.row.error)">查看详情</el-button>
-					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" iconColor="red" @onConfirm="deleteLogById(scope.row.id)">
-						<el-button size="mini" type="danger" icon="el-icon-delete" slot="reference">删除</el-button>
+					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" icon-color="red" @confirm="deleteLogById(scope.row.id)">
+						<template #reference><el-button size="mini" type="danger" icon="el-icon-delete">删除</el-button></template>
 					</el-popconfirm>
 				</template>
 			</el-table-column>
@@ -50,15 +50,15 @@
 		</el-pagination>
 
 		<!-- 异常信息 -->
-		<el-dialog title="异常信息" append-to-body top="20px" width="80%" :visible.sync="detailDialogVisible" destroy-on-close>
+		<el-dialog title="异常信息" append-to-body top="20px" width="80%" v-model="detailDialogVisible" destroy-on-close>
 			<div class="match-braces rainbow-braces">
 				<pre>
 					<code class="language-java">{{ detail }}</code>
 				</pre>
 			</div>
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="detailDialogVisible=false">关 闭</el-button>
-			</span>
+			</template>
 		</el-dialog>
 	</div>
 </template>
@@ -140,3 +140,4 @@
 		margin-bottom: 0;
 	}
 </style>
+

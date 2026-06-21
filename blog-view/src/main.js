@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
@@ -10,49 +10,51 @@ import './assets/css/icon/iconfont.css'
 import "./assets/css/typo.css";
 //semantic-ui
 import 'semantic-ui-css/semantic.min.css'
-//element-ui
-import Element from 'element-ui'
-import 'element-ui/lib/theme-chalk/index.css'
+//element-plus
+import ElementPlus, { ElMessage, ElNotification } from 'element-plus'
+import 'element-plus/dist/index.css'
 //moment
-import './util/dateTimeFormatUtils.js'
+import dateTimeFormatUtils from './util/dateTimeFormatUtils.js'
 //v-viewer
 import 'viewerjs/dist/viewer.css'
-import Viewer from 'v-viewer'
+import VueViewer from 'v-viewer'
 //directive
-import './util/directive'
+import directives from './util/directive'
 //懒加载
-import VueLazyload from 'vue-lazyload'
+import lazyPlugin from 'vue3-lazyload'
+import loadingImage from './assets/img/loading.gif'
 
-console.log(
-	'%c DreamBlog %c By lurendie %c https://github.com/lurendie/DreamBlog',
-	'background:#35495e ; padding: 1px; border-radius: 3px 0 0 3px;  color: #fff',
-	'background:#41b883 ; padding: 1px; border-radius: 0 3px 3px 0;  color: #000',
-	'background:transparent'
-)
+const app = createApp(App)
 
-Vue.use(Element)
-Vue.use(Viewer)
-Vue.use(VueLazyload, {
+app.use(ElementPlus)
+app.use(VueViewer)
+app.use(lazyPlugin, {
 	preLoad: 1.2,
-	loading: require('./assets/img/loading.gif'),
+	loading: loadingImage,
 })
+app.use(dateTimeFormatUtils)
+app.use(directives)
+app.use(router)
+app.use(store)
 
-Vue.prototype.msgSuccess = function (msg) {
-	this.$message.success(msg)
+app.config.globalProperties.msgSuccess = function (msg) {
+	ElMessage.success(msg)
 }
 
-Vue.prototype.msgError = function (msg) {
-	this.$message.error(msg)
+app.config.globalProperties.msgError = function (msg) {
+	ElMessage.error(msg)
 }
 
-Vue.prototype.msgInfo = function (msg) {
-	this.$message.info(msg);
+app.config.globalProperties.msgInfo = function (msg) {
+	ElMessage.info(msg);
 }
+app.config.globalProperties.$message = ElMessage
+app.config.globalProperties.$notify = ElNotification
 
 const cubic = value => Math.pow(value, 3);
 const easeInOutCubic = value => value < 0.5 ? cubic(value * 2) / 2 : 1 - cubic((1 - value) * 2) / 2;
-//滚动至页面顶部，使用 Element-ui 回到顶部 组件中的算法
-Vue.prototype.scrollToTop = function () {
+//滚动至页面顶部，使用 Element Plus 回到顶部组件中的算法
+app.config.globalProperties.scrollToTop = function () {
 	const el = document.documentElement
 	const beginTime = Date.now()
 	const beginValue = el.scrollTop
@@ -68,12 +70,4 @@ Vue.prototype.scrollToTop = function () {
 	}
 	rAF(frameFunc)
 }
-
-
-Vue.config.productionTip = false
-
-new Vue({
-	router,
-	store,
-	render: h => h(App)
-}).$mount('#app')
+app.mount('#app')

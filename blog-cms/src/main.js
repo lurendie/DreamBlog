@@ -1,45 +1,49 @@
-import Vue from 'vue'
+import {createApp} from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
 
 //normalize.css
 import 'normalize.css/normalize.css' // A modern alternative to CSS resets
-//element-ui
-import Element from 'element-ui'
-import 'element-ui/lib/theme-chalk/index.css'
+//element-plus
+import ElementPlus, {ElMessage, ElMessageBox} from 'element-plus'
+import 'element-plus/dist/index.css'
 //global css
 import '@/assets/styles/index.scss'
 //icon
-import '@/icons'
+import Icons from '@/icons'
 
 //moment
-import './util/dateTimeFormatUtils.js'
-//mavonEditor
-import mavonEditor from 'mavon-editor'
-import 'mavon-editor/dist/css/index.css'
+import DateTimeFormatUtils from './util/dateTimeFormatUtils.js'
+//md-editor-v3
+import {MdEditor} from 'md-editor-v3'
+import 'md-editor-v3/lib/style.css'
 //v-viewer
 import 'viewerjs/dist/viewer.css'
 import Viewer from 'v-viewer'
 // directive
-import './util/directive'
+import Directives from './util/directive'
 
-Vue.use(mavonEditor)
-Vue.use(Element)
-Vue.use(Viewer)
+const app = createApp(App)
 
-Vue.prototype.msgSuccess = function (msg) {
-	this.$message.success(msg)
+app.config.globalProperties.msgSuccess = function (msg) {
+	ElMessage.success(msg)
 }
 
-Vue.prototype.msgError = function (msg) {
-	this.$message.error(msg)
+app.config.globalProperties.msgError = function (msg) {
+	ElMessage.error(msg)
 }
 
-Vue.config.productionTip = false
+app.config.globalProperties.$message = ElMessage
+app.config.globalProperties.$confirm = ElMessageBox.confirm
 
-new Vue({
-	router,
-	store,
-	render: h => h(App)
-}).$mount('#app')
+app
+	.use(store)
+	.use(router)
+	.use(ElementPlus)
+	.use(MdEditor)
+	.use(Viewer)
+	.use(Icons)
+	.use(Directives)
+	.use(DateTimeFormatUtils)
+	.mount('#app')

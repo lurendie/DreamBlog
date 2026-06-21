@@ -27,13 +27,13 @@
 			</el-table-column>
 			<el-table-column label="浏览次数" prop="views" width="100"></el-table-column>
 			<el-table-column label="创建时间" width="170">
-				<template v-slot="scope">{{ scope.row.createTime | dateFormat }}</template>
+				<template v-slot="scope">{{ dateFormat(scope.row.createTime) }}</template>
 			</el-table-column>
 			<el-table-column label="操作" width="200">
 				<template v-slot="scope">
 					<el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row)">编辑</el-button>
-					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" iconColor="red" @onConfirm="deleteFriendById(scope.row.id)">
-						<el-button size="mini" type="danger" icon="el-icon-delete" slot="reference">删除</el-button>
+					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" icon-color="red" @confirm="deleteFriendById(scope.row.id)">
+						<template #reference><el-button size="mini" type="danger" icon="el-icon-delete">删除</el-button></template>
 					</el-popconfirm>
 				</template>
 			</el-table-column>
@@ -48,7 +48,7 @@
 		<!--友链页面信息-->
 		<el-form label-position="top">
 			<el-form-item label="友链页面信息">
-				<mavon-editor v-model="infoForm.content"/>
+				<MdEditor v-model="infoForm.content"/>
 			</el-form-item>
 			<el-form-item style="text-align: right;">
 				<el-button type="primary" icon="el-icon-check" @click="updateContent">保存</el-button>
@@ -56,7 +56,7 @@
 		</el-form>
 
 		<!--添加友链对话框-->
-		<el-dialog title="添加友链" width="40%" :visible.sync="addDialogVisible" :close-on-click-modal="false" @close="addDialogClosed">
+		<el-dialog title="添加友链" width="40%" v-model="addDialogVisible" :close-on-click-modal="false" @close="addDialogClosed">
 			<!--内容主体-->
 			<el-form :model="addForm" :rules="formRules" ref="addFormRef" label-width="80px">
 				<el-form-item label="昵称" prop="nickname">
@@ -76,14 +76,14 @@
 				</el-form-item>
 			</el-form>
 			<!--底部-->
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="addDialogVisible=false">取 消</el-button>
 				<el-button type="primary" @click="saveFriend">确 定</el-button>
-			</span>
+			</template>
 		</el-dialog>
 
 		<!--编辑友链对话框-->
-		<el-dialog title="编辑友链" width="40%" :visible.sync="editDialogVisible" :close-on-click-modal="false" @close="editDialogClosed">
+		<el-dialog title="编辑友链" width="40%" v-model="editDialogVisible" :close-on-click-modal="false" @close="editDialogClosed">
 			<!--内容主体-->
 			<el-form :model="editForm" :rules="formRules" ref="editFormRef" label-width="80px">
 				<el-form-item label="昵称" prop="nickname">
@@ -103,10 +103,10 @@
 				</el-form-item>
 			</el-form>
 			<!--底部-->
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="editDialogVisible=false">取 消</el-button>
 				<el-button type="primary" @click="editFriend">确 定</el-button>
-			</span>
+			</template>
 		</el-dialog>
 	</div>
 </template>
@@ -253,3 +253,4 @@
 		margin-bottom: 0;
 	}
 </style>
+

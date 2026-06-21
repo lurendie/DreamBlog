@@ -22,14 +22,14 @@
 			</el-table-column>
 			<el-table-column label="备注" prop="remark"></el-table-column>
 			<el-table-column label="创建时间" width="170">
-				<template v-slot="scope">{{ scope.row.createTime | dateFormat }}</template>
+				<template v-slot="scope">{{ dateFormat(scope.row.createTime) }}</template>
 			</el-table-column>
 			<el-table-column label="操作" width="290">
 				<template v-slot="scope">
 					<el-button type="warning" icon="el-icon-caret-right" size="mini" @click="runOnce(scope.row.jobId)">执行一次</el-button>
 					<el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDialog(scope.row)">编辑</el-button>
-					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" iconColor="red" @onConfirm="deleteJobById(scope.row.jobId)">
-						<el-button size="mini" type="danger" icon="el-icon-delete" slot="reference">删除</el-button>
+					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" icon-color="red" @confirm="deleteJobById(scope.row.jobId)">
+						<template #reference><el-button size="mini" type="danger" icon="el-icon-delete">删除</el-button></template>
 					</el-popconfirm>
 				</template>
 			</el-table-column>
@@ -42,7 +42,7 @@
 		</el-pagination>
 
 		<!--添加任务对话框-->
-		<el-dialog title="添加任务" width="50%" :visible.sync="addDialogVisible" :close-on-click-modal="false" @close="addDialogClosed">
+		<el-dialog title="添加任务" width="50%" v-model="addDialogVisible" :close-on-click-modal="false" @close="addDialogClosed">
 			<!--内容主体-->
 			<el-form :model="addForm" :rules="formRules" ref="addFormRef" label-width="80px">
 				<el-form-item label="类型" prop="beanName">
@@ -68,14 +68,14 @@
 				</el-form-item>
 			</el-form>
 			<!--底部-->
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="addDialogVisible=false">取 消</el-button>
 				<el-button type="primary" @click="addJob">确 定</el-button>
-			</span>
+			</template>
 		</el-dialog>
 
 		<!--编辑任务对话框-->
-		<el-dialog title="编辑任务" width="50%" :visible.sync="editDialogVisible" :close-on-click-modal="false" @close="editDialogClosed">
+		<el-dialog title="编辑任务" width="50%" v-model="editDialogVisible" :close-on-click-modal="false" @close="editDialogClosed">
 			<!--内容主体-->
 			<el-form :model="editForm" :rules="formRules" ref="editFormRef" label-width="80px">
 				<el-form-item label="类型" prop="beanName">
@@ -101,10 +101,10 @@
 				</el-form-item>
 			</el-form>
 			<!--底部-->
-			<span slot="footer">
+			<template #footer>
 				<el-button @click="editDialogVisible=false">取 消</el-button>
 				<el-button type="primary" @click="editJob">确 定</el-button>
-			</span>
+			</template>
 		</el-dialog>
 	</div>
 </template>
@@ -273,3 +273,5 @@
 		margin-bottom: 0;
 	}
 </style>
+
+

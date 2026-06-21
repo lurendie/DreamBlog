@@ -1,21 +1,18 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
+import {createRouter, createWebHistory} from 'vue-router'
 import getPageTitle from '@/util/get-page-title'
 import Layout from '@/layout'
 import {clearLoginState, getStoredUser} from '@/util/storage'
 
-Vue.use(VueRouter)
-
 const routes = [
 	{
 		path: '/404',
-		component: () => import('@/views/404'),
+		component: () => import('@/views/404.vue'),
 		meta: {title: '404 NOT FOUND'},
 		hidden: true
 	},
 	{
 		path: '/login',
-		component: () => import('@/views/login'),
+		component: () => import('@/views/login/index.vue'),
 		meta: {title: '后台管理登录'},
 		hidden: true
 	},
@@ -27,7 +24,7 @@ const routes = [
 			{
 				path: 'dashboard',
 				name: 'Dashboard',
-				component: () => import('@/views/dashboard'),
+				component: () => import('@/views/dashboard/index.vue'),
 				meta: {title: 'Dashboard', icon: 'dashboard'}
 			}
 		]
@@ -42,57 +39,57 @@ const routes = [
 			{
 				path: 'write',
 				name: 'WriteBlog',
-				component: () => import('@/views/blog/blog/WriteBlog'),
+				component: () => import('@/views/blog/blog/WriteBlog.vue'),
 				meta: {title: '写文章', icon: 'el-icon-edit'}
 			},
 			{
 				path: 'moment/write',
 				name: 'WriteMoment',
-				component: () => import('@/views/blog/moment/WriteMoment'),
+				component: () => import('@/views/blog/moment/WriteMoment.vue'),
 				meta: {title: '写动态', icon: 'el-icon-edit'}
 			},
 			{
 				path: 'edit/:id',
 				name: 'EditBlog',
-				component: () => import('@/views/blog/blog/WriteBlog'),
+				component: () => import('@/views/blog/blog/WriteBlog.vue'),
 				meta: {title: '编辑文章', icon: 'el-icon-edit'},
 				hidden: true
 			},
 			{
 				path: 'moment/edit/:id',
 				name: 'EditMoment',
-				component: () => import('@/views/blog/moment/WriteMoment'),
+				component: () => import('@/views/blog/moment/WriteMoment.vue'),
 				meta: {title: '编辑动态', icon: 'el-icon-edit'},
 				hidden: true
 			},
 			{
 				path: 'list',
 				name: 'BlogList',
-				component: () => import('@/views/blog/blog/BlogList'),
+				component: () => import('@/views/blog/blog/BlogList.vue'),
 				meta: {title: '文章管理', icon: 'el-icon-s-order'}
 			},
 			{
 				path: 'moment/list',
 				name: 'MomentList',
-				component: () => import('@/views/blog/moment/MomentList'),
+				component: () => import('@/views/blog/moment/MomentList.vue'),
 				meta: {title: '动态管理', icon: 'el-icon-chat-dot-round'}
 			},
 			{
 				path: 'category/list',
 				name: 'CategoryList',
-				component: () => import('@/views/blog/category/CategoryList'),
+				component: () => import('@/views/blog/category/CategoryList.vue'),
 				meta: {title: '分类管理', icon: 'el-icon-s-opportunity'}
 			},
 			{
 				path: 'tag/list',
 				name: 'TagList',
-				component: () => import('@/views/blog/tag/TagList'),
+				component: () => import('@/views/blog/tag/TagList.vue'),
 				meta: {title: '标签管理', icon: 'biaoqian'}
 			},
 			{
 				path: 'comment/list',
 				name: 'CommentList',
-				component: () => import('@/views/blog/comment/CommentList'),
+				component: () => import('@/views/blog/comment/CommentList.vue'),
 				meta: {title: '评论管理', icon: 'el-icon-s-comment'}
 			},
 		]
@@ -107,19 +104,19 @@ const routes = [
 			{
 				path: 'site',
 				name: 'SiteSetting',
-				component: () => import('@/views/page/SiteSetting'),
+				component: () => import('@/views/page/SiteSetting.vue'),
 				meta: {title: '站点设置', icon: 'bianjizhandian'}
 			},
 			{
 				path: 'friend',
 				name: 'FriendList',
-				component: () => import('@/views/page/FriendList'),
+				component: () => import('@/views/page/FriendList.vue'),
 				meta: {title: '友链管理', icon: 'friend'}
 			},
 			{
 				path: 'about',
 				name: 'About',
-				component: () => import('@/views/page/About'),
+				component: () => import('@/views/page/About.vue'),
 				meta: {title: '关于我', icon: 'el-icon-tickets'}
 			},
 		]
@@ -134,25 +131,25 @@ const routes = [
 			{
 				path: 'setting',
 				name: 'Setting',
-				component: () => import('@/views/pictureHosting/Setting'),
+				component: () => import('@/views/pictureHosting/Setting.vue'),
 				meta: {title: '配置', icon: 'el-icon-setting'}
 			},
 			{
 				path: 'github',
 				name: 'GithubManage',
-				component: () => import('@/views/pictureHosting/GithubManage'),
+				component: () => import('@/views/pictureHosting/GithubManage.vue'),
 				meta: {title: 'GitHub', icon: 'el-icon-folder-opened'}
 			},
 			{
 				path: 'upyun',
 				name: 'UpyunManage',
-				component: () => import('@/views/pictureHosting/UpyunManage'),
+				component: () => import('@/views/pictureHosting/UpyunManage.vue'),
 				meta: {title: '又拍云', icon: 'el-icon-folder-opened'}
 			},
 			{
 				path: 'txyun',
 				name: 'TxyunManage',
-				component: () => import('@/views/pictureHosting/TxyunManage'),
+				component: () => import('@/views/pictureHosting/TxyunManage.vue'),
 				meta: {title: '腾讯云', icon: 'el-icon-folder-opened'}
 			},
 		]
@@ -167,13 +164,13 @@ const routes = [
 			{
 				path: 'account',
 				name: 'Account',
-				component: () => import('@/views/system/Account'),
+				component: () => import('@/views/system/Account.vue'),
 				meta: {title: '修改账户', icon: 'el-icon-user-solid'}
 			},
 			{
 				path: 'job',
 				name: 'JobList',
-				component: () => import('@/views/system/ScheduleJobList'),
+				component: () => import('@/views/system/ScheduleJobList.vue'),
 				meta: {title: '定时任务', icon: 'el-icon-alarm-clock'}
 			},
 		]
@@ -188,31 +185,31 @@ const routes = [
 			{
 				path: 'job',
 				name: 'JobLog',
-				component: () => import('@/views/log/ScheduleJobLog'),
+				component: () => import('@/views/log/ScheduleJobLog.vue'),
 				meta: {title: '任务日志', icon: 'el-icon-alarm-clock'}
 			},
 			{
 				path: 'login',
 				name: 'LoginLog',
-				component: () => import('@/views/log/LoginLog'),
+				component: () => import('@/views/log/LoginLog.vue'),
 				meta: {title: '登录日志', icon: 'el-icon-finished'}
 			},
 			{
 				path: 'operation',
 				name: 'OperationLog',
-				component: () => import('@/views/log/OperationLog'),
+				component: () => import('@/views/log/OperationLog.vue'),
 				meta: {title: '操作日志', icon: 'el-icon-document-checked'}
 			},
 			{
 				path: 'exception',
 				name: 'ExceptionLog',
-				component: () => import('@/views/log/ExceptionLog'),
+				component: () => import('@/views/log/ExceptionLog.vue'),
 				meta: {title: '异常日志', icon: 'el-icon-document-delete'}
 			},
 			{
 				path: 'visit',
 				name: 'VisitLog',
-				component: () => import('@/views/log/VisitLog'),
+				component: () => import('@/views/log/VisitLog.vue'),
 				meta: {title: '访问日志', icon: 'el-icon-data-line'}
 			},
 		]
@@ -227,19 +224,18 @@ const routes = [
 			{
 				path: 'visitor',
 				name: 'Visitor',
-				component: () => import('@/views/statistics/Visitor'),
+				component: () => import('@/views/statistics/Visitor.vue'),
 				meta: {title: '访客统计', icon: 'el-icon-s-marketing'}
 			},
 		]
 	},
 
 	// 404 page must be placed at the end !!!
-	{path: '*', redirect: '/404', hidden: true}
+	{path: '/:pathMatch(.*)*', redirect: '/404', hidden: true}
 ]
 
-const router = new VueRouter({
-	mode: 'history',
-	base: process.env.BASE_URL,
+const router = createRouter({
+	history: createWebHistory(import.meta.env.BASE_URL),
 	routes
 })
 
@@ -259,3 +255,5 @@ router.beforeEach((to, from, next) => {
 })
 
 export default router
+export {routes}
+

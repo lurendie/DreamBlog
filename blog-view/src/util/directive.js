@@ -1,24 +1,24 @@
-import Vue from 'vue'
 import {sanitizeRichHtml} from './sanitizeHtml'
 
-Vue.directive('safe-html', {
-	inserted(el, binding) {
+const directives = {
+	'safe-html': {
+	mounted(el, binding) {
 		el.innerHTML = sanitizeRichHtml(binding.value)
 	},
-	update(el, binding) {
+	updated(el, binding) {
 		if (binding.value !== binding.oldValue) {
 			el.innerHTML = sanitizeRichHtml(binding.value)
 		}
 	}
-})
+},
 
 /**
  * 防抖 单位时间只触发最后一次
  * 例：<el-button v-debounce="[reset,`click`,300]">刷新</el-button>
  * 简写：<el-button v-debounce="[reset]">刷新</el-button>
  */
-Vue.directive('debounce', {
-	inserted: function (el, binding) {
+	debounce: {
+	mounted: function (el, binding) {
 		let [fn, event = "click", time = 300] = binding.value
 		let timer
 		el.addEventListener(event, () => {
@@ -26,15 +26,15 @@ Vue.directive('debounce', {
 			timer = setTimeout(() => fn(), time)
 		})
 	}
-})
+},
 
 /**
  * 节流 每单位时间可触发一次
  * 例：<el-button v-throttle="[reset,`click`,300]">刷新</el-button>
  * 传递参数：<el-button v-throttle="[()=>reset(param),`click`,300]">刷新</el-button>
  */
-Vue.directive('throttle', {
-	inserted: function (el, binding) {
+	throttle: {
+	mounted: function (el, binding) {
 		let [fn, event = "click", time = 300] = binding.value
 		let now, preTime
 		el.addEventListener(event, () => {
@@ -45,4 +45,13 @@ Vue.directive('throttle', {
 			}
 		})
 	}
-})
+}
+}
+
+export default {
+	install(app) {
+		Object.entries(directives).forEach(([name, directive]) => {
+			app.directive(name, directive)
+		})
+	}
+}

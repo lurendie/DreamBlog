@@ -8,7 +8,7 @@
 </template>
 
 <script>
-	import BlogList from "@/components/blog/BlogList";
+	import BlogList from "@/components/blog/BlogList.vue";
 	import {getBlogListByTagName} from "@/api/tag";
 	import { updateSeo } from '@/util/seo'
 
