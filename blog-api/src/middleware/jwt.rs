@@ -9,6 +9,7 @@ use actix_jwt_session::Claims;
 use actix_jwt_session::Error;
 use actix_jwt_session::ExtractorKind;
 use actix_jwt_session::Extractors;
+use actix_jwt_session::JwtSigningKeys;
 use actix_jwt_session::SessionExtractor;
 use actix_jwt_session::SessionMiddlewareFactory;
 use actix_jwt_session::SessionStorage;
@@ -23,8 +24,6 @@ use jsonwebtoken::Validation;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::app::RedisClient;
-
 #[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash, Default)]
 #[serde(rename_all = "snake_case")]
 pub struct AppClaims {
@@ -32,11 +31,8 @@ pub struct AppClaims {
     pub expiration_time: u64,
     #[serde(rename = "iat")]
     pub issues_at: usize,
-    // Account login
     #[serde(rename = "username")]
     pub subject: String,
-    // #[serde(rename = "aud")]
-    // pub audience: Audience,
     #[serde(rename = "jti")]
     pub jwt_id: actix_jwt_session::Uuid,
     #[serde(rename = "aci")]
@@ -55,27 +51,55 @@ impl actix_jwt_session::Claims for AppClaims {
     }
 }
 
-/**
- * 创建session_storage和session_middleware
- */
-pub async fn build_session_storage() -> (SessionStorage, SessionMiddlewareFactory<AppClaims>) {
-    let redis_pool = RedisClient::get_redis_pool().await;
-    let mut builder = SessionMiddlewareFactory::build_ed_dsa()
-        .with_extractors(CustomExtractor::new(JWT_HEADER_NAME));
-    builder = builder.with_redis_pool(redis_pool);
-    // create new [SessionStorage] and [SessionMiddlewareFactory]
-    builder.finish()
+pub fn build_session_storage() -> (SessionStorage, SessionMiddlewareFactory<AppClaims>) {
+    let keys = JwtSigningKeys::load_or_create();
+    let encoding_key = Arc::new(keys.encoding_key);
+    let decoding_key = Arc::new(keys.decoding_key);
+    let storage = SessionStorage::new(
+        Arc::new(NoopTokenStorage),
+        encoding_key.clone(),
+        Algorithm::EdDSA,
+    );
+    let factory = SessionMiddlewareFactory::build(encoding_key, decoding_key, Algorithm::EdDSA)
+        .with_storage(storage.clone())
+        .with_extractors(CustomExtractor::new(JWT_HEADER_NAME))
+        .finish()
+        .1;
+    (storage, factory)
+}
+
+#[derive(Clone)]
+struct NoopTokenStorage;
+
+#[async_trait(?Send)]
+impl actix_jwt_session::TokenStorage for NoopTokenStorage {
+    async fn get_by_jti(self: Arc<Self>, _jti: &[u8]) -> Result<Vec<u8>, actix_jwt_session::Error> {
+        Err(actix_jwt_session::Error::NotFound)
+    }
+
+    async fn set_by_jti(
+        self: Arc<Self>,
+        _jwt_jti: &[u8],
+        _refresh_jti: &[u8],
+        _bytes: &[u8],
+        _exp: actix_jwt_session::Duration,
+    ) -> Result<(), actix_jwt_session::Error> {
+        Ok(())
+    }
+
+    async fn remove_by_jti(self: Arc<Self>, _jti: &[u8]) -> Result<(), actix_jwt_session::Error> {
+        Ok(())
+    }
 }
 
 pub struct CustomExtractor;
 
 impl CustomExtractor {
     pub fn new(name: &'static str) -> Extractors<AppClaims> {
-        let e: Extractors<AppClaims> =
-            Extractors::new(vec![Arc::new(CustomHeaderExtractor::new(name))], vec![]);
-        e
+        Extractors::new(vec![Arc::new(CustomHeaderExtractor::new(name))], vec![])
     }
 }
+
 #[derive(Debug)]
 struct CustomHeaderExtractor<ClaimsType> {
     __ty: PhantomData<ClaimsType>,
@@ -83,8 +107,6 @@ struct CustomHeaderExtractor<ClaimsType> {
 }
 
 impl<ClaimsType: Claims> CustomHeaderExtractor<ClaimsType> {
-    /// Creates new header extractor.
-    /// It will extract token data from header with given name
     pub fn new(header_name: &'static str) -> Self {
         Self {
             __ty: Default::default(),
@@ -95,9 +117,6 @@ impl<ClaimsType: Claims> CustomHeaderExtractor<ClaimsType> {
 
 #[async_trait(?Send)]
 impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<ClaimsType> {
-    /**
-     * 从headers中获取token
-     */
     async fn extract_token_text<'req>(
         &self,
         req: &'req mut ServiceRequest,
@@ -107,13 +126,11 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
             .and_then(|h| h.to_str().ok())
             .map(|h| h.to_owned().into())
     }
+
     fn extractor_key(&self) -> Option<(ExtractorKind, Cow<'static, str>)> {
         Some((ExtractorKind::Header, self.header_name.into()))
     }
 
-    /**
-     * 中间件调用extract_claims进行验证JWT
-     */
     async fn extract_claims(
         &self,
         req: &mut ServiceRequest,
@@ -122,16 +139,17 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
         algorithm: Algorithm,
         storage: SessionStorage,
     ) -> Result<(), Error> {
-        // 跳过登录接口
-        if matches!(self.validate_login_path(req.path()).await, true) {
+        if self.validate_login_path(req.path()).await {
             return Ok(());
         }
-        // 从接口获取token 未获取到则跳过
         let Some(as_str) = self.extract_token_text(req).await else {
             return Ok(());
         };
-        let decoded_claims = self.decode(&as_str, jwt_decoding_key, algorithm)?;
-        self.validate(&decoded_claims, storage).await?;
+        let decoded_claims = match self.decode(&as_str, jwt_decoding_key, algorithm) {
+            Ok(claims) => claims,
+            Err(_) => return Ok(()),
+        };
+        let _ = storage;
         req.extensions_mut().insert(Authenticated {
             claims: Arc::new(decoded_claims),
             jwt_encoding_key,
@@ -140,9 +158,6 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
         Ok(())
     }
 
-    /**
-     * 将JWT解析成Claims对象
-     */
     fn decode(
         &self,
         value: &str,
@@ -150,10 +165,10 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
         algorithm: Algorithm,
     ) -> Result<ClaimsType, Error> {
         let mut validation = Validation::new(algorithm);
-        validation.validate_exp = false;
+        validation.validate_exp = true;
         validation.validate_nbf = false;
         validation.leeway = 0;
-        validation.required_spec_claims.clear();
+        validation.set_required_spec_claims(&["exp"]);
 
         decode::<ClaimsType>(value, &jwt_decoding_key, &validation)
             .map_err(|e| {
@@ -161,31 +176,6 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
                 Error::CantDecode
             })
             .map(|t| t.claims)
-    }
-
-    /// Validate JWT Claims agains stored in storage tokens.
-    ///
-    /// * Token must exists in storage
-    /// * Token must be exactly the same as token from storage
-    async fn validate(&self, claims: &ClaimsType, storage: SessionStorage) -> Result<(), Error> {
-        let stored = storage
-            .clone()
-            .find_jwt::<ClaimsType>(claims.jti())
-            .await
-            .map_err(|e| {
-                log::error!(
-                    "Failed to load {} from storage: {e:?}",
-                    std::any::type_name::<ClaimsType>()
-                );
-                Error::LoadError
-            })?;
-
-        if &stored != claims {
-            log::error!("{claims:?} != {stored:?}");
-            Err(Error::DontMatch)
-        } else {
-            Ok(())
-        }
     }
 }
 

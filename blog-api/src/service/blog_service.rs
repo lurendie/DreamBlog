@@ -18,7 +18,7 @@ use rand::Rng;
 use rbs::value;
 use rbs::value::map::ValueMap;
 use rbs::Value;
-use sea_orm::ActiveValue::Set;
+use sea_orm::prelude::Expr;
 use sea_orm::IntoActiveModel;
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbBackend, EntityTrait,
@@ -85,18 +85,19 @@ impl BlogService {
             value!(page.num_pages().await.unwrap_or_default()),
         );
         //4.如果数据库查询不是Null 存放到Redis中
-        if !blog_info_list.is_empty() {
-            RedisService::try_set_hash_key(
+        if !blog_info_list.is_empty()
+            && RedisService::try_set_hash_key(
                 RedisKeyConstant::HOME_BLOG_INFO_LIST.to_string(),
                 page_num.to_string(),
                 &map,
             )
-            .await;
+            .await
+        {
+            log::info!(
+                "redis KEY:{} 缓存数据成功",
+                RedisKeyConstant::HOME_BLOG_INFO_LIST
+            );
         }
-        log::info!(
-            "redis KEY:{} 缓存数据成功",
-            RedisKeyConstant::HOME_BLOG_INFO_LIST
-        );
         Ok(map)
     }
     /**
@@ -152,13 +153,14 @@ impl BlogService {
                 }
             }
         }
-        if result.len() > 0 {
+        if result.len() > 0
             //保存到Redis
-            RedisService::try_set_value_vec(
+            && RedisService::try_set_value_vec(
                 RedisKeyConstant::RANDOM_BLOG_LIST.to_string(),
                 &value!(&result),
             )
-            .await;
+            .await
+        {
             log::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::RANDOM_BLOG_LIST
@@ -215,13 +217,14 @@ impl BlogService {
             }
         }
 
-        if result.len() > 0 {
+        if result.len() > 0
             //保存到Redis
-            RedisService::try_set_value_vec(
+            && RedisService::try_set_value_vec(
                 RedisKeyConstant::NEW_BLOG_LIST.to_string(),
                 &value!(&result),
             )
-            .await;
+            .await
+        {
             log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::NEW_BLOG_LIST);
         }
 
@@ -281,12 +284,18 @@ impl BlogService {
             "totalPage".to_string(),
             value!(page.num_pages().await.unwrap_or_default()),
         );
-        RedisService::try_set_hash_key(
+        if RedisService::try_set_hash_key(
             RedisKeyConstant::CATEGORY_BLOG_LIST.to_string(),
             cache_field,
             &map,
         )
-        .await;
+        .await
+        {
+            log::info!(
+                "redis KEY:{} 缓存数据成功",
+                RedisKeyConstant::CATEGORY_BLOG_LIST
+            );
+        }
         map
     }
 
@@ -329,12 +338,18 @@ impl BlogService {
         if let Some(views) = views {
             blog.views = views;
         }
-        RedisService::try_set_hash_key(
+        if RedisService::try_set_hash_key(
             RedisKeyConstant::BLOG_DETAIL_MAP.to_string(),
             id.to_string(),
             &blog,
         )
-        .await;
+        .await
+        {
+            log::info!(
+                "redis KEY:{} 缓存数据成功",
+                RedisKeyConstant::BLOG_DETAIL_MAP
+            );
+        }
         Some(blog)
     }
 
@@ -392,12 +407,15 @@ impl BlogService {
             "totalPage".to_string(),
             value!(page.num_pages().await.unwrap_or_default()),
         );
-        RedisService::try_set_hash_key(
+        if RedisService::try_set_hash_key(
             RedisKeyConstant::TAG_BLOG_LIST.to_string(),
             cache_field,
             &map,
         )
-        .await;
+        .await
+        {
+            log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::TAG_BLOG_LIST);
+        }
         map
     }
 
@@ -458,10 +476,11 @@ impl BlogService {
             map.insert(value!(key), value!(blogs));
         }
 
-        if map.len() > 0 {
+        if map.len() > 0
             //保存到Redis
-            RedisService::try_set_string(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string(), &map)
-                .await;
+            && RedisService::try_set_string(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string(), &map)
+                .await
+        {
             log::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::ARCHIVE_BLOG_MAP
@@ -488,8 +507,8 @@ impl BlogService {
             RedisService::get_hash_all::<i64, i32>(RedisKeyConstant::BLOG_VIEWS_MAP.to_string())
                 .await
                 .unwrap_or_else(|e| {
-                    log::error!(
-                        "获取 Redis KEY:{} 失败，错误信息：{}",
+                    log::debug!(
+                        "获取 Redis KEY:{} 失败，使用数据库浏览量，错误信息：{}",
                         RedisKeyConstant::BLOG_VIEWS_MAP,
                         e
                     );
@@ -510,15 +529,12 @@ impl BlogService {
                 });
             } else {
                 //如果Redis没有，则缓存数据
-                RedisService::set_hash_key::<i32>(
+                RedisService::try_set_hash_key::<i32>(
                     RedisKeyConstant::BLOG_VIEWS_MAP.to_string(),
                     id.to_string(),
                     &item.views,
                 )
-                .await
-                .unwrap_or_else(|e| {
-                    log::error!("Redis KEY: blogViewsMap 缓存数据失败，错误信息：{e}");
-                })
+                .await;
             }
 
             if let Some(password) = &item.password {
@@ -538,22 +554,28 @@ impl BlogService {
     }
 
     async fn increment_blog_views(id: i64, db: &DatabaseConnection) -> Option<i32> {
-        let current_views = if let Ok(views) = RedisService::get_hash_key::<i32>(
-            RedisKeyConstant::BLOG_VIEWS_MAP.to_string(),
-            id.to_string(),
-        )
-        .await
-        {
-            views
-        } else {
-            blog::Entity::find_by_id(id)
-                .one(db)
-                .await
-                .ok()
-                .flatten()
-                .map(|blog| blog.views)?
-        };
-        let new_views = current_views.saturating_add(1);
+        let update_result = blog::Entity::update_many()
+            .col_expr(
+                blog::Column::Views,
+                Expr::col(blog::Column::Views).add(1).into(),
+            )
+            .filter(blog::Column::Id.eq(id))
+            .exec(db)
+            .await;
+        match update_result {
+            Ok(result) if result.rows_affected > 0 => {}
+            Ok(_) => return None,
+            Err(e) => {
+                log::error!("更新文章浏览量失败 id:{} 错误:{}", id, e);
+                return None;
+            }
+        }
+        let new_views = blog::Entity::find_by_id(id)
+            .one(db)
+            .await
+            .ok()
+            .flatten()
+            .map(|blog| blog.views)?;
         RedisService::try_set_hash_key(
             RedisKeyConstant::BLOG_VIEWS_MAP.to_string(),
             id.to_string(),
@@ -624,23 +646,26 @@ impl BlogService {
             Some(blog) => {
                 let mut active_model = blog::ActiveModel::from(blog);
                 if v.get_appreciation().is_some() {
-                    active_model.is_appreciation = Set(v.get_appreciation().unwrap_or_default());
+                    active_model.is_appreciation =
+                        ActiveValue::Set(v.get_appreciation().unwrap_or_default());
                 }
                 if v.get_published().is_some() {
-                    active_model.is_published = Set(v.get_published().unwrap_or_default());
+                    active_model.is_published =
+                        ActiveValue::Set(v.get_published().unwrap_or_default());
                 }
                 if v.get_top().is_some() {
-                    active_model.is_top = Set(v.get_top().unwrap_or_default());
+                    active_model.is_top = ActiveValue::Set(v.get_top().unwrap_or_default());
                 }
                 if v.get_password().is_some() {
-                    active_model.password = Set(v.get_password());
+                    active_model.password = ActiveValue::Set(v.get_password());
                 }
                 if v.get_recommend().is_some() {
-                    active_model.is_recommend = Set(v.get_recommend().unwrap_or_default());
+                    active_model.is_recommend =
+                        ActiveValue::Set(v.get_recommend().unwrap_or_default());
                 }
                 if v.get_comment_enabled().is_some() {
                     active_model.is_comment_enabled =
-                        Set(v.get_comment_enabled().unwrap_or_default());
+                        ActiveValue::Set(v.get_comment_enabled().unwrap_or_default());
                 }
                 active_model.update(db).await?;
                 Self::clear_blog_cache().await;
@@ -732,22 +757,24 @@ impl BlogService {
                         }
                         false => {
                             let mut active = blog_model.clone().into_active_model();
-                            active.is_appreciation = Set(blog_vo.appreciation);
-                            active.category_id = Set(blog_vo.category_id);
-                            active.is_comment_enabled = Set(blog_vo.comment_enabled);
-                            active.is_top = Set(blog_vo.top);
-                            active.is_published = Set(blog_vo.published);
-                            active.is_recommend = Set(blog_vo.recommend);
-                            active.views = Set(blog_vo.views);
-                            active.words = Set(blog_vo.words);
-                            active.title = Set(blog_vo.title);
-                            active.content = Set(blog_vo.content);
-                            active.password = Set(blog_vo.password);
-                            active.description = Set(blog_vo.description);
-                            active.first_picture = Set(blog_vo.first_picture);
-                            active.read_time = Set(blog_vo.read_time);
-                            active.create_time = Set(blog_vo.create_time.unwrap_or_default());
-                            active.update_time = Set(blog_vo.update_time.unwrap_or_default());
+                            active.is_appreciation = ActiveValue::Set(blog_vo.appreciation);
+                            active.category_id = ActiveValue::Set(blog_vo.category_id);
+                            active.is_comment_enabled = ActiveValue::Set(blog_vo.comment_enabled);
+                            active.is_top = ActiveValue::Set(blog_vo.top);
+                            active.is_published = ActiveValue::Set(blog_vo.published);
+                            active.is_recommend = ActiveValue::Set(blog_vo.recommend);
+                            active.views = ActiveValue::Set(blog_vo.views);
+                            active.words = ActiveValue::Set(blog_vo.words);
+                            active.title = ActiveValue::Set(blog_vo.title);
+                            active.content = ActiveValue::Set(blog_vo.content);
+                            active.password = ActiveValue::Set(blog_vo.password);
+                            active.description = ActiveValue::Set(blog_vo.description);
+                            active.first_picture = ActiveValue::Set(blog_vo.first_picture);
+                            active.read_time = ActiveValue::Set(blog_vo.read_time);
+                            active.create_time =
+                                ActiveValue::Set(blog_vo.create_time.unwrap_or_default());
+                            active.update_time =
+                                ActiveValue::Set(blog_vo.update_time.unwrap_or_default());
                             let model = active.update(conn).await?;
 
                             //1.查询旧的标签

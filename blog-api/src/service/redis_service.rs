@@ -1,4 +1,6 @@
+use std::cmp::Eq;
 use std::collections::HashMap;
+use std::hash::Hash;
 
 use crate::app::RedisClient;
 use crate::app::CONFIG;
@@ -7,114 +9,113 @@ use deadpool_redis::redis::AsyncCommands;
 use deadpool_redis::redis::FromRedisValue;
 use rbs::Value;
 use serde::Serialize;
-use std::cmp::Eq;
-use std::hash::Hash;
 
 pub struct RedisService;
 
 impl RedisService {
-    /**
-        根据KEY HashName 查询HashMap<String, Value>
-    */
+    async fn connection() -> Option<deadpool_redis::Connection> {
+        RedisClient::get_connection().await
+    }
+
+    fn redis_ttl() -> Option<i64> {
+        CONFIG.get_redis_config().and_then(|config| {
+            if config.ttl > 0 {
+                Some(config.ttl)
+            } else {
+                None
+            }
+        })
+    }
+
     pub async fn get_hash_key<T: serde::de::DeserializeOwned>(
         key: String,
         hash: String,
     ) -> Result<T, DataBaseError> {
-        //1.获取连接
-        let mut connection = RedisClient::get_connection().await?;
-        let redis_reuslt = connection
-            .hget::<String, String, Option<String>>(key.to_owned(), hash.to_owned())
+        let Some(mut connection) = Self::connection().await else {
+            return Err(DataBaseError::Custom(format!("redis disabled: {}", key)));
+        };
+        let value = connection
+            .hget::<String, String, Option<String>>(key.clone(), hash.clone())
             .await?;
-        match redis_reuslt {
-            Some(result_str) => {
-                let result = serde_json::from_str::<T>(&result_str)?;
-                return Ok(result);
-            }
-            None => {
-                return Err(DataBaseError::Custom(format!(
-                    "无法从 redis {} 获取字段 {} 的值",
-                    key, hash
-                )));
-            }
+        match value {
+            Some(result_str) => Ok(serde_json::from_str::<T>(&result_str)?),
+            None => Err(DataBaseError::Custom(format!(
+                "无法从 redis {} 获取字段 {} 的值",
+                key, hash
+            ))),
         }
     }
 
-    /**
-     * 根据HashName key保存HashMap<String, Value>
-     */
     pub async fn set_hash_key<T: Serialize>(
         key: String,
         hash: String,
         value: &T,
-    ) -> Result<(), DataBaseError> {
-        //redis序列化
-        let value_str = serde_json::to_string(&value)?;
-        let mut connection = RedisClient::get_connection().await?;
-
+    ) -> Result<bool, DataBaseError> {
+        let Some(mut connection) = Self::connection().await else {
+            return Ok(false);
+        };
+        let value_str = serde_json::to_string(value)?;
         connection
             .hset::<String, String, String, i64>(key.clone(), hash, value_str)
             .await?;
-        if CONFIG.get_redis_config().ttl > 0 {
-            RedisService::set_expire(key).await?;
+        if Self::redis_ttl().is_some() {
+            Self::set_expire(key).await?;
         }
-
-        Ok(())
+        Ok(true)
     }
 
-    pub async fn try_set_hash_key<T: Serialize>(key: String, hash: String, value: &T) {
-        if let Err(e) = Self::set_hash_key(key.clone(), hash.clone(), value).await {
-            log::error!("redis key: {} hash: {} 缓存写入失败:{}", key, hash, e);
+    pub async fn try_set_hash_key<T: Serialize>(key: String, hash: String, value: &T) -> bool {
+        match Self::set_hash_key(key.clone(), hash.clone(), value).await {
+            Ok(stored) => stored,
+            Err(e) => {
+                log::debug!("redis key: {} hash: {} 缓存写入失败:{}", key, hash, e);
+                false
+            }
         }
     }
 
-    /**
-     * 根据KEY获取 所有hash和value
-     */
     pub async fn get_hash_all<K, V>(key: String) -> Result<HashMap<K, V>, DataBaseError>
     where
         K: serde::de::DeserializeOwned + Hash + Eq + FromRedisValue,
         V: serde::de::DeserializeOwned + Hash + Eq + FromRedisValue,
     {
-        let mut connection = RedisClient::get_connection().await?;
-        let redis_reuslt = connection
-            .hgetall::<String, HashMap<K, V>>(key.to_owned())
-            .await?;
-        Ok(redis_reuslt)
+        let Some(mut connection) = Self::connection().await else {
+            return Err(DataBaseError::Custom(format!("redis disabled: {}", key)));
+        };
+        Ok(connection.hgetall::<String, HashMap<K, V>>(key).await?)
     }
 
-    /**
-     * Set `key` `value`字符串
-     */
-    pub async fn set_string<T: Serialize>(key: String, value: &T) -> Result<(), DataBaseError> {
-        //1.序列化
-        let value_str = serde_json::to_string(&value)?;
-        //2.获取连接
-        let mut connection = RedisClient::get_connection().await?;
+    pub async fn set_string<T: Serialize>(key: String, value: &T) -> Result<bool, DataBaseError> {
+        let Some(mut connection) = Self::connection().await else {
+            return Ok(false);
+        };
+        let value_str = serde_json::to_string(value)?;
         connection
             .set::<String, String, String>(key.clone(), value_str)
             .await?;
-        if CONFIG.get_redis_config().ttl > 0 {
-            RedisService::set_expire(key).await?;
+        if Self::redis_ttl().is_some() {
+            Self::set_expire(key).await?;
         }
-        Ok(())
+        Ok(true)
     }
 
-    pub async fn try_set_string<T: Serialize>(key: String, value: &T) {
-        if let Err(e) = Self::set_string(key.clone(), value).await {
-            log::error!("redis key: {} 缓存写入失败:{}", key, e);
+    pub async fn try_set_string<T: Serialize>(key: String, value: &T) -> bool {
+        match Self::set_string(key.clone(), value).await {
+            Ok(stored) => stored,
+            Err(e) => {
+                log::debug!("redis key: {} 缓存写入失败:{}", key, e);
+                false
+            }
         }
     }
 
-    /**
-     * 获取`key`字符串
-     */
     pub async fn get_string<T: serde::de::DeserializeOwned>(
         key: String,
     ) -> Result<T, DataBaseError> {
-        //1.获取连接
-        let mut connection = RedisClient::get_connection().await?;
+        let Some(mut connection) = Self::connection().await else {
+            return Err(DataBaseError::Custom(format!("redis disabled: {}", key)));
+        };
 
-        // 检查key是否存在
         let exists: i32 = connection.exists::<String, i32>(key.clone()).await?;
         if exists == 0 {
             return Err(DataBaseError::Custom(format!("key:{} 不存在", key)));
@@ -127,162 +128,84 @@ impl RedisService {
         Ok(serde_json::from_str::<T>(&result)?)
     }
 
-    /**
-     * Set `key` `value`字符串
-     */
-    pub async fn set_value_vec(key: String, value: &Value) -> Result<(), DataBaseError> {
-        //如果KEY或者VALUE为空则不设置
+    pub async fn set_value_vec(key: String, value: &Value) -> Result<bool, DataBaseError> {
         if key.is_empty() || value.is_empty() {
             return Err(DataBaseError::Custom(format!(
                 "redis 设置key{}的value数据为空",
                 key
             )));
         }
-        //1.序列化
+        let Some(mut connection) = Self::connection().await else {
+            return Ok(false);
+        };
         let value_str = serde_json::to_string(value)?;
-        //2.获取连接
-        let mut con = RedisClient::get_connection().await?;
-        con.set::<String, String, String>(key.clone(), value_str)
+        connection
+            .set::<String, String, String>(key.clone(), value_str)
             .await?;
-        //5.设置过期时间
-        if CONFIG.get_redis_config().ttl > 0 {
-            RedisService::set_expire(key).await?;
+        if Self::redis_ttl().is_some() {
+            Self::set_expire(key).await?;
         }
-        Ok(())
+        Ok(true)
     }
 
-    pub async fn try_set_value_vec(key: String, value: &Value) {
-        if let Err(e) = Self::set_value_vec(key.clone(), value).await {
-            log::error!("redis key: {} 缓存写入失败:{}", key, e);
-        }
-    }
-
-    /**
-     * 获取`key`字符串
-     */
-    pub async fn get_value_vec(key: String) -> Option<Value> {
-        //1.获取连接
-        match RedisClient::get_connection().await {
-            //2.获取连接成功
-            Ok(mut connection) => {
-                //3.a.判断key是否存在
-                let exists: i32 = connection
-                    .exists::<String, i32>(key.clone())
-                    .await
-                    .unwrap_or(0);
-                if exists == 0 {
-                    log::info!("redis KEY: {} 没有检索到数据 ", key);
-                    return None;
-                }
-                //4.获取数据
-                match connection.get::<String, Option<String>>(key.clone()).await {
-                    Ok(Some(result)) => {
-                        //redis 反序列化
-                        match serde_json::from_str(result.as_str()) {
-                            Ok(value) => Some(value),
-                            Err(e) => {
-                                log::error!("redis {} 反序列化错误：{}", key, e);
-                                None
-                            }
-                        }
-                    }
-                    Ok(None) => {
-                        log::info!("redis KEY: {} 没有数据", key);
-                        None
-                    }
-                    Err(e) => {
-                        log::error!("redis {} 获取数据错误：{}", key, e);
-                        None
-                    }
-                }
-            }
-            //获取连接失败
+    pub async fn try_set_value_vec(key: String, value: &Value) -> bool {
+        match Self::set_value_vec(key.clone(), value).await {
+            Ok(stored) => stored,
             Err(e) => {
-                log::error!("redis 设置key: {} 获取连接异常:{}", key, e);
+                log::debug!("redis key: {} 缓存写入失败:{}", key, e);
+                false
+            }
+        }
+    }
+
+    pub async fn get_value_vec(key: String) -> Option<Value> {
+        let Some(mut connection) = Self::connection().await else {
+            return None;
+        };
+
+        let exists: i32 = connection
+            .exists::<String, i32>(key.clone())
+            .await
+            .unwrap_or(0);
+        if exists == 0 {
+            return None;
+        }
+        match connection.get::<String, Option<String>>(key.clone()).await {
+            Ok(Some(result)) => serde_json::from_str(result.as_str()).ok(),
+            Ok(None) => None,
+            Err(e) => {
+                log::debug!("redis {} 获取数据错误：{}", key, e);
                 None
             }
         }
     }
 
-    /**
-     * 设置key的过期时间
-     */
     pub async fn set_expire(key: String) -> Result<(), DataBaseError> {
-        //获取连接
-        let mut connection = RedisClient::get_connection().await?;
-        match connection
-            .expire::<String, i64>(key.clone(), CONFIG.get_redis_config().ttl)
-            .await
-        {
-            Ok(_) => log::info!("redis key: {} 设置过期时间成功", key),
-            Err(e) => log::error!("redis key: {} 设置过期时间失败:{}", key, e),
+        let Some(mut connection) = Self::connection().await else {
+            return Ok(());
         };
+        let Some(ttl) = Self::redis_ttl() else {
+            return Ok(());
+        };
+        let _ = connection
+            .expire::<String, i64>(key.clone(), ttl)
+            .await
+            .map_err(|e| log::debug!("redis key: {} 设置过期时间失败:{}", key, e));
         Ok(())
     }
 
     pub async fn _del_key(key: &str) -> Result<(), DataBaseError> {
-        //获取连接
-        let mut connection = RedisClient::get_connection().await?;
-        match connection.del::<String, i64>(key.to_string()).await {
-            Ok(_) => log::info!("redis key: {} 删除成功", key),
-            Err(e) => log::error!("redis key: {} 删除失败:{}", key, e),
-        }
+        let Some(mut connection) = Self::connection().await else {
+            return Ok(());
+        };
+        let _ = connection
+            .del::<String, i64>(key.to_string())
+            .await
+            .map_err(|e| log::debug!("redis key: {} 删除失败:{}", key, e));
         Ok(())
     }
 
     pub async fn try_del_key(key: &str) {
-        if let Err(e) = Self::_del_key(key).await {
-            log::error!("redis key: {} 删除失败:{}", key, e);
-        }
-    }
-
-    /**
-     * 向set集合中添加元素
-     */
-    pub async fn sadd(key: String, value: String) -> Result<bool, DataBaseError> {
-        //获取连接
-        let mut connection = RedisClient::get_connection().await?;
-        let exists = Self::sismember(&key, &value).await?;
-
-        if !exists {
-            match connection
-                .sadd::<String, String, i64>(key.clone(), value)
-                .await
-            {
-                Ok(_) => return Ok(true), //log::info!("redis key: {} sadd成功", key),
-                Err(e) => {
-                    return Err(DataBaseError::Custom(format!(
-                        "redis key: {} sadd失败:{}",
-                        key, e
-                    )))
-                }
-            }
-        }
-        Ok(false)
-    }
-
-    pub async fn sismember(key: &str, value: &str) -> Result<bool, DataBaseError> {
-        //获取连接
-        let mut connection = RedisClient::get_connection().await?;
-        let exists = connection
-            .sismember::<String, String, i32>(key.to_string(), value.to_string())
-            .await?;
-        if exists == 0 {
-            return Ok(false);
-        }
-        Ok(true)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use std::collections::HashMap;
-    #[test]
-    fn test_json_get() {
-        let mut map: HashMap<String, Value> = HashMap::new();
-        map.insert("1".to_string(), Value::String("value1".to_string()));
-
-        //let _ = super::set_value("my_sql".to_string(), &map);
+        let _ = Self::_del_key(key).await;
     }
 }

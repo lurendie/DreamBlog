@@ -52,13 +52,14 @@ impl CategoryService {
                 result.push(value!(Category::from(model)));
             });
 
-        if result.len() > 0 {
+        if result.len() > 0
             //3.保存Redis
-            RedisService::try_set_value_vec(
+            && RedisService::try_set_value_vec(
                 RedisKeyConstant::CATEGORY_NAME_LIST.to_string(),
                 &value!(&result),
             )
-            .await;
+            .await
+        {
             log::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::CATEGORY_NAME_LIST

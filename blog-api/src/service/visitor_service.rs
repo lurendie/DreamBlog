@@ -1,14 +1,13 @@
+use sea_orm::prelude::Expr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel,
     PaginatorTrait, QueryFilter, QueryOrder,
 };
 
-use crate::constant::RedisKeyConstant;
 use crate::entity::visitor;
 use crate::error::DataBaseError;
 use crate::model::{Visitor, VisitorQuery};
-use crate::service::RedisService;
 
 pub struct VisitorService;
 
@@ -37,32 +36,43 @@ impl VisitorService {
         visitor: Visitor,
         db: &DatabaseConnection,
     ) -> Result<(), DataBaseError> {
-        //记录访客缓存
-        let flag =
-            RedisService::sismember(RedisKeyConstant::IDENTIFICATION_SET, &visitor.uuid).await?;
-        if !flag {
-            //查询UUID是否存在
-            match VisitorService::get_by_uuid(&visitor.uuid, db).await {
-                Some(model) => {
-                    //查询到 重新缓存数据
-                    RedisService::sadd(
-                        RedisKeyConstant::IDENTIFICATION_SET.to_string(),
-                        model.uuid,
+        match VisitorService::get_by_uuid(&visitor.uuid, db).await {
+            Some(model) => {
+                visitor::Entity::update_many()
+                    .col_expr(visitor::Column::Pv, Expr::col(visitor::Column::Pv).add(1).into())
+                    .col_expr(
+                        visitor::Column::Ip,
+                        Expr::value(visitor.ip.unwrap_or_default()).into(),
                     )
-                    .await?;
-                }
-                None => {
-                    //查询不到新增数据并缓存
-                    RedisService::sadd(
-                        RedisKeyConstant::IDENTIFICATION_SET.to_string(),
-                        visitor.uuid.clone(),
+                    .col_expr(
+                        visitor::Column::IpSource,
+                        Expr::value(visitor.ip_source.unwrap_or_default()).into(),
                     )
+                    .col_expr(
+                        visitor::Column::Os,
+                        Expr::value(visitor.os.unwrap_or_default()).into(),
+                    )
+                    .col_expr(
+                        visitor::Column::Browser,
+                        Expr::value(visitor.browser.unwrap_or_default()).into(),
+                    )
+                    .col_expr(
+                        visitor::Column::LastTime,
+                        Expr::value(visitor.last_time).into(),
+                    )
+                    .col_expr(
+                        visitor::Column::UserAgent,
+                        Expr::value(visitor.user_agent.unwrap_or_default()).into(),
+                    )
+                    .filter(visitor::Column::Id.eq(model.id))
+                    .exec(db)
                     .await?;
-                    let mut model = visitor::Model::from(visitor).into_active_model();
-                    model.not_set(visitor::Column::Id);
-                    model.save(db).await?;
-                }
-            };
+            }
+            None => {
+                let mut model = visitor::Model::from(visitor).into_active_model();
+                model.not_set(visitor::Column::Id);
+                model.save(db).await?;
+            }
         }
         Ok(())
     }

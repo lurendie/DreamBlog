@@ -2,11 +2,12 @@ use crate::app::AppState;
 use crate::common::IpRegion;
 use crate::common::ParamUtils;
 use crate::error::{AppError, WebError};
+use crate::middleware::AppClaims;
 use crate::model::ApiResponse;
 use crate::model::CommentDTO;
 use crate::model::SearchRequest;
-use crate::service::CommentService;
-use crate::service::UserService;
+use crate::service::{CommentService, UserService};
+use actix_jwt_session::MaybeAuthenticated;
 use actix_web::get;
 use actix_web::routes;
 use actix_web::web::{self, Query};
@@ -45,27 +46,16 @@ pub async fn save_comment(
     state: web::Data<AppState>,
     comment_dto: web::Json<CommentDTO>,
     req: HttpRequest,
+    auth: Option<MaybeAuthenticated<AppClaims>>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    let is_admin_comment = {
-        log::warn!("验证TOKEN 识别评论者身份!");
-        let owenr_user = UserService::find_admin_role(state.get_mysql_pool()).await?;
-        let cache_user_info = UserService::get_cache_user_info(&owenr_user.get_username()).await?;
-        let token = {
-            let authorization = req.headers().get("Authorization");
-            if let Some(a) = authorization {
-                a.to_str().unwrap_or_default()
-            } else {
-                ""
-            }
-        };
-
-        if cache_user_info.cache_info.token.eq(token) {
-            log::warn!("评论者身份:管理员");
-            true
-        } else {
-            log::warn!("评论者身份:访客");
-            false
-        }
+    let authenticated_username = auth
+        .and_then(|value| value.into_option())
+        .map(|claims| claims.subject.clone());
+    let is_admin_comment = match authenticated_username {
+        Some(username) => UserService::is_admin_username(&username, &state.mysql_connection)
+            .await
+            .unwrap_or(false),
+        None => false,
     };
     if !is_admin_comment {
         validate_comment_input(&comment_dto)?;

@@ -1,9 +1,5 @@
-use std::io;
-
 use crate::entity::user;
 use chrono::NaiveDateTime;
-use deadpool_redis::redis::FromRedisValue;
-use deadpool_redis::redis::Value;
 use serde::{Deserialize, Serialize};
 /*
  * @Author: lurendie
@@ -84,59 +80,4 @@ impl From<user::Model> for User {
 pub struct LoginUser {
     pub(crate) username: String,
     pub(crate) password: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Default, Hash, PartialEq, Eq, Clone)]
-pub struct LoginedCacheUser {
-    pub cache_info: CacheUserInfo,
-    pub password: String,
-    pub uuid: String,
-}
-
-impl LoginedCacheUser {
-    pub fn new(cache_info: CacheUserInfo, password: &str, uuid: &str) -> Self {
-        Self {
-            cache_info: cache_info,
-            password: password.to_string(),
-            uuid: uuid.to_string(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Default, Hash, PartialEq, Eq, Clone)]
-pub struct CacheUserInfo {
-    pub user: User,
-    pub token: String,
-}
-
-impl CacheUserInfo {
-    pub fn new(user: User, token: &str) -> Self {
-        Self {
-            user: user,
-            token: token.to_string(),
-        }
-    }
-}
-
-impl FromRedisValue for LoginedCacheUser {
-    fn from_redis_values(
-        items: &[deadpool_redis::redis::Value],
-    ) -> deadpool_redis::redis::RedisResult<Vec<Self>> {
-        items.iter().map(FromRedisValue::from_redis_value).collect()
-    }
-
-    fn from_byte_vec(_vec: &[u8]) -> Option<Vec<Self>> {
-        Self::from_redis_value(&deadpool_redis::redis::Value::Data(_vec.into()))
-            .map(|rv| std::vec![rv])
-            .ok()
-    }
-
-    fn from_redis_value(v: &Value) -> deadpool_redis::redis::RedisResult<Self> {
-        match v {
-            Value::Data(data) => Ok(serde_json::from_slice(data)?),
-            _ => Err(deadpool_redis::redis::RedisError::from(io::Error::other(
-                "Invalid data type",
-            ))),
-        }
-    }
 }

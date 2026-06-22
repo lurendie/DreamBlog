@@ -22,14 +22,14 @@ request.interceptors.request.use(
 
 // 响应拦截
 request.interceptors.response.use(
-	config => {
+	response => {
 		NProgress.done()
-		const identification = config.headers.identification
+		const identification = response.headers?.identification
 		if (identification) {
 			//保存身份标识到localStorage
 			window.localStorage.setItem('identification', identification)
 		}
-		return config.data
+		return response.data
 	},
 	error => {
 		NProgress.done()

@@ -120,8 +120,9 @@ impl SiteSettingService {
         map.insert(value!("badges"), value!(badges));
 
         //缓存数据
-        RedisService::try_set_string(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await;
-        log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::SITE_INFO_MAP);
+        if RedisService::try_set_string(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await {
+            log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::SITE_INFO_MAP);
+        }
         Ok(map)
     }
 

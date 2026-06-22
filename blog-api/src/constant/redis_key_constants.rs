@@ -66,12 +66,6 @@ impl RedisKeyConstant {
      * 评论数量key
      */
     pub const COMMENT_COUNT_MAP: &str = "commentCountMap";
-    /**
-     * 访客标识码key
-     */
-    pub const IDENTIFICATION_SET: &str = "identificationSet";
-
-    pub const LOGIN_USER_INFO: &str = "loginUserInfo";
     // /**
     //  * QQ号与对应头像URL key
     //  */

@@ -15,7 +15,8 @@ use std::{env, fs, sync::LazyLock};
 pub struct AppConfig {
     server: ServerConfig,
     mysql: MysqlConfig, //Mysql链接
-    redis: RedisConfig, //Redis
+    #[serde(default)]
+    redis: Option<RedisConfig>, //Redis
     log: Option<LogConfig>,
     email: EmailConfig,
 }
@@ -24,12 +25,18 @@ pub struct AppConfig {
  */
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct RedisConfig {
+    #[serde(default = "default_redis_enabled")]
+    pub(crate) enabled: bool,
     pub(crate) port: u16,    //端口
     pub(crate) host: String, //IP地址
     pub(crate) db: u16,
     pub(crate) username: String,
     pub(crate) password: String,
     pub(crate) ttl: i64,
+}
+
+fn default_redis_enabled() -> bool {
+    true
 }
 /**
  * MySQL 配置信息结构体
@@ -116,8 +123,8 @@ impl AppConfig {
         self.mysql.clone()
     }
 
-    pub fn get_redis_config(&self) -> RedisConfig {
-        self.redis.clone()
+    pub fn get_redis_config(&self) -> Option<RedisConfig> {
+        self.redis.clone().filter(|config| config.enabled)
     }
 
     pub fn get_server_config(&self) -> ServerConfig {

@@ -44,7 +44,7 @@ impl AppServer {
         tokio::spawn(async move {
             JobRunner::start(scheduler_state).await;
         });
-        let (session_storage, factory) = build_session_storage().await;
+        let (session_storage, factory) = build_session_storage();
         HttpServer::new(move || {
             //创建App
             App::new()
@@ -55,6 +55,7 @@ impl AppServer {
                 .service(
                     web::scope("/blog")
                         .wrap(VisiLog::default())
+                        .wrap(factory.clone())
                         .configure(Self::view_router),
                 )
                 .service(

@@ -26,25 +26,6 @@ pub async fn login(
     refresh_ttl: Data<RefreshTtl>,
     app: Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {
-    match UserService::verify_logined_user(&user_form, &store).await {
-        Ok(data) => {
-            let result = ApiResponse::<Value>::success_with_msg(
-                format!("登录成功!,欢迎用户{}回来!", user_form.username).as_str(),
-                Some(value!(&data.0)),
-            );
-            result
-                .http_response_builder()
-                .append_header((JWT_HEADER_NAME, data.1.to_string()));
-            return Ok(result);
-        }
-        Err(e) => {
-            log::warn!(
-                "用户名:{},未获取到缓存数据，异常信息:{e} ,正在查询数据库",
-                user_form.username
-            );
-        }
-    }
-    //验证账号 密码是否正确
     let data = UserService::get_user_info(
         &user_form,
         app.get_mysql_pool(),

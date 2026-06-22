@@ -12,6 +12,7 @@ mysql:
   user_name: "CHANGE_ME"
   password: "CHANGE_ME"
 redis:
+  enabled: true
   host: "127.0.0.1"
   port: 6379
   db: 0
