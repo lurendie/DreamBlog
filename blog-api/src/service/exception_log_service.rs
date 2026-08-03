@@ -16,8 +16,8 @@ impl ExceptionLogService {
         query: ExceptionLogQuery,
         db: &DatabaseConnection,
     ) -> Result<(Vec<ExceptionLog>, u64), DataBaseError> {
-        let page_num = query.page_num.unwrap_or(1);
-        let page_size = query.page_size.unwrap_or(10);
+        let page_num = query.page_num.unwrap_or(1).max(1);
+        let page_size = query.page_size.unwrap_or(10).max(1);
         let mut query_builder = exception_log::Entity::find();
 
         if let Some(date) = query.date.as_deref() {

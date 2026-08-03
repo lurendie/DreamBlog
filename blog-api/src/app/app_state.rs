@@ -42,8 +42,12 @@ impl AppState {
 pub async fn get_connection() -> DatabaseConnection {
     let mysql_config = CONFIG.get_mysql_config();
     let opt = ConnectOptions::new(format!(
-        "mysql://{}:{}@{}/{}",
-        mysql_config.user_name, mysql_config.password, mysql_config.host, mysql_config.data_base
+        "mysql://{}:{}@{}:{}/{}",
+        mysql_config.user_name,
+        mysql_config.password,
+        mysql_config.host,
+        mysql_config.port,
+        mysql_config.data_base
     ))
     .max_connections(100)
     .min_connections(10)

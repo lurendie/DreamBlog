@@ -31,11 +31,16 @@ impl From<DbErr> for AppError {
 
 impl error::ResponseError for AppError {
     fn status_code(&self) -> StatusCode {
-        StatusCode::INTERNAL_SERVER_ERROR
+        // 保持 HTTP 200 + body code 的既有契约；状态码语义问题见 error_response 注释
+        StatusCode::OK
     }
 
     fn error_response(&self) -> HttpResponse<BoxBody> {
-        ApiResponse::<String>::error(&self.to_string()).respond()
+        // 保留 WebError 的业务错误码（400/401/404/500...），避免全部退化为 500
+        match self {
+            AppError::WebError(e) => ApiResponse::<String>::from_error(e).respond(),
+            _ => ApiResponse::<String>::error(&self.to_string()).respond(),
+        }
     }
 }
 

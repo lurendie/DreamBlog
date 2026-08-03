@@ -62,7 +62,7 @@ pub async fn save_comment(
     } else if comment_dto.content.trim().is_empty() {
         return Err(WebError::Validation("评论内容不能为空".to_string()).into());
     }
-    let ip = IpRegion::get_real_client_ip(&req);
+    let ip = IpRegion::get_real_client_ip(&req, crate::app::CONFIG.get_server_config().trust_proxy);
     CommentService::save_comment(comment_dto.0, &state.mysql_connection, ip, is_admin_comment)
         .await?;
     Ok(ApiResponse::<Value>::success(None))

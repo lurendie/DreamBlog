@@ -78,7 +78,10 @@ pub async fn recommend(
  */
 #[routes]
 #[get("/categoryAndTag")]
-pub async fn category_and_tag(app: web::Data<AppState>) -> Result<ApiResponse<Value>, AppError> {
+pub async fn category_and_tag(
+    _: Authenticated<AppClaims>,
+    app: web::Data<AppState>,
+) -> Result<ApiResponse<Value>, AppError> {
     let mut map: HashMap<String, Value> = HashMap::new();
     let connect = app.get_mysql_pool();
     let tag_list = TagService::get_tags(connect).await?;
@@ -94,6 +97,7 @@ pub async fn category_and_tag(app: web::Data<AppState>) -> Result<ApiResponse<Va
 #[routes]
 #[get("/blog")]
 pub async fn blog(
+    _: Authenticated<AppClaims>,
     query: Query<HashMap<String, String>>,
     app: web::Data<AppState>,
 ) -> Result<ApiResponse<Value>, AppError> {

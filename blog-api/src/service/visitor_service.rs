@@ -98,8 +98,8 @@ impl VisitorService {
         query: VisitorQuery,
         db: &DatabaseConnection,
     ) -> Result<(Vec<Visitor>, u64), DataBaseError> {
-        let page_num = query.page_num.unwrap_or(1);
-        let page_size = query.page_size.unwrap_or(10);
+        let page_num = query.page_num.unwrap_or(1).max(1);
+        let page_size = query.page_size.unwrap_or(10).max(1);
         // 构建查询条件
         let mut query_builder = visitor::Entity::find();
 

@@ -94,6 +94,9 @@ impl CommentService {
         blog_id: i64,
         db: &DatabaseConnection,
     ) -> Result<ValueMap, DataBaseError> {
+        // page_num/page_size 下限保护，避免 0 导致下溢
+        let page_num = page_num.max(1);
+        let page_size = page_size.max(1);
         let mut map = ValueMap::new();
         let select = comment::Entity::find().order_by_desc(comment::Column::CreateTime);
         let page = {
@@ -249,8 +252,23 @@ impl CommentService {
         ip: String,
         is_admin: bool,
     ) -> Result<(), DataBaseError> {
-        let option_model = comment::Entity::find_by_id(comment_dto.id).one(db).await;
-        if let Ok(Some(model)) = option_model {
+        // 游客评论限频：同一 IP 60 秒内最多 1 条（Redis 关闭时跳过，不误伤）
+        if !is_admin && !ip.is_empty() {
+            let rate_key = format!("comment:rate:{}", ip);
+            if !RedisService::check_rate_limit(&rate_key, 60).await {
+                return Err(DataBaseError::Custom(
+                    "评论过于频繁，请稍后再试".to_string(),
+                ));
+            }
+        }
+
+        // 仅管理员可修改已存在的评论；游客提交的 id 一律忽略，作为新评论插入
+        let option_model = if is_admin {
+            comment::Entity::find_by_id(comment_dto.id).one(db).await?
+        } else {
+            None
+        };
+        if let Some(model) = option_model {
             let mut active = model.into_active_model();
             active.avatar = Set(comment_dto.avatar);
             active.content = Set(comment_dto.content);
@@ -260,6 +278,7 @@ impl CommentService {
             active.website = Set(Some(comment_dto.website));
             active.update(db).await?;
         } else {
+            comment_dto.id = 0; // 防止客户端指定自增 id
             comment_dto.ip = ip;
             let mut rng = rand::thread_rng(); //生成随机数
             let index = rng.gen_range(1..5);

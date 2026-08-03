@@ -232,6 +232,10 @@ impl UploadForm {
 }
 
 async fn read_upload_form(mut payload: Multipart) -> Result<UploadForm, AppError> {
+    // 上传文件与表单字段大小限制，防止超大请求耗尽内存
+    const MAX_FILE_BYTES: usize = 20 * 1024 * 1024; // 20MB
+    const MAX_FIELD_BYTES: usize = 4 * 1024; // 4KB
+
     let mut fields = HashMap::new();
     let mut file = None;
     while let Some(item) = payload.next().await {
@@ -244,6 +248,18 @@ async fn read_upload_form(mut payload: Multipart) -> Result<UploadForm, AppError
         let mut bytes = Vec::new();
         while let Some(chunk) = field.next().await {
             bytes.extend_from_slice(&chunk.map_err(|e| AppError::Custom(e.to_string()))?);
+            let limit = if name == "file" {
+                MAX_FILE_BYTES
+            } else {
+                MAX_FIELD_BYTES
+            };
+            if bytes.len() > limit {
+                return Err(AppError::Custom(if name == "file" {
+                    "上传文件不能超过 20MB".to_string()
+                } else {
+                    "上传表单字段过大".to_string()
+                }));
+            }
         }
         if name == "file" {
             file = Some(bytes);

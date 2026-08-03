@@ -10,6 +10,7 @@ use actix_web::routes;
 use actix_web::web::{self, Json, Query};
 use rbs::value;
 use rbs::Value;
+use sea_orm::EntityTrait;
 use service::BlogService;
 use std::collections::HashMap;
 
@@ -86,7 +87,15 @@ pub async fn check_blog_password(
         .await
         .ok_or_else(|| WebError::NotFound(format!("BlogID:{}文章不存在", query.blog_id)))?;
     let password = query.password;
-    if blog_info.password.clone().unwrap_or_default() == password {
+    // 密码比较直接查库（详情缓存中不保存密码字段）
+    let db_password = crate::entity::blog::Entity::find_by_id(query.blog_id)
+        .one(app.get_mysql_pool())
+        .await
+        .ok()
+        .flatten()
+        .and_then(|m| m.password)
+        .unwrap_or_default();
+    if db_password == password {
         Ok(ApiResponse::success_with_msg(
             "验证成功,密码正确!",
             Some(value!(blog_info)),

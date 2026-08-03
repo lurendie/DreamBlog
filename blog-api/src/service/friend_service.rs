@@ -162,8 +162,8 @@ impl FriendService {
         // 分页查询
         let friend_models = query_builder
             .order_by_asc(friend::Column::Id)
-            .limit(page_size as u64)
-            .offset(page_num as u64)
+            .limit(page_size.max(1) as u64)
+            .offset((page_num.max(1) as u64 - 1) * page_size.max(1) as u64)
             .all(db)
             .await?;
         let mut friends = Vec::new();

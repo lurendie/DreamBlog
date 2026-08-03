@@ -208,4 +208,73 @@ impl RedisService {
     pub async fn try_del_key(key: &str) {
         let _ = Self::_del_key(key).await;
     }
+
+    /// 判断 key 是否存在（Redis 关闭时返回 false，调用方应将其视为“不限频”）
+    pub async fn key_exists(key: &str) -> bool {
+        let Some(mut connection) = Self::connection().await else {
+            return false;
+        };
+        match connection.exists::<String, i64>(key.to_string()).await {
+            Ok(count) => count > 0,
+            Err(e) => {
+                log::debug!("redis key: {} 判断存在失败:{}", key, e);
+                false
+            }
+        }
+    }
+
+    /// 设置带独立过期时间的字符串值（秒），用于限频等短时效数据
+    pub async fn set_string_ttl<T: Serialize>(key: String, value: &T, ttl_secs: u64) -> bool {
+        let Some(mut connection) = Self::connection().await else {
+            return false;
+        };
+        let value_str = match serde_json::to_string(value) {
+            Ok(s) => s,
+            Err(e) => {
+                log::debug!("redis key: {} 序列化失败:{}", key, e);
+                return false;
+            }
+        };
+        match connection
+            .set_ex::<String, String, ()>(key.clone(), value_str, ttl_secs)
+            .await
+        {
+            Ok(_) => true,
+            Err(e) => {
+                log::debug!("redis key: {} 设置过期值失败:{}", key, e);
+                false
+            }
+        }
+    }
+
+    /// 限频检查：窗口期内已存在则拒绝，否则占用窗口。Redis 关闭时始终放行。
+    pub async fn check_rate_limit(key: &str, window_secs: u64) -> bool {
+        if Self::key_exists(key).await {
+            return false;
+        }
+        Self::set_string_ttl(key.to_string(), &1u8, window_secs).await
+    }
+
+    /// 自增计数，首次自增时设置过期时间（秒），用于登录失败锁定等。Redis 关闭时返回 None。
+    pub async fn incr_with_ttl(key: &str, ttl_secs: u64) -> Option<i64> {
+        let Some(mut connection) = Self::connection().await else {
+            return None;
+        };
+        let count: i64 = match connection
+            .incr::<String, i64, i64>(key.to_string(), 1)
+            .await
+        {
+            Ok(n) => n,
+            Err(e) => {
+                log::debug!("redis key: {} 自增失败:{}", key, e);
+                return None;
+            }
+        };
+        if count == 1 {
+            let _ = connection
+                .expire::<String, i64>(key.to_string(), ttl_secs as i64)
+                .await;
+        }
+        Some(count)
+    }
 }

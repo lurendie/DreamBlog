@@ -71,7 +71,7 @@ impl From<BlogVO> for Model {
             is_comment_enabled: blog_vo.comment_enabled,
             is_top: blog_vo.top,
             create_time: blog_vo.create_time.unwrap_or(Local::now().naive_local()),
-            update_time: blog_vo.create_time.unwrap_or(Local::now().naive_local()),
+            update_time: blog_vo.update_time.unwrap_or(Local::now().naive_local()),
             views: blog_vo.views,
             words: blog_vo.words,
             read_time: blog_vo.read_time,

@@ -25,8 +25,8 @@ impl ScheduleJobService {
         query: JobQuery,
         db: &DatabaseConnection,
     ) -> Result<(Vec<ScheduleJob>, u64), DataBaseError> {
-        let page_num = query.page_num.unwrap_or(1);
-        let page_size = query.page_size.unwrap_or(10);
+        let page_num = query.page_num.unwrap_or(1).max(1);
+        let page_size = query.page_size.unwrap_or(10).max(1);
         // 构建查询条件
         let mut query_builder = schedule_job::Entity::find();
 
@@ -83,8 +83,8 @@ impl ScheduleJobService {
         query: JobLogQuery,
         db: &DatabaseConnection,
     ) -> Result<(Vec<ScheduleJobLog>, u64), DataBaseError> {
-        let page_num = query.page_num.unwrap_or(1);
-        let page_size = query.page_size.unwrap_or(10);
+        let page_num = query.page_num.unwrap_or(1).max(1);
+        let page_size = query.page_size.unwrap_or(10).max(1);
 
         // 构建查询条件
         let mut query_builder = schedule_job_log::Entity::find();

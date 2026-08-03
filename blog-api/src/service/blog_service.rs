@@ -13,7 +13,7 @@ use crate::model::{
 };
 use crate::model::{BlogDTO, BlogIdAndTitle};
 use crate::service::RedisService;
-use chrono::{Datelike, NaiveDate};
+use chrono::{Datelike, Local, NaiveDate};
 use rand::Rng;
 use rbs::value;
 use rbs::value::map::ValueMap;
@@ -144,9 +144,9 @@ impl BlogService {
                 }
             }
         } else {
-            //随机获取文章ID并且去重
+            //随机获取文章ID并且去重（上界为 len，避免最后一个元素永远不被选中）
             while ids.len() < BlogInfoConstant::RANDOM_BLOG_LIMIT_NUM {
-                let index = rng.gen_range(0..(blog_info_list.len() - 1));
+                let index = rng.gen_range(0..blog_info_list.len());
                 if !ids.contains(&index) {
                     ids.push(index);
                     result.push(value!(blog_info_list[index].clone()));
@@ -189,32 +189,21 @@ impl BlogService {
             };
             return Ok(arr);
         }
-        //2.查询数据库
+        //2.查询数据库（显式按创建时间倒序，最新在前）
         let blog_models = blog::Entity::find()
             .filter(blog::Column::IsPublished.eq(true))
+            .order_by_desc(blog::Column::CreateTime)
             .all(db)
             .await?;
-        let mut blog_info_list = Vec::new();
-        for item in blog_models {
-            blog_info_list.push(BlogInfo::from(item));
-        }
+        let mut blog_info_list: Vec<BlogInfo> =
+            blog_models.into_iter().map(BlogInfo::from).collect();
+        //截取最新 N 篇后再处理依赖关系，避免重复处理全部文章
+        blog_info_list.truncate(BlogInfoConstant::NEW_BLOG_PAGE_SIZE);
         BlogService::bloginfo_handle(&mut blog_info_list, db).await;
 
-        //反转元素
-        blog_info_list.reverse();
-        BlogService::bloginfo_handle(&mut blog_info_list, db).await;
         let mut result = vec![];
-        //如果文章数量小于NEW_BLOG_PAGE_SIZE 则直接返回
-        if blog_info_list.len() < BlogInfoConstant::NEW_BLOG_PAGE_SIZE {
-            if blog_info_list.len() > 0 {
-                for i in 0..blog_info_list.len() {
-                    result.push(value!(blog_info_list[i].clone()));
-                }
-            }
-        } else {
-            for i in 0..BlogInfoConstant::NEW_BLOG_PAGE_SIZE {
-                result.push(value!(blog_info_list[i].clone()));
-            }
+        for item in blog_info_list {
+            result.push(value!(item.clone()));
         }
 
         if result.len() > 0
@@ -301,6 +290,18 @@ impl BlogService {
 
     //根据ID查找博文
     pub(crate) async fn find_id_detail(id: i64, db: &DatabaseConnection) -> Option<BlogDetail> {
+        // 仅已发布文章可通过前台访问（防止草稿/已下架文章被缓存命中或直接访问）
+        let published = blog::Entity::find()
+            .filter(blog::Column::Id.eq(id))
+            .filter(blog::Column::IsPublished.eq(true))
+            .count(db)
+            .await
+            .unwrap_or(0)
+            > 0;
+        if !published {
+            return None;
+        }
+
         let mut cached_blog = RedisService::get_hash_key::<BlogDetail>(
             RedisKeyConstant::BLOG_DETAIL_MAP.to_string(),
             id.to_string(),
@@ -465,13 +466,14 @@ impl BlogService {
             let mut blogs = BlogArchive::find_by_statement(sql).all(db).await?;
 
             for model in blogs.iter_mut() {
-                if model.password.is_none() {
-                    model.password = Some("".to_string());
-                    model.privacy = Some(false);
-                } else {
-                    model.password = Some("".to_string());
-                    model.privacy = Some(true);
-                }
+                // 按“密码是否非空”判定隐私状态，空字符串密码不再误判为私密
+                let has_password = model
+                    .password
+                    .as_deref()
+                    .map(|p| !p.is_empty())
+                    .unwrap_or(false);
+                model.password = Some("".to_string());
+                model.privacy = Some(has_password);
             }
             map.insert(value!(key), value!(blogs));
         }
@@ -600,11 +602,11 @@ impl BlogService {
             .apply_if(search.get_category_id(), |query, value| {
                 query.filter(blog::Column::CategoryId.eq(value))
             })
-            .paginate(db, search.get_page_size().unwrap_or_default() as u64);
+            .paginate(db, search.get_page_size().unwrap_or(10).max(1) as u64);
 
         let mut map: ValueMap = ValueMap::new();
         let page_list = page
-            .fetch_page(search.get_page_num().unwrap_or_default() as u64 - 1)
+            .fetch_page(search.get_page_num().unwrap_or(1).max(1) as u64 - 1)
             .await
             .unwrap_or_default();
         let mut blog_list = vec![];
@@ -716,7 +718,7 @@ impl BlogService {
                             }
                             TypeValue::String(tag_name) => {
                                 let insert_result = tag::Entity::find()
-                                    .filter(tag::Column::TagName.contains(&tag_name))
+                                    .filter(tag::Column::TagName.eq(&tag_name))
                                     .one(conn)
                                     .await;
                                 //如果tag存在，则直接获取id
@@ -773,8 +775,8 @@ impl BlogService {
                             active.read_time = ActiveValue::Set(blog_vo.read_time);
                             active.create_time =
                                 ActiveValue::Set(blog_vo.create_time.unwrap_or_default());
-                            active.update_time =
-                                ActiveValue::Set(blog_vo.update_time.unwrap_or_default());
+                            // 更新时间由服务端设置，不信任客户端传入值
+                            active.update_time = ActiveValue::Set(Local::now().naive_local());
                             let model = active.update(conn).await?;
 
                             //1.查询旧的标签
@@ -893,24 +895,31 @@ impl BlogService {
      * 搜索博文
      */
     pub async fn search_content(
-        mut content: String,
+        content: String,
         db: &DatabaseConnection,
     ) -> Result<Vec<SearchBlog>, DataBaseError> {
-        let mut find_str = content.clone();
-        find_str.insert_str(0, r"[\u4E00-\u9FA5A-Za-z0-9_,，。\n\s*\r\t]{0,10}");
-        find_str.insert_str(
-            find_str.len(),
-            r"[\u4E00-\u9FA5A-Za-z0-9_,，。\n\s*\r\t]{0,10}",
+        let keyword = content.trim();
+        if keyword.is_empty() {
+            return Err(DataBaseError::Custom("搜索关键词不能为空".to_string()));
+        }
+        // LIKE 通配符转义（% _ \），防止扩大匹配范围
+        let escaped_like = keyword
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_");
+        let like = format!("%{}%", escaped_like);
+        // 关键词作为字面量构建正则，防止正则注入与 ReDoS
+        let keyword_escaped = regex::escape(keyword);
+        let pattern = format!(
+            r"[\u4E00-\u9FA5A-Za-z0-9_,，。\n\s*\r\t]{{0,10}}{}[\u4E00-\u9FA5A-Za-z0-9_,，。\n\s*\r\t]{{0,10}}",
+            keyword_escaped
         );
-        content.insert_str(0, "%");
-        content.insert_str(content.len(), "%");
-        //构建正则表达式,出现异常则返回异常
-        let regex_builder = regex::RegexBuilder::new(&find_str)
+        let regex_builder = regex::RegexBuilder::new(&pattern)
             .case_insensitive(true)
             .build()?;
         let mut models = blog::Entity::find()
             .filter(blog::Column::IsPublished.eq(true))
-            .filter(blog::Column::Content.contains(content))
+            .filter(blog::Column::Content.contains(like))
             .all(db)
             .await?;
         let mut search_blogs = vec![];
@@ -927,7 +936,7 @@ impl BlogService {
                     search_blogs.push(search_blog);
                 }
                 None => {
-                    log::info!("search_blog 未找到关键词:{:?}", find_str);
+                    log::info!("search_blog 未找到关键词:{:?}", keyword);
                 }
             }
         }

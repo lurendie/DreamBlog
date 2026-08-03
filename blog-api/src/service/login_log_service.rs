@@ -1,9 +1,13 @@
-use chrono::NaiveDateTime;
+use actix_web::HttpRequest;
+use chrono::{Local, NaiveDateTime};
 use sea_orm::{
-    ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait,
+    PaginatorTrait, QueryFilter, QueryOrder,
 };
 
 use crate::{
+    app::CONFIG,
+    common::{IpRegion, UserAgent},
     entity::login_log,
     error::DataBaseError,
     model::{LoginLog, LoginLogQuery},
@@ -12,12 +16,46 @@ use crate::{
 pub struct LoginLogService;
 
 impl LoginLogService {
+    /// 记录一次登录行为（成功/失败），写日志失败不影响登录流程
+    pub async fn save_login_log(
+        db: &DatabaseConnection,
+        username: &str,
+        req: &HttpRequest,
+        status: bool,
+        description: String,
+    ) -> Result<(), DataBaseError> {
+        let ip = IpRegion::get_real_client_ip(req, CONFIG.get_server_config().trust_proxy);
+        let user_agent_str = req
+            .headers()
+            .get("User-Agent")
+            .and_then(|h| h.to_str().ok())
+            .unwrap_or("")
+            .to_string();
+        let user_agent = UserAgent::parse_user_agent(&user_agent_str).await;
+        let model = login_log::ActiveModel {
+            username: Set(username.to_string()),
+            ip: Set(Some(ip.clone())),
+            ip_source: Set(Some(
+                IpRegion::search_by_ip::<&str>(&ip).unwrap_or_default(),
+            )),
+            os: Set(Some(user_agent.os.name)),
+            browser: Set(Some(user_agent.browser.name)),
+            status: Set(Some(status)),
+            description: Set(Some(description)),
+            create_time: Set(Local::now().naive_local()),
+            user_agent: Set(Some(user_agent.user_agent)),
+            ..Default::default()
+        };
+        model.save(db).await?;
+        Ok(())
+    }
+
     pub async fn get_login_log_list(
         query: LoginLogQuery,
         db: &DatabaseConnection,
     ) -> Result<(Vec<LoginLog>, u64), DataBaseError> {
-        let page_num = query.page_num.unwrap_or(1);
-        let page_size = query.page_size.unwrap_or(10);
+        let page_num = query.page_num.unwrap_or(1).max(1);
+        let page_size = query.page_size.unwrap_or(10).max(1);
         let mut query_builder = login_log::Entity::find();
 
         if let Some(date) = query.date.as_deref() {

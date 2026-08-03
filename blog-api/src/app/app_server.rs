@@ -13,9 +13,12 @@ use crate::controller::{
     moment_controller, sitemap_controller, user_controller,
 };
 use crate::middleware::build_session_storage;
-use crate::middleware::{OperationLog, VisiLog};
+use crate::middleware::{ExceptionLog, OperationLog, VisiLog};
+use actix_cors::Cors;
 use actix_jwt_session::{Duration, JwtTtl, RefreshTtl};
 use actix_web::web::Data;
+use actix_web::http::header::{self, HeaderName};
+use actix_web::middleware::Condition;
 use actix_web::{web, App, HttpServer};
 
 pub struct AppServer;
@@ -30,6 +33,8 @@ impl AppServer {
      */
     pub async fn run() -> std::io::Result<()> {
         let server_config = CONFIG.get_server_config();
+        let bind_host = server_config.host.clone();
+        let bind_port = server_config.port;
         //创建JWT TTL
         let jwt_ttl = JwtTtl(Duration::days(server_config.token_expires));
         let refresh_ttl = RefreshTtl(Duration::days(server_config.token_expires));
@@ -46,8 +51,11 @@ impl AppServer {
         });
         let (session_storage, factory) = build_session_storage();
         HttpServer::new(move || {
+            let cors = Self::build_cors(&server_config);
             //创建App
             App::new()
+                .wrap(ExceptionLog::default())
+                .wrap(Condition::new(server_config.cors_enabled, cors))
                 .app_data(Data::new(jwt_ttl))
                 .app_data(Data::new(refresh_ttl))
                 .app_data(Data::new(app_state.clone()))
@@ -66,9 +74,29 @@ impl AppServer {
                 )
                 .default_service(web::to(index_controller::default))
         })
-        .bind_auto_h2c(format!("{}:{}", server_config.host, server_config.port))?
+        .bind_auto_h2c(format!("{}:{}", bind_host, bind_port))?
         .run()
         .await
+    }
+
+    fn build_cors(server_config: &super::app_config::ServerConfig) -> Cors {
+        let mut cors = Cors::default()
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+            .allowed_headers(vec![
+                header::AUTHORIZATION,
+                header::ACCEPT,
+                header::CONTENT_TYPE,
+                header::ORIGIN,
+                HeaderName::from_static("identification"),
+            ])
+            .supports_credentials()
+            .max_age(3600);
+
+        for origin in server_config.cors_origins() {
+            cors = cors.allowed_origin(&origin);
+        }
+
+        cors
     }
     /**
      * 前台路由
@@ -91,7 +119,8 @@ impl AppServer {
             .service(user_controller::login)
             .service(blog_controller::search_blog)
             .service(moment_controller::moment_like)
-            .service(comment_controller::save_comment);
+            .service(comment_controller::save_comment)
+            .service(user_controller::logout);
     }
 
     /**
@@ -99,6 +128,7 @@ impl AppServer {
      */
     fn cms_router(cfg: &mut web::ServiceConfig) {
         cfg.service(user_controller::login)
+            .service(user_controller::logout)
             .service(admin::dashboard_controller::dashboard) //.default_service(web::to(adminIndexController::default)),
             .service(admin::about_controller::get_about)
             .service(admin::about_controller::update_about)

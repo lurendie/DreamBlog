@@ -20,8 +20,7 @@ pub struct BlogDetail {
     #[serde(rename(serialize = "readTime"))]
     pub(crate) read_time: i32,
     pub(crate) is_top: bool,
-
-    pub(crate) password: Option<String>,
+    pub(crate) privacy: Option<bool>,
     pub(crate) tags: Option<Vec<TagDTO>>,
 }
 
@@ -46,7 +45,7 @@ impl From<blog::Model> for BlogDetail {
             words: model.words,
             read_time: model.read_time,
             is_top: model.is_top,
-            password: model.password,
+            privacy: model.password.as_ref().map(|p| !p.is_empty()),
             tags: None,
         }
     }

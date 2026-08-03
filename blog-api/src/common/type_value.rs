@@ -27,7 +27,9 @@ impl<'de> Deserialize<'de> for TypeValue {
             where
                 E: de::Error,
             {
-                Ok(TypeValue::Int32(value as i32))
+                i32::try_from(value)
+                    .map(TypeValue::Int32)
+                    .map_err(|_| E::custom(format!("整数 {} 超出 i32 范围", value)))
             }
 
             // 处理 u64 类型的值
@@ -35,7 +37,9 @@ impl<'de> Deserialize<'de> for TypeValue {
             where
                 E: de::Error,
             {
-                Ok(TypeValue::Int32(value as i32))
+                i32::try_from(value)
+                    .map(TypeValue::Int32)
+                    .map_err(|_| E::custom(format!("整数 {} 超出 i32 范围", value)))
             }
 
             fn visit_string<E>(self, v: String) -> Result<Self::Value, E>

@@ -105,7 +105,7 @@ impl VisitService {
                         behavior.set_content(value.to_string());
                         behavior.set_remark(format!("友链名称：{value}"));
                     }
-                    VisitBehavior::from(VisitBehaviorType::ClickFriend)
+                    behavior
                 }
 
                 VisitBehaviorType::LikeMoment => VisitBehavior::from(VisitBehaviorType::LikeMoment),
@@ -191,7 +191,9 @@ impl VisitService {
             }
         }
 
-        // 获取分页数据
+        // 获取分页数据（page_num/page_size 下限保护，避免 0 导致下溢）
+        let page_num = page_num.max(1);
+        let page_size = page_size.max(1);
         let paginator = query_builder
             .order_by_desc(visit_log::Column::Id)
             .paginate(db, page_size as u64);

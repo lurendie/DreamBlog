@@ -87,8 +87,18 @@ impl IpRegion {
     }
 
     /// 获取真实的客户端IP地址，考虑代理和转发的情况
-    pub fn get_real_client_ip(req: &HttpRequest) -> String {
-        // 按优先级尝试获取IP地址
+    /// `trust_proxy` 为 false 时（默认）仅信任 TCP 对端地址，防止客户端伪造转发头；
+    /// 仅当服务部署在可信反向代理（如 Nginx）之后时置为 true。
+    pub fn get_real_client_ip(req: &HttpRequest, trust_proxy: bool) -> String {
+        if !trust_proxy {
+            return req
+                .connection_info()
+                .peer_addr()
+                .unwrap_or("unknown")
+                .to_string();
+        }
+
+        // 信任代理模式：按优先级尝试获取IP地址
         let headers = req.headers();
 
         // 1. 首先检查 X-Forwarded-For 头

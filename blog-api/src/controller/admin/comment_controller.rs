@@ -59,7 +59,10 @@ pub async fn update_comment(
     comment: web::Json<CommentDTO>,
     req: HttpRequest,
 ) -> Result<ApiResponse<Value>, AppError> {
-    let ip = IpRegion::get_real_client_ip(&req);
+    let ip = IpRegion::get_real_client_ip(
+        &req,
+        crate::app::CONFIG.get_server_config().trust_proxy,
+    );
     CommentService::save_comment(comment.0, &app.get_mysql_pool(), ip, false).await?;
     Ok(ApiResponse::<Value>::success_with_msg("更新成功！", None))
 }

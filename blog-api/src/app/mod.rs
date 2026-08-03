@@ -8,4 +8,5 @@ pub use app_config::CONFIG;
 pub use app_server::AppServer;
 pub use app_state::AppState;
 pub use job_runner::JobRunner;
+pub use redis_client::REDIS_CLIENT;
 pub use redis_client::RedisClient;

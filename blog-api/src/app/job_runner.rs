@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
@@ -16,6 +16,9 @@ impl JobRunner {
     pub async fn start(app_state: AppState) {
         let last_runs: Arc<Mutex<HashMap<i64, DateTime<Utc>>>> =
             Arc::new(Mutex::new(HashMap::new()));
+        // 正在执行的任务集合，防止任务耗时超过轮询周期时被重复调度（重叠执行）
+        let running: Arc<Mutex<HashSet<i64>>> = Arc::new(Mutex::new(HashSet::new()));
+        // 轮询间隔：秒级 cron 的触发精度受此限制
         let mut ticker = interval(Duration::from_secs(30));
 
         loop {
@@ -40,9 +43,19 @@ impl JobRunner {
                     continue;
                 }
 
+                let job_id = job.job_id;
+                // 任务正在执行则跳过本轮，避免重叠
+                {
+                    let mut run_set = running.lock().await;
+                    if run_set.contains(&job_id) {
+                        continue;
+                    }
+                    run_set.insert(job_id);
+                }
+
                 let last_run = {
                     let map = last_runs.lock().await;
-                    map.get(&job.job_id)
+                    map.get(&job_id)
                         .copied()
                         .unwrap_or_else(|| DateTime::<Utc>::from(std::time::UNIX_EPOCH))
                 };
@@ -50,20 +63,25 @@ impl JobRunner {
                 let next_run = match ScheduleJobService::next_run_after(&cron, last_run) {
                     Ok(value) => value,
                     Err(e) => {
-                        log::error!("定时任务Cron解析失败 job_id={}: {}", job.job_id, e);
+                        log::error!("定时任务Cron解析失败 job_id={}: {}", job_id, e);
+                        running.lock().await.remove(&job_id);
                         continue;
                     }
                 };
-                let Some(next_run) = next_run else { continue };
+                let Some(next_run) = next_run else {
+                    running.lock().await.remove(&job_id);
+                    continue;
+                };
                 let now = Utc::now();
                 if next_run > now {
+                    running.lock().await.remove(&job_id);
                     continue;
                 }
 
-                let job_id = job.job_id;
                 if let Err(e) = ScheduleJobService::execute_job_model(job, db).await {
                     log::error!("定时任务执行失败: {}", e);
                 }
+                running.lock().await.remove(&job_id);
 
                 let mut map = last_runs.lock().await;
                 map.insert(job_id, now);

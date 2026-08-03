@@ -85,7 +85,7 @@ where
             .and_then(|h| h.to_str().ok())
             .unwrap_or("")
             .to_string();
-        let ip = IpRegion::get_real_client_ip(&req.request());
+        let ip = IpRegion::get_real_client_ip(&req.request(), crate::app::CONFIG.get_server_config().trust_proxy);
         let app_state = req.app_data::<Data<AppState>>().cloned();
         let fut = self.service.call(req);
         Box::pin(async move {

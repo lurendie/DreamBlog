@@ -149,7 +149,7 @@ impl ParamUtils {
             search_params.page = page_type;
         }
         if let Some(title) = param.get_title() {
-            if title.contains("") || title.is_empty() {
+            if title.trim().is_empty() {
                 return Err(WebError::Validation("标题不能为空".to_string()));
             }
             search_params.title = title;

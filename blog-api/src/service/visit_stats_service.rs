@@ -31,7 +31,7 @@ impl VisitStatsService {
             DbBackend::MySql,
             r#"
 SELECT
-  COALESCE(SUM(times), 0) AS pv,
+  COUNT(*) AS pv,
   COUNT(DISTINCT IFNULL(uuid, ip)) AS uv
 FROM visit_log
 WHERE create_time BETWEEN ? AND ?
@@ -41,9 +41,10 @@ WHERE create_time BETWEEN ? AND ?
 
         let row = db.query_one(sql).await?;
         if let Some(row) = row {
-            let pv: i32 = row.try_get("", "pv").unwrap_or(0);
-            let uv: i32 = row.try_get("", "uv").unwrap_or(0);
-            return Ok((pv, uv));
+            // COUNT 返回 BIGINT，用 i64 读取避免类型转换失败导致恒为 0
+            let pv: i64 = row.try_get("", "pv").unwrap_or(0);
+            let uv: i64 = row.try_get("", "uv").unwrap_or(0);
+            return Ok((pv as i32, uv as i32));
         }
         Ok((0, 0))
     }

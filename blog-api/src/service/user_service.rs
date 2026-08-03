@@ -90,9 +90,6 @@ impl UserService {
         //将用户信息存入map封装
         map.insert(value!("user"), value!(&user));
         map.insert(value!("token"), value!(&jwt_token));
-
-        map.insert(value!("user"), value!(&user));
-        map.insert(value!("token"), value!(&jwt_token));
         Ok((map, jwt_token))
     }
 
@@ -102,13 +99,27 @@ impl UserService {
         db: &DatabaseConnection,
     ) -> Result<(), AppError> {
         let user = UserService::get_by_username(&username, db).await?;
+        let current_user_id = user.get_id();
         let user_model = user::Model::from(user);
         let mut active_user: user::ActiveModel = user_model.into();
         let now = Utc::now().naive_utc();
         // 更新字段
         if !user_from.get_username().is_empty() {
-            // 检查用户名是否已被其他用户使用
-            active_user.username = Set(user_from.get_username());
+            // 检查用户名是否已被其他用户使用（排除自己）
+            let new_username = user_from.get_username();
+            let exists = user::Entity::find()
+                .filter(user::Column::Username.eq(&new_username))
+                .filter(user::Column::Id.ne(current_user_id))
+                .one(db)
+                .await?;
+            if exists.is_some() {
+                return Err(DataBaseError::Custom(format!(
+                    "用户名 {} 已被使用",
+                    new_username
+                ))
+                .into());
+            }
+            active_user.username = Set(new_username);
         }
         if !user_from.get_nickname().is_empty() {
             active_user.nickname = Set(user_from.get_nickname());

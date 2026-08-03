@@ -55,16 +55,30 @@ pub fn build_session_storage() -> (SessionStorage, SessionMiddlewareFactory<AppC
     let keys = JwtSigningKeys::load_or_create();
     let encoding_key = Arc::new(keys.encoding_key);
     let decoding_key = Arc::new(keys.decoding_key);
-    let storage = SessionStorage::new(
-        Arc::new(NoopTokenStorage),
-        encoding_key.clone(),
-        Algorithm::EdDSA,
-    );
-    let factory = SessionMiddlewareFactory::build(encoding_key, decoding_key, Algorithm::EdDSA)
-        .with_storage(storage.clone())
-        .with_extractors(CustomExtractor::new(JWT_HEADER_NAME))
-        .finish()
-        .1;
+
+    let mut builder =
+        SessionMiddlewareFactory::build(encoding_key.clone(), decoding_key, Algorithm::EdDSA);
+    // Redis 可用时将会话存入 Redis，token 可被吊销（logout/改密后立即失效）；
+    // 不可用时降级为无状态模式（token 仅依赖签名与过期时间）。
+    let session_validation = match &*crate::app::REDIS_CLIENT {
+        Some(pool) => {
+            log::info!("JWT 会话存储启用 Redis，支持 token 吊销");
+            builder = builder.with_redis_pool(pool.clone());
+            true
+        }
+        None => {
+            log::warn!("Redis 未启用，JWT 会话无法吊销，token 仅依赖签名与过期时间");
+            builder = builder.with_storage(SessionStorage::new(
+                Arc::new(NoopTokenStorage),
+                encoding_key.clone(),
+                Algorithm::EdDSA,
+            ));
+            false
+        }
+    };
+    let (storage, factory) = builder
+        .with_extractors(CustomExtractor::new(JWT_HEADER_NAME, session_validation))
+        .finish();
     (storage, factory)
 }
 
@@ -95,8 +109,11 @@ impl actix_jwt_session::TokenStorage for NoopTokenStorage {
 pub struct CustomExtractor;
 
 impl CustomExtractor {
-    pub fn new(name: &'static str) -> Extractors<AppClaims> {
-        Extractors::new(vec![Arc::new(CustomHeaderExtractor::new(name))], vec![])
+    pub fn new(name: &'static str, session_validation: bool) -> Extractors<AppClaims> {
+        Extractors::new(
+            vec![Arc::new(CustomHeaderExtractor::new(name, session_validation))],
+            vec![],
+        )
     }
 }
 
@@ -104,13 +121,16 @@ impl CustomExtractor {
 struct CustomHeaderExtractor<ClaimsType> {
     __ty: PhantomData<ClaimsType>,
     header_name: &'static str,
+    /// 是否校验会话存储（Redis 模式）
+    session_validation: bool,
 }
 
 impl<ClaimsType: Claims> CustomHeaderExtractor<ClaimsType> {
-    pub fn new(header_name: &'static str) -> Self {
+    pub fn new(header_name: &'static str, session_validation: bool) -> Self {
         Self {
             __ty: Default::default(),
             header_name,
+            session_validation,
         }
     }
 }
@@ -147,9 +167,14 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
         };
         let decoded_claims = match self.decode(&as_str, jwt_decoding_key, algorithm) {
             Ok(claims) => claims,
+            // 无效/过期 token 按匿名处理，避免误伤前台公开接口
             Err(_) => return Ok(()),
         };
-        let _ = storage;
+        // 会话校验（Redis 存储模式）：token 必须仍存在于存储中，吊销后立即失效
+        if self.session_validation && self.validate(&decoded_claims, storage).await.is_err() {
+            log::debug!("JWT 会话校验失败（token 已失效或不存在），按匿名处理");
+            return Ok(());
+        }
         req.extensions_mut().insert(Authenticated {
             claims: Arc::new(decoded_claims),
             jwt_encoding_key,
@@ -172,7 +197,7 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
 
         decode::<ClaimsType>(value, &jwt_decoding_key, &validation)
             .map_err(|e| {
-                log::error!("Failed to decode claims: {e:?}. {e}");
+                log::debug!("Failed to decode claims: {e:?}. {e}");
                 Error::CantDecode
             })
             .map(|t| t.claims)

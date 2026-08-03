@@ -72,19 +72,19 @@ const OWNER_HTML_TEMPLATE: &str = r#"<!DOCTYPE html>
 impl HtmlTemplate for OwenrComment {
     fn to_html(&self) -> String {
         let mut html = OWNER_HTML_TEMPLATE.to_string();
-        // 使用 replace 方法逐个替换占位符
-        html = html.replace("{post_title}", &self.post_title);
+        // 使用 replace 方法逐个替换占位符（用户输入字段先做 HTML 转义，防注入）
+        html = html.replace("{post_title}", &escape_html(&self.post_title));
         html = html.replace("{post_url}", &self.post_url);
-        html = html.replace("{nickname}", &self.nickname);
-        html = html.replace("{content}", &self.content);
+        html = html.replace("{nickname}", &escape_html(&self.nickname));
+        html = html.replace("{content}", &escape_html(&self.content));
 
         // 格式化日期
         let formatted_time = self.time.format("%Y-%m-%d %H:%M").to_string();
         html = html.replace("{time}", &formatted_time);
 
-        html = html.replace("{ip}", &self.ip);
-        html = html.replace("{email}", &self.email);
-        html = html.replace("{status}", &self.status);
+        html = html.replace("{ip}", &escape_html(&self.ip));
+        html = html.replace("{email}", &escape_html(&self.email));
+        html = html.replace("{status}", &escape_html(&self.status));
         html = html.replace("{manage_url}", &self.manage_url);
         html
     }
@@ -174,17 +174,27 @@ const GUEST_HTML_TEMPLATE: &str = r#"<!DOCTYPE html>
 impl HtmlTemplate for GuestReply {
     fn to_html(&self) -> String {
         let mut html = GUEST_HTML_TEMPLATE.to_string();
-        html = html.replace("{post_title}", &self.post_title);
+        html = html.replace("{post_title}", &escape_html(&self.post_title));
         html = html.replace("{post_url}", &self.post_url);
-        html = html.replace("{parent_nickname}", &self.parent_nickname);
-        html = html.replace("{parent_content}", &self.parent_content);
-        html = html.replace("{nickname}", &self.nickname);
-        html = html.replace("{content}", &self.content);
+        html = html.replace("{parent_nickname}", &escape_html(&self.parent_nickname));
+        html = html.replace("{parent_content}", &escape_html(&self.parent_content));
+        html = html.replace("{nickname}", &escape_html(&self.nickname));
+        html = html.replace("{content}", &escape_html(&self.content));
         // 格式化日期
         let formatted_time = self.time.format("%Y-%m-%d %H:%M").to_string();
         html = html.replace("{time}", &formatted_time);
         html
     }
+}
+
+/// 对用户输入做 HTML 转义，防止注入邮件模板
+fn escape_html(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
 }
 
 pub trait HtmlTemplate {
