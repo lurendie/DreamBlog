@@ -8,11 +8,18 @@
 			<!--登录表单-->
 			<el-form ref="loginFormRef" :model="loginForm" :rules="loginFormRules" class="login_form">
 				<el-form-item prop="username">
-					<el-input v-model="loginForm.username" prefix-icon="el-icon-user-solid"></el-input>
+					<el-input v-model="loginForm.username">
+						<template #prefix>
+							<el-icon><User /></el-icon>
+						</template>
+					</el-input>
 				</el-form-item>
 				<el-form-item prop="password">
-					<el-input v-model="loginForm.password" prefix-icon="el-icon-lock" show-password
-						@keyup.enter="login"></el-input>
+					<el-input v-model="loginForm.password" show-password @keyup.enter="login">
+						<template #prefix>
+							<el-icon><Lock /></el-icon>
+						</template>
+					</el-input>
 				</el-form-item>
 				<el-form-item class="btns">
 					<el-button type="primary" @click="login">登录</el-button>
@@ -25,9 +32,14 @@
 
 <script>
 	import { login } from "@/api/login";
+	import { Lock, User } from '@element-plus/icons-vue'
 
 	export default {
 		name: "Login",
+		components: {
+			Lock,
+			User,
+		},
 		data() {
 			return {
 				loginForm: {
@@ -118,5 +130,28 @@
 	.btns {
 		display: flex;
 		justify-content: flex-end;
+	}
+
+	@media screen and (max-width: 767px) {
+		.login_box {
+			width: calc(100vw - 32px);
+			height: auto;
+			min-height: 300px;
+		}
+
+		.login_form {
+			position: static;
+			padding: 88px 16px 20px;
+		}
+
+		.btns {
+			flex-wrap: wrap;
+			gap: 10px;
+		}
+
+		.btns :deep(.el-button) {
+			flex: 1 1 100%;
+			margin-left: 0;
+		}
 	}
 </style>

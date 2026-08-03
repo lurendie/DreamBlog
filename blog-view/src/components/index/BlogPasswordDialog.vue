@@ -1,6 +1,6 @@
 <template>
 	<!--私密文章密码对话框-->
-	<el-dialog title="请输入受保护文章密码" width="30%" v-model="dialogVisible"
+	<el-dialog title="请输入受保护文章密码" :width="dialogWidth" v-model="dialogVisible"
 	           :lock-scroll="false" :before-close="blogPasswordDialogClosed">
 		<!--内容主体-->
 		<el-form :model="blogPasswordForm" :rules="formRules" ref="formRef" label-width="80px">
@@ -25,6 +25,9 @@
 		name: "BlogPasswordDialog",
 		computed: {
 			...mapState(['blogPasswordForm']),
+			dialogWidth() {
+				return document.body.clientWidth <= 767 ? '92%' : '30%'
+			},
 			dialogVisible: {
 				get() {
 					return this.$store.state.blogPasswordDialogVisible

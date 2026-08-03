@@ -21,12 +21,12 @@
 					</div>
 					<div class="icons">
 						<el-tooltip class="item" effect="dark" content="复制CDN链接" placement="bottom">
-							<i class="icon el-icon-link" @click="copy(1,file)"></i>
+							<el-icon class="icon" @click="copy(1,file)"><Link /></el-icon>
 						</el-tooltip>
 						<el-tooltip class="item" effect="dark" content="复制MD格式" placement="bottom">
 							<SvgIcon icon-class="markdown" class-name="icon" @click="copy(2,file)"></SvgIcon>
 						</el-tooltip>
-						<i class="icon el-icon-delete" @click="delFile(file)"></i>
+						<el-icon class="icon" @click="delFile(file)"><Delete /></el-icon>
 					</div>
 				</div>
 			</div>
@@ -46,7 +46,7 @@
 				<el-input placeholder="例：oldFolder/newFolder/" v-model="customPath" :disabled="!isCustomPath" size="medium" style="margin-top: 10px"></el-input>
 			</el-row>
 			<el-upload ref="uploadRef" action="" :http-request="upload" drag multiple :file-list="uploadList" list-type="picture" :auto-upload="false">
-				<i class="el-icon-upload"></i>
+				<el-icon><UploadFilled /></el-icon>
 				<div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
 			</el-upload>
 		</el-drawer>
@@ -55,6 +55,7 @@
 
 <script>
 	import SvgIcon from "@/components/SvgIcon";
+	import { Delete, Link, UploadFilled } from '@element-plus/icons-vue'
 	import {getUserRepos, getReposContents, delFile, upload} from "@/api/github";
 	import {isImgExt} from "@/util/validate";
 	import {randomUUID} from "@/util/uuid";
@@ -62,9 +63,14 @@
 	import {taskQueue} from "@/util/task-queue";
 	import {getConfigs} from "@/api/pictureHosting";
 
-	export default {
-		name: "GithubManage",
-		components: {SvgIcon},
+export default {
+	name: "GithubManage",
+	components: {
+		Delete,
+		Link,
+		SvgIcon,
+		UploadFilled,
+	},
 		data() {
 			return {
 				reposList: [],

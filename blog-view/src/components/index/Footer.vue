@@ -15,7 +15,7 @@
 				<div class="six wide column">
 					<h4 class="ui inverted header m-text-thin m-text-spaced">最新博客</h4>
 					<div class="ui inverted link list">
-						<a href="javascript:;" @click.prevent="toBlog(item)" v-for="item in newBlogList" :key="item.id" class="item m-text-thin m-padded-tb-small">{{ item.title }}</a>
+						<a href="javascript:;" @click.prevent="toBlog(item)" v-for="item in safeNewBlogList" :key="item.id" class="item m-text-thin m-padded-tb-small">{{ item.title }}</a>
 					</div>
 				</div>
 
@@ -28,13 +28,13 @@
 			<div class="ui inverted section divider"></div>
 
 			<p class="m-text-thin m-text-spaced m-opacity-tiny">
-				<span style="margin-right: 10px" v-if="siteInfo.copyright">{{ siteInfo.copyright.title }}</span>
-				<router-link to="/" style="color:#ffe500" v-if="siteInfo.copyright">{{ siteInfo.copyright.siteName }}</router-link>
-				<span style="margin: 0 15px" v-if="siteInfo.copyright && siteInfo.beian">|</span>
+				<span style="margin-right: 10px" v-if="safeCopyright">{{ safeCopyright.title }}</span>
+				<router-link to="/" style="color:#ffe500" v-if="safeCopyright">{{ safeCopyright.siteName }}</router-link>
+				<span style="margin: 0 15px" v-if="safeCopyright && siteInfo.beian">|</span>
 				<a rel="external nofollow noopener" href="https://beian.miit.gov.cn/" target="_blank" style="color:#ffe500">{{ siteInfo.beian }}</a>
 			</p>
 
-			<div class="github-badge" v-for="(item,index) in badges" :key="index">
+			<div class="github-badge" v-for="(item,index) in safeBadges" :key="index">
 				<a rel="external nofollow noopener" :href="item.url" target="_blank" :title="item.title">
 					<span class="badge-subject">{{ item.subject }}</span>
 					<span class="badge-value" :class="`bg-${item.color}`">{{ item.value }}</span>
@@ -64,6 +64,23 @@
 			hitokoto: {
 				type: Object,
 				required: true
+			}
+		},
+		computed: {
+			safeNewBlogList() {
+				if (!Array.isArray(this.newBlogList)) {
+					return []
+				}
+				return this.newBlogList.filter(item => item && typeof item === 'object' && item.title)
+			},
+			safeBadges() {
+				if (!Array.isArray(this.badges)) {
+					return []
+				}
+				return this.badges.filter(item => item && typeof item === 'object')
+			},
+			safeCopyright() {
+				return this.siteInfo && typeof this.siteInfo.copyright === 'object' ? this.siteInfo.copyright : null
 			}
 		},
 		methods: {

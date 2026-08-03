@@ -12,7 +12,7 @@ import router from "../router";
 import tvMapper from '@/plugins/tvMapper.json'
 import aruMapper from '@/plugins/aruMapper.json'
 import paopaoMapper from '@/plugins/paopaoMapper.json'
-import sanitizeHtml from 'sanitize-html'
+import { escapeHtml } from '@/util/sanitizeHtml'
 
 export default {
 	getCommentList({commit, rootState}) {
@@ -40,21 +40,16 @@ export default {
 
 		getCommentListByQuery(token, rootState.commentQuery).then(res => {
 			if (res.code === 200) {
-				let sanitizeHtmlConfig = {
-					allowedTags: [],
-					allowedAttributes: false,
-					disallowedTagsMode: 'recursiveEscape'
-				}
 				res.data.comments.list.forEach(comment => {
 					//转义评论中的html
-					comment.content = sanitizeHtml(comment.content, sanitizeHtmlConfig)
+					comment.content = escapeHtml(comment.content)
 					//查找评论中是否有表情
 					if (comment.content.indexOf('@[') != -1) {
 						convertEmoji(comment)
 					}
 					comment.replyComments.forEach(comment => {
 						//转义评论中的html
-						comment.content = sanitizeHtml(comment.content, sanitizeHtmlConfig)
+						comment.content = escapeHtml(comment.content)
 						//查找评论中是否有表情
 						if (comment.content.indexOf('@[') != -1) {
 							convertEmoji(comment)

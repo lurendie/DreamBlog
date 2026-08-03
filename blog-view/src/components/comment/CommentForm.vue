@@ -44,20 +44,24 @@
 				</div>
 			</div>
 			<el-form-item prop="nickname">
-				<el-input v-model="commentForm.nickname" placeholder="昵称（必填）" :validate-event="false" v-popover:nicknamePopover>
-					<i slot="prefix" class="el-input__icon el-icon-user"></i>
+				<el-input v-model="commentForm.nickname" placeholder="昵称（必填）" :validate-event="false">
+					<template #prefix>
+						<el-icon><User /></el-icon>
+					</template>
 				</el-input>
 			</el-form-item>
 			<el-form-item prop="email">
-				<el-popover ref="emailPopover" placement="bottom" trigger="focus" content="用于接收回复邮件"></el-popover>
-				<el-input v-model="commentForm.email" placeholder="邮箱（必填）" :validate-event="false" v-popover:emailPopover>
-					<i slot="prefix" class="el-input__icon el-icon-message"></i>
+				<el-input v-model="commentForm.email" placeholder="邮箱（必填，用于接收回复邮件）" :validate-event="false">
+					<template #prefix>
+						<el-icon><Message /></el-icon>
+					</template>
 				</el-input>
 			</el-form-item>
 			<el-form-item prop="website">
-				<el-popover ref="websitePopover" placement="bottom" trigger="focus" content="可以让我参观一下吗😊"></el-popover>
-				<el-input v-model="commentForm.website" placeholder="https://（可选）" :validate-event="false" v-popover:websitePopover>
-					<i slot="prefix" class="el-input__icon el-icon-map-location"></i>
+				<el-input v-model="commentForm.website" placeholder="https://（可选）" :validate-event="false">
+					<template #prefix>
+						<el-icon><Position /></el-icon>
+					</template>
 				</el-input>
 			</el-form-item>
 			<el-form-item label="订阅回复">
@@ -77,6 +81,7 @@
 	import tvMapper from '@/plugins/tvMapper.json'
 	import aruMapper from '@/plugins/aruMapper.json'
 	import paopaoMapper from '@/plugins/paopaoMapper.json'
+	import { Message, Position, User } from '@element-plus/icons-vue'
 
 	const validateWebsite = (rule, value, callback) => {
 		if (value) {
@@ -86,6 +91,11 @@
 	}
 	export default {
 		name: "CommentForm",
+		components: {
+			Message,
+			Position,
+			User,
+		},
 		computed: {
 			...mapState(['parentCommentId', 'commentForm', 'commentQuery'])
 		},
@@ -319,5 +329,62 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
+	}
+
+	@media screen and (max-width: 767px) {
+		.form h3 {
+			margin: 0 0 10px;
+		}
+
+		.form .m-small {
+			margin-left: 8px;
+		}
+
+		.el-form {
+			display: block;
+		}
+
+		.el-form .el-form-item {
+			display: flex !important;
+			width: 100%;
+			margin-right: 0 !important;
+			margin-bottom: 12px !important;
+		}
+
+		.el-form .el-form-item__content {
+			width: 100%;
+			margin-left: 0 !important;
+		}
+
+		.el-form .textarea {
+			margin-bottom: 12px;
+		}
+
+		.el-form .el-input__wrapper {
+			min-height: 40px;
+		}
+
+		.el-form .el-textarea__inner {
+			min-height: 120px !important;
+		}
+
+		.emoji {
+			margin-right: 0;
+			margin-bottom: 12px;
+		}
+
+		.emoji-box {
+			width: min(340px, calc(100vw - 32px));
+			left: 0;
+			right: auto;
+		}
+
+		.emoji-box .emoji-tabs .tab-link {
+			padding: 7px 14px;
+		}
+
+		.el-form-item .el-button {
+			width: 100%;
+		}
 	}
 </style>

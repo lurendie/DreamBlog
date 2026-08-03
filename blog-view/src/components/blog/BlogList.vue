@@ -3,17 +3,17 @@
 		<!--content-->
 		<BlogItem :blogList="blogList"/>
 		<!--分页-->
-		<Pagination :getBlogList="getBlogList" :totalPage="totalPage"/>
+		<BlogPagination :getBlogList="getBlogList" :totalPage="totalPage"/>
 	</div>
 </template>
 
 <script>
 	import BlogItem from "./BlogItem.vue";
-	import Pagination from "./Pagination.vue";
+	import BlogPagination from "./BlogPagination.vue";
 
 	export default {
 		name: "BlogList",
-		components: {Pagination, BlogItem},
+		components: {BlogPagination, BlogItem},
 		props: {
 			getBlogList: {
 				type: Function,

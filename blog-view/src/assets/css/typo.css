@@ -13,6 +13,7 @@
     display: block;
     margin: 0 auto;
     max-width: 100%;
+    height: auto;
 }
 
 .typo p {
@@ -253,6 +254,8 @@
     font-size: 14px;
     border-radius: 8px;
     padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* 保证块/段落之间的空白隔行 */
@@ -332,6 +335,13 @@
     color: #666;
 }
 
+.typo table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .typo table th {
     background: #fbfbfb;
 }
@@ -383,4 +393,62 @@
 
 .typo img[src*="#w10"] {
     width: 10%;
+}
+
+@media only screen and (max-width: 767px) {
+    .typo {
+        font-size: 15px;
+        line-height: 1.8;
+        text-align: left;
+    }
+
+    .typo p,
+    .typo ul,
+    .typo ol {
+        font-size: 15px;
+        line-height: 1.85;
+        text-align: left;
+    }
+
+    .typo h1 {
+        font-size: 1.7em;
+    }
+
+    .typo h2 {
+        font-size: 1.4em;
+    }
+
+    .typo h3 {
+        font-size: 1.2em;
+    }
+
+    .typo h4 {
+        font-size: 1.05em;
+    }
+
+    .typo h1, .typo h2, .typo h3, .typo h4, .typo h5, .typo h6 {
+        margin-top: 20px;
+        margin-bottom: 12px;
+        line-height: 1.4;
+    }
+
+    .typo pre {
+        font-size: 13px;
+        padding: 0.9rem 1rem;
+        border-radius: 10px;
+    }
+
+    .typo p code, .typo ul code, .typo ol code {
+        word-break: break-all;
+    }
+
+    .typo blockquote {
+        padding-left: 0.85em;
+        font-size: 14px;
+    }
+
+    .typo table th, .typo table td, .typo table caption {
+        padding: 0.55em 0.7em;
+        white-space: nowrap;
+    }
 }

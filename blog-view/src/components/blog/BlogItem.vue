@@ -41,10 +41,7 @@
 					<div
 						class="typo m-padded-tb-small line-numbers match-braces rainbow-braces"
 						v-if="!item.firstPicture"
-						v-lazy-container="{selector: 'img'}"
-						v-viewer
-						v-safe-html="item.description"
-					></div>
+					>{{ getBlogPreview(item) }}</div>
 					<!--阅读全文按钮-->
 					<div class="row m-padded-tb-small m-margin-top">
 						<a href="javascript:;" @click.prevent="toBlog(item)" class="color-btn">阅读全文</a>
@@ -64,6 +61,8 @@
 </template>
 
 <script>
+	import { createDescription } from '@/util/seo'
+
 	export default {
 		name: "BlogItem",
 		props: {
@@ -73,6 +72,12 @@
 			}
 		},
 		methods: {
+			getBlogPreview(blog) {
+				if (!blog || typeof blog !== 'object') {
+					return ''
+				}
+				return createDescription(blog.description || blog.content || '')
+			},
 			toBlog(blog) {
 				this.$store.dispatch('goBlogPage', blog)
 			}

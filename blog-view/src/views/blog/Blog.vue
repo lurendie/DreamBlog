@@ -53,14 +53,16 @@
 									<div style="font-size: 12px;text-align: center;margin-top: 5px;">一块是真爱</div>
 								</div>
 							</div>
-							<el-button slot="reference" class="ui orange inverted circular button m-text-500">赞赏</el-button>
+							<template #reference>
+								<el-button class="ui orange inverted circular button m-text-500">赞赏</el-button>
+							</template>
 						</el-popover>
 					</div>
 					<!--横线-->
 					<el-divider></el-divider>
 					<!--标签-->
 					<div class="row m-padded-tb-no">
-						<div class="column m-padding-left-no">
+						<div class="column m-padding-left-no blog-tag-list">
 							<router-link :to="`/tag/${tag.name}`" class="ui tag label m-text-500 m-margin-small" :class="tag.color" v-for="(tag,index) in blog.tags" :key="index">{{ tag.name }}</router-link>
 						</div>
 					</div>
@@ -156,7 +158,7 @@
 						this.blog = res.data
 						updateSeo({
 							title: this.blog.title,
-							description: createDescription(this.blog.description || this.blog.content),
+							description: createDescription(this.blog.description || ''),
 							keywords: this.createArticleKeywords(this.blog.tags),
 							path: `/blog/${id}`,
 							image: this.blog.firstPicture,
@@ -194,6 +196,65 @@
 <style scoped>
 	.el-divider {
 		margin: 1rem 0 !important;
+	}
+
+	@media screen and (max-width: 767px) {
+		.ui.padded.attached.segment {
+			padding-left: 1rem !important;
+			padding-right: 1rem !important;
+		}
+
+		.ui.grid.m-margin-lr {
+			margin-left: 0 !important;
+			margin-right: 0 !important;
+		}
+
+		.ui.grid.m-margin-lr > .row > h2.ui.header {
+			font-size: 1.65rem !important;
+			line-height: 1.35 !important;
+			margin-bottom: 0.2rem !important;
+		}
+
+		.ui.horizontal.link.list.m-center {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			row-gap: 8px;
+			column-gap: 12px;
+			font-size: 13px;
+		}
+
+		.ui.horizontal.link.list.m-center .item {
+			margin-left: 0 !important;
+			margin-right: 0 !important;
+		}
+
+		.typo.js-toc-content {
+			padding-top: 0.75rem !important;
+			padding-bottom: 0.75rem !important;
+		}
+
+		.ui.orange.large.ribbon.label {
+			margin-left: -1rem !important;
+			font-size: 0.95rem !important;
+		}
+
+		.blog-tag-list {
+			display: flex;
+			flex-wrap: wrap;
+			row-gap: 8px;
+		}
+
+		.blog-tag-list .ui.label {
+			margin: 0 0.45rem 0 0 !important;
+		}
+
+		.ui.attached.positive.message,
+		.ui.bottom.teal.attached.segment.threaded.comments {
+			padding-left: 1rem !important;
+			padding-right: 1rem !important;
+			font-size: 14px;
+		}
 	}
 
 	h1::before, h2::before, h3::before, h4::before, h5::before, h6::before {

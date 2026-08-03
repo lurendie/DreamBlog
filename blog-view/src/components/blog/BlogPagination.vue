@@ -10,7 +10,7 @@
 	import {mapState} from 'vuex'
 
 	export default {
-		name: "Pagination",
+		name: "BlogPagination",
 		props: {
 			getBlogList: {
 				type: Function,

@@ -23,14 +23,14 @@
 			<el-table-column width="170">
 				<template #header>
 					最后访问
-					<el-tooltip effect="dark" content="每日凌晨自动更新" placement="top"><i class="el-icon-question"></i></el-tooltip>
+					<el-tooltip effect="dark" content="每日凌晨自动更新" placement="top"><el-icon><QuestionFilled /></el-icon></el-tooltip>
 				</template>
 				<template v-slot="scope">{{ dateFormat(scope.row.lastTime) }}</template>
 			</el-table-column>
 			<el-table-column prop="pv" width="70">
 				<template #header>
 					PV
-					<el-tooltip effect="dark" content="访客总浏览量，每日凌晨自动更新" placement="top"><i class="el-icon-question"></i></el-tooltip>
+					<el-tooltip effect="dark" content="访客总浏览量，每日凌晨自动更新" placement="top"><el-icon><QuestionFilled /></el-icon></el-tooltip>
 				</template>
 			</el-table-column>
 			<el-table-column label="操作" width="200">
@@ -55,10 +55,15 @@
 	import Breadcrumb from "@/components/Breadcrumb";
 	import {getVisitorList, deleteVisitor} from "@/api/visitor";
 	import DateTimeRangePicker from "@/components/DateTimeRangePicker";
+	import { QuestionFilled } from '@element-plus/icons-vue'
 
 	export default {
 		name: "Visitor",
-		components: {DateTimeRangePicker, Breadcrumb},
+		components: {
+			Breadcrumb,
+			DateTimeRangePicker,
+			QuestionFilled,
+		},
 		data() {
 			return {
 				queryInfo: {

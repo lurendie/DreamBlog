@@ -9,10 +9,27 @@ import './assets/css/icon/iconfont.css'
 //typo.css
 import "./assets/css/typo.css";
 //semantic-ui
-import 'semantic-ui-css/semantic.min.css'
+import 'semantic-ui-css/components/reset.min.css'
+import 'semantic-ui-css/components/site.min.css'
+import 'semantic-ui-css/components/container.min.css'
+import 'semantic-ui-css/components/grid.min.css'
+import 'semantic-ui-css/components/segment.min.css'
+import 'semantic-ui-css/components/menu.min.css'
+import 'semantic-ui-css/components/header.min.css'
+import 'semantic-ui-css/components/list.min.css'
+import 'semantic-ui-css/components/item.min.css'
+import 'semantic-ui-css/components/label.min.css'
+import 'semantic-ui-css/components/divider.min.css'
+import 'semantic-ui-css/components/image.min.css'
+import 'semantic-ui-css/components/card.min.css'
+import 'semantic-ui-css/components/comment.min.css'
+import 'semantic-ui-css/components/message.min.css'
+import 'semantic-ui-css/components/button.min.css'
+import 'semantic-ui-css/components/icon.min.css'
 //element-plus
-import ElementPlus, { ElMessage, ElNotification } from 'element-plus'
-import 'element-plus/dist/index.css'
+import { ElMessage, ElNotification } from 'element-plus'
+import 'element-plus/es/components/message/style/css'
+import 'element-plus/es/components/notification/style/css'
 //moment
 import dateTimeFormatUtils from './util/dateTimeFormatUtils.js'
 //v-viewer
@@ -26,7 +43,6 @@ import loadingImage from './assets/img/loading.gif'
 
 const app = createApp(App)
 
-app.use(ElementPlus)
 app.use(VueViewer)
 app.use(lazyPlugin, {
 	preLoad: 1.2,

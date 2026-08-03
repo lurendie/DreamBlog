@@ -1,5 +1,5 @@
 <template>
-  <i v-if="icon && icon.includes('el-icon')" :class="[icon, 'sub-el-icon']" />
+  <component :is="icon" v-if="icon && icon.includes('el-icon')" class="sub-el-icon" />
   <svg-icon v-else-if="icon" :icon-class="icon" />
   <span v-if="title">{{ title }}</span>
 </template>
@@ -25,6 +25,9 @@ export default {
   color: currentColor;
   width: 1em !important;
   height: 1em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
 

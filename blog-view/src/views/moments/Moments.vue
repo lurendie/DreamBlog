@@ -216,4 +216,33 @@
 	.privacy {
 		background: repeating-linear-gradient(145deg, #f2f2f2, #f2f2f2 15px, #fff 0, #fff 30px) !important;
 	}
+
+	@media screen and (max-width: 767px) {
+		.ui.attached.segment.m-padding-bottom-large {
+			padding-left: 0.85rem !important;
+			padding-right: 0.85rem !important;
+		}
+
+		.moments {
+			margin-left: 0 !important;
+			padding-left: 16px !important;
+		}
+
+		.avatar {
+			margin-left: -38px;
+		}
+
+		.avatar img {
+			width: 34px;
+			height: 34px;
+		}
+
+		.moment {
+			margin-top: 20px;
+		}
+
+		.pagination {
+			margin-top: 1.6rem;
+		}
+	}
 </style>

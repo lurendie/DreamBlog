@@ -4,6 +4,7 @@ export default {
 		avatar: '',
 		name: '',
 		rollText: [],
+		favorites: [],
 	},
 	commentQuery: {
 		//用于后端判断该评论所在页面类型(文章、友链、关于我)

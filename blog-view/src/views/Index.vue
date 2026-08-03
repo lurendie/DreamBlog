@@ -17,9 +17,11 @@
 						</div>
 						<!--中间-->
 						<div class="ten wide column">
-							<keep-alive include="Home">
-								<router-view/>
-							</keep-alive>
+							<router-view v-slot="{ Component }">
+								<keep-alive include="Home">
+									<component :is="Component"/>
+								</keep-alive>
+							</router-view>
 						</div>
 						<!--右侧-->
 						<div class="three wide column m-mobile-hide">
@@ -110,18 +112,21 @@
 			}
 		},
 		methods: {
+			normalizeList(list) {
+				return Array.isArray(list) ? list.filter(item => item && typeof item === 'object') : []
+			},
 			saveClientSize() {
 				this.$store.commit(SAVE_CLIENT_SIZE, {clientHeight: document.body.clientHeight, clientWidth: document.body.clientWidth})
 			},
 			getSite() {
 				getSite().then(res => {
 					if (res.code === 200) {
-						this.siteInfo = res.data.siteInfo
-						this.badges = res.data.badges
-						this.newBlogList = res.data.newBlogList
-						this.categoryList = res.data.categoryList
-						this.tagList = res.data.tagList
-						this.randomBlogList = res.data.randomBlogList
+						this.siteInfo = res.data.siteInfo && typeof res.data.siteInfo === 'object' ? res.data.siteInfo : {}
+						this.badges = this.normalizeList(res.data.badges)
+						this.newBlogList = this.normalizeList(res.data.newBlogList)
+						this.categoryList = this.normalizeList(res.data.categoryList)
+						this.tagList = this.normalizeList(res.data.tagList)
+						this.randomBlogList = this.normalizeList(res.data.randomBlogList)
 						this.$store.commit(SAVE_SITE_INFO, this.siteInfo)
 						this.$store.commit(SAVE_INTRODUCTION, res.data.introduction)
 						if (this.$route.name !== 'blog') {
@@ -158,7 +163,7 @@
 	}
 
 	.main .ui.container {
-		width: 1400px !important;
+		width: min(1400px, calc(100vw - 24px)) !important;
 		margin-left: auto !important;
 		margin-right: auto !important;
 	}
@@ -173,5 +178,20 @@
 
 	.m-display-none {
 		display: none !important;
+	}
+
+	@media screen and (max-width: 767px) {
+		.main {
+			margin-top: 56px;
+		}
+
+		.m-padded-tb-big {
+			padding-top: 0.75rem !important;
+			padding-bottom: 2rem !important;
+		}
+
+		.main .ui.container {
+			width: calc(100vw - 16px) !important;
+		}
 	}
 </style>

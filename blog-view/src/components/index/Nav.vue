@@ -1,13 +1,41 @@
 <template>
-	<div ref="nav" class="ui fixed inverted stackable pointing menu" :class="{'transparent':$route.name==='home' && clientSize.clientWidth>768}">
+	<div
+		ref="nav"
+		class="ui fixed inverted stackable pointing menu"
+		:class="{
+			'transparent': $route.name==='home' && clientSize.clientWidth>768,
+			'mobile-open': !mobileHide && clientSize.clientWidth <= 767
+		}"
+	>
 		<div class="ui container">
 			<router-link to="/">
 				<h3 class="ui header item m-blue">{{ blogName }}</h3>
 			</router-link>
-			<router-link to="/home" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='home'}">
+			<router-link to="/home" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='home','m-mobile-menu-item': !mobileHide}">
 				<i class="home icon"></i>首页
 			</router-link>
-			<el-dropdown trigger="click" @command="categoryRoute">
+			<template v-if="isMobile">
+				<div
+					class="item m-mobile-menu-item category-wrapper-mobile category-inline-trigger"
+					:class="{'active': $route.name==='category', 'is-hidden': mobileHide}"
+					@click.stop="toggleMobileCategories"
+				>
+					<span class="category-inline-label">
+						<i class="idea icon"></i>分类
+					</span>
+					<i class="caret icon" :class="showMobileCategories ? 'up' : 'down'"></i>
+				</div>
+				<div v-if="!mobileHide && showMobileCategories" class="mobile-category-panel" @click.stop>
+					<a
+						v-for="(category,index) in categoryList"
+						:key="index"
+						class="mobile-category-item"
+						@click.prevent="categoryRoute(category.name)"
+					>{{ category.name }}</a>
+					<div v-if="!categoryList.length" class="mobile-category-empty">暂无分类</div>
+				</div>
+			</template>
+			<el-dropdown v-else class="category-wrapper-mobile" trigger="click" @command="categoryRoute">
 				<span class="el-dropdown-link item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='category'}">
 					<i class="idea icon"></i>分类<i class="caret down icon"></i>
 				</span>
@@ -17,19 +45,19 @@
 					</el-dropdown-menu>
 				</template>
 			</el-dropdown>
-			<router-link to="/archives" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='archives'}">
+			<router-link to="/archives" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='archives','m-mobile-menu-item': !mobileHide}">
 				<i class="clone icon"></i>归档
 			</router-link>
-			<router-link to="/moments" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='moments'}">
+			<router-link to="/moments" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='moments','m-mobile-menu-item': !mobileHide}">
 				<i class="comment alternate outline icon"></i>动态
 			</router-link>
-			<router-link to="/friends" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='friends'}">
+			<router-link to="/friends" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='friends','m-mobile-menu-item': !mobileHide}">
 				<i class="users icon"></i>友人帐
 			</router-link>
-			<router-link to="/about" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='about'}">
+			<router-link to="/about" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='about','m-mobile-menu-item': !mobileHide}">
 				<i class="info icon"></i>关于我
 			</router-link>
-				<el-autocomplete v-model="queryString" :fetch-suggestions="debounceQuery" placeholder="Search..."
+			<el-autocomplete v-model="queryString" :fetch-suggestions="debounceQuery" placeholder="Search..."
 			                 class="right item m-search" :class="{'m-mobile-hide': mobileHide}"
 			                 popper-class="m-search-item" @select="handleSelect">
 				<template #suffix>
@@ -66,24 +94,34 @@
 		data() {
 			return {
 				mobileHide: true,
+				showMobileCategories: false,
 				queryString: '',
 				queryResult: [],
-				timer: null
+				timer: null,
+				handleScroll: null,
+				handleDocumentClick: null,
 			}
 		},
 		computed: {
-			...mapState(['clientSize'])
+			...mapState(['clientSize']),
+			isMobile() {
+				return this.clientSize.clientWidth <= 767
+			}
 		},
 		watch: {
 			//路由改变时，收起导航栏
 			'$route.path'() {
 				this.mobileHide = true
+				this.showMobileCategories = false
 			}
 		},
 		mounted() {
 			//监听页面滚动位置，改变导航栏的显示
-			window.addEventListener('scroll', () => {
+			this.handleScroll = () => {
 				//首页且不是移动端
+				if (!this.$refs.nav) {
+					return
+				}
 				if (this.$route.name === 'home' && this.clientSize.clientWidth > 768) {
 					if (window.scrollY > this.clientSize.clientHeight / 2) {
 						this.$refs.nav.classList.remove('transparent')
@@ -91,22 +129,47 @@
 						this.$refs.nav.classList.add('transparent')
 					}
 				}
-			})
+			}
+			window.addEventListener('scroll', this.handleScroll)
 			//监听点击事件，收起导航菜单
-			document.addEventListener('click', (e) => {
+			this.handleDocumentClick = (e) => {
+				const nav = this.$refs.nav
+				if (!nav) {
+					return
+				}
 				//遍历冒泡
-				let flag = this.$refs.nav.contains(e.target)
+				let flag = nav.contains(e.target)
 				//如果导航栏是打开状态，且点击的元素不是Nav的子元素，则收起菜单
 				if (!this.mobileHide && !flag) {
 					this.mobileHide = true
+					this.showMobileCategories = false
 				}
-			})
+			}
+			document.addEventListener('click', this.handleDocumentClick)
+		},
+		beforeUnmount() {
+			if (this.handleScroll) {
+				window.removeEventListener('scroll', this.handleScroll)
+			}
+			if (this.handleDocumentClick) {
+				document.removeEventListener('click', this.handleDocumentClick)
+			}
 		},
 		methods: {
 			toggle() {
 				this.mobileHide = !this.mobileHide
+				if (this.mobileHide) {
+					this.showMobileCategories = false
+				}
+			},
+			toggleMobileCategories() {
+				if (this.isMobile) {
+					this.showMobileCategories = !this.showMobileCategories
+				}
 			},
 			categoryRoute(name) {
+				this.showMobileCategories = false
+				this.mobileHide = true
 				this.$router.push(`/category/${name}`)
 			},
 			debounceQuery(queryString, callback) {
@@ -147,17 +210,21 @@
 
 <style>
 	.ui.fixed.menu .container {
-		width: 1400px !important;
+		width: min(1400px, calc(100vw - 24px)) !important;
 		margin-left: auto !important;
 		margin-right: auto !important;
 	}
 
 	.ui.fixed.menu {
-		transition: .3s ease-out;
+		background: rgba(255, 255, 255, 0.96) !important;
+		border: 0 !important;
+		box-shadow: 0 10px 30px rgba(31, 41, 55, 0.08) !important;
+		transition: background .3s ease-out, box-shadow .3s ease-out, min-height .25s ease;
 	}
 
 	.ui.inverted.pointing.menu.transparent {
 		background: transparent !important;
+		box-shadow: none !important;
 	}
 
 	.ui.inverted.pointing.menu.transparent .active.item:after {
@@ -167,6 +234,25 @@
 
 	.ui.inverted.pointing.menu.transparent .active.item:hover:after {
 		background: transparent !important;
+	}
+
+	.ui.inverted.pointing.menu .item,
+	.ui.inverted.pointing.menu .item > i,
+	.ui.inverted.pointing.menu .el-dropdown-link {
+		color: #4b5563 !important;
+	}
+
+	.ui.inverted.pointing.menu .item:hover,
+	.ui.inverted.pointing.menu .el-dropdown-link:hover {
+		background: rgba(72, 219, 251, 0.08) !important;
+	}
+
+	.ui.inverted.pointing.menu .active.item {
+		background: rgba(72, 219, 251, 0.12) !important;
+	}
+
+	.ui.inverted.pointing.menu .active.item:after {
+		background: #48dbfb !important;
 	}
 
 	.el-dropdown-link {
@@ -180,16 +266,20 @@
 		margin: 7px 0 0 0 !important;
 		padding: 0 !important;
 		border: 0 !important;
-		background: #1b1c1d !important;
+		background: #ffffff !important;
+		box-shadow: 0 16px 40px rgba(63, 122, 186, 0.18) !important;
+		border-radius: 12px !important;
 	}
 
 	.el-dropdown-menu__item {
 		padding: 0 15px !important;
-		color: rgba(255, 255, 255, .9) !important;
+		color: #337ecc !important;
+		font-size: 16px !important;
+		line-height: 42px !important;
 	}
 
 	.el-dropdown-menu__item:hover {
-		background: rgba(255, 255, 255, .08) !important;
+		background: rgba(64, 158, 255, .10) !important;
 	}
 
 	.el-popper .popper__arrow::after {
@@ -201,19 +291,48 @@
 	}
 
 	.m-search {
+		display: flex !important;
+		align-items: center;
 		min-width: 220px;
+		max-width: 260px;
+		margin-left: auto !important;
 		padding: 0 !important;
+		background: transparent !important;
+		box-shadow: none !important;
+		border: 0 !important;
 	}
 
-	.m-search input {
-		color: rgba(255, 255, 255, .9);;
-		border: 0px !important;
-		background-color: inherit;
-		padding: .67857143em 2.1em .67857143em 1em;
+	.m-search .el-input {
+		display: flex;
+		align-items: center;
 	}
 
-	.m-search i {
-		color: rgba(255, 255, 255, .9) !important;
+	.m-search .el-input__wrapper {
+		padding: 0 12px !important;
+		background: transparent !important;
+		box-shadow: none !important;
+		border-radius: 0 !important;
+	}
+
+	.m-search .el-input__inner {
+		height: 38px !important;
+		color: #4b5563 !important;
+		background-color: transparent !important;
+	}
+
+	.m-search .el-input__inner::placeholder {
+		color: #9ca3af !important;
+	}
+
+	.m-search .el-input__suffix,
+	.m-search .el-input__suffix-inner {
+		display: flex;
+		align-items: center;
+	}
+
+	.m-search i,
+	.m-search .el-input__icon {
+		color: #6b7280 !important;
 	}
 
 	.m-search-item {
@@ -235,5 +354,184 @@
 		text-overflow: ellipsis;
 		font-size: 12px;
 		color: rgba(0, 0, 0, .70);
+	}
+
+	@media screen and (max-width: 767px) {
+		.ui.fixed.menu {
+			min-height: 56px;
+			padding: 0 !important;
+			backdrop-filter: blur(10px);
+			overflow: visible !important;
+			z-index: 1001 !important;
+		}
+
+		.ui.fixed.menu .container {
+			width: calc(100vw - 16px) !important;
+			display: flex !important;
+			flex-wrap: wrap;
+			align-items: center;
+			align-content: flex-start;
+			padding: 8px 0 0;
+			overflow: visible !important;
+		}
+
+		.ui.fixed.menu.mobile-open {
+			height: auto !important;
+			padding-bottom: 8px !important;
+			box-shadow: 0 18px 44px rgba(31, 41, 55, 0.14) !important;
+		}
+
+		.ui.fixed.menu .item,
+		.ui.fixed.menu .el-dropdown-link {
+			font-size: 15px !important;
+		}
+
+		.ui.fixed.menu .ui.header.item {
+			padding-left: 0.75rem !important;
+			padding-right: 0.75rem !important;
+			font-size: 22px !important;
+		}
+
+		.ui.fixed.menu .m-mobile-hide {
+			display: none !important;
+		}
+
+		.ui.fixed.menu .m-mobile-hide.item,
+		.ui.fixed.menu .m-mobile-hide.el-dropdown-link,
+		.ui.fixed.menu .category-wrapper-mobile,
+		.ui.fixed.menu .m-search.m-mobile-hide {
+			width: 100%;
+		}
+
+		.ui.fixed.menu .item.m-mobile-hide,
+		.ui.fixed.menu .el-dropdown-link.m-mobile-hide {
+			display: none !important;
+		}
+
+		.ui.fixed.menu .item:not(.m-mobile-hide),
+		.ui.fixed.menu .el-dropdown-link:not(.m-mobile-hide) {
+			padding-top: 0.9rem !important;
+			padding-bottom: 0.9rem !important;
+		}
+
+		.ui.fixed.menu .item.m-mobile-menu-item,
+		.ui.fixed.menu .category-wrapper-mobile {
+			display: flex !important;
+			align-items: center;
+			justify-content: space-between;
+			width: 100%;
+			margin: 0;
+			border-top: 1px solid rgba(15, 23, 42, 0.06);
+			background: rgba(255, 255, 255, 0.98);
+			animation: mobileMenuFadeIn .18s ease-out;
+		}
+
+		.ui.fixed.menu .category-wrapper-mobile.is-hidden {
+			display: none !important;
+		}
+
+		.ui.fixed.menu .category-wrapper-mobile .el-dropdown-link {
+			width: 100%;
+		}
+
+		.ui.fixed.menu .category-inline-trigger {
+			cursor: pointer;
+		}
+
+		.ui.fixed.menu .category-inline-label {
+			display: inline-flex;
+			align-items: center;
+		}
+
+		.mobile-category-panel {
+			display: block;
+			width: 100%;
+			padding: 0.35rem 0.25rem 0.75rem;
+			background: rgba(247, 250, 255, 0.98);
+			border-top: 1px solid rgba(15, 23, 42, 0.05);
+			animation: mobileMenuFadeIn .18s ease-out;
+			position: relative;
+			z-index: 2;
+		}
+
+		.mobile-category-item {
+			display: block;
+			padding: 0.78rem 0.9rem;
+			margin: 0.3rem 0;
+			border-radius: 12px;
+			color: #2563eb !important;
+			font-size: 16px;
+			font-weight: 500;
+			background: #ffffff;
+			box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+		}
+
+		.mobile-category-empty {
+			padding: 0.85rem 0.95rem;
+			border-radius: 12px;
+			color: #6b7280;
+			font-size: 14px;
+			background: rgba(255, 255, 255, 0.92);
+			box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+		}
+
+		.ui.fixed.menu .item.m-mobile-menu-item i,
+		.ui.fixed.menu .category-wrapper-mobile i {
+			margin-right: 8px !important;
+		}
+
+		.m-search {
+			min-width: 0;
+			max-width: 100%;
+			width: 100%;
+			margin-left: 0 !important;
+			padding: 0.35rem 0 0.75rem !important;
+			order: 20;
+			animation: mobileMenuFadeIn .22s ease-out;
+		}
+
+		.m-search .el-input__wrapper {
+			padding: 0 10px !important;
+			border-radius: 10px !important;
+			background: rgba(255, 255, 255, 0.9) !important;
+			box-shadow: inset 0 0 0 1px rgba(72, 219, 251, 0.18) !important;
+		}
+
+		.m-search .el-input__inner {
+			height: 40px !important;
+		}
+
+		.m-search-item {
+			min-width: 0 !important;
+			width: calc(100vw - 32px) !important;
+			max-width: calc(100vw - 32px) !important;
+		}
+
+		.m-right-top {
+			top: 6px;
+			right: 4px;
+			width: 42px !important;
+			height: 42px !important;
+			border-radius: 12px !important;
+			background: rgba(72, 219, 251, 0.14) !important;
+			color: #1f2937 !important;
+			box-shadow: none !important;
+		}
+
+		.m-right-top:hover,
+		.m-right-top:active {
+			background: rgba(72, 219, 251, 0.22) !important;
+		}
+
+		@keyframes mobileMenuFadeIn {
+			from {
+				opacity: 0;
+				transform: translateY(-6px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
 	}
 </style>

@@ -10,7 +10,7 @@
 	import {SET_COMMENT_QUERY_PAGE_NUM, SET_PARENT_COMMENT_ID} from "@/store/mutations-types";
 
 	export default {
-		name: "Pagination",
+		name: "CommentPagination",
 		computed: {
 			...mapState(['commentQuery', 'commentTotalPage'])
 		},
@@ -29,5 +29,11 @@
 	.pagination {
 		margin-top: 2em;
 		text-align: center;
+	}
+
+	@media screen and (max-width: 767px) {
+		.pagination {
+			margin-top: 1.25rem;
+		}
 	}
 </style>
