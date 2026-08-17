@@ -15,8 +15,8 @@
 	<link rel="icon" href="/favicon.ico">
 	<title>DreamBlog</title>
 	<link rel="stylesheet" href="/lib/css/prism.css">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aplayer/1.10.1/APlayer.min.css">
-	<link rel="canonical" href="http://localhost:8080/">
+	<link rel="stylesheet" href="/lib/css/APlayer.min.css" integrity="sha384-tLMkTWh2pfXNWGFlUS0w1TFtRG5xZ9lPWFOooj+vDDLIL+xBGQU/voDBY5XE2lVh" crossorigin="anonymous">
+	<!-- canonical 不再硬编码 localhost，改为在 main.js 中根据构建期变量 VITE_SITE_URL 注入，避免上线后指向错误的本地地址 -->
 </head>
 <body>
 	<noscript>
@@ -24,12 +24,12 @@
 	</noscript>
 	<div id="app"></div>
 	<script src="/lib/js/prism.js" data-manual></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/aplayer/1.10.1/APlayer.min.js"></script>
+	<script src="/lib/js/APlayer.min.js" integrity="sha384-gdGYZwHnfJM54evoZhpO0s6ZF5BQiybkiyW7VXr+h5UfruuRL/aORyw+5+HZoU6e" crossorigin="anonymous"></script>
 	<script>
 		var meting_api='https://api.naccl.top/meting/api?server=:server&type=:type&id=:id&auth=:auth&r=:r';
 	</script>
 	<script src="/lib/js/Meting.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.6.0/tocbot.min.js"></script>
+	<script src="/lib/js/tocbot.min.js" integrity="sha384-T1Gf4Z/muD8k8yM2MyuI0A/ixPuqQQ3FE4rVdpUCex2cfLgeLRpZAuSdJ1VUTz7h" crossorigin="anonymous"></script>
 	<script type="module" src="/src/main.js"></script>
 </body>
 </html>

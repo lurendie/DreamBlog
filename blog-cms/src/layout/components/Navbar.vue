@@ -32,6 +32,7 @@
 	import Hamburger from '@/components/Hamburger'
 	import SvgIcon from '@/components/SvgIcon'
 	import {clearLoginState, getStoredUser} from '@/util/storage'
+	import {logout as logoutApi} from '@/api/login'
 
 	export default {
 		components: {
@@ -64,9 +65,12 @@
 				}
 			},
 			logout() {
-				clearLoginState()
-				this.$router.push('/login')
-				this.msgSuccess('退出成功')
+				// 先调用后端注销接口吊销 Redis 会话，再清理本地登录态
+				logoutApi().catch(() => {}).finally(() => {
+					clearLoginState()
+					this.$router.push('/login')
+					this.msgSuccess('退出成功')
+				})
 			}
 		}
 	}

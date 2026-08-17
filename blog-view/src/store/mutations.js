@@ -15,6 +15,7 @@ import {
 	SET_IS_BLOG_TO_HOME,
 	SAVE_CLIENT_SIZE,
 } from "./mutations-types";
+import {safeParse} from "@/util/storage";
 
 export default {
 	[SAVE_SITE_INFO](state, siteInfo) {
@@ -53,8 +54,8 @@ export default {
 		state.commentForm.notice = true
 	},
 	[RESTORE_COMMENT_FORM](state) {
-		const lastForm = JSON.parse(window.localStorage.getItem('commentForm'))
-		if (lastForm) {
+		const lastForm = safeParse(window.localStorage.getItem('commentForm'))
+		if (lastForm && typeof lastForm === 'object') {
 			state.commentForm.nickname = lastForm.nickname
 			state.commentForm.email = lastForm.email
 			state.commentForm.website = lastForm.website

@@ -34,13 +34,14 @@
 <script>
 	import {getMomentListByPageNum, likeMoment} from "@/api/moment";
 	import { updateSeo } from '@/util/seo'
+	import {safeParse} from '@/util/storage'
 
 	export default {
 		name: "Moments",
 		data() {
 			return {
-				//用localStorage本地存储已点赞的动态id数组
-				likeMomentIds: JSON.parse(window.localStorage.getItem('likeMomentIds') || '[]'),
+				//用localStorage本地存储已点赞的动态id数组（safeParse 防御损坏/非JSON内容导致页面崩溃）
+				likeMomentIds: safeParse(window.localStorage.getItem('likeMomentIds'), null) || [],
 				momentList: [],
 				pageNum: 1,
 				totalPage: 0

@@ -20,6 +20,7 @@
 	import {mapState} from "vuex";
 	import {SET_BLOG_PASSWORD_DIALOG_VISIBLE} from "../../store/mutations-types";
 	import {checkBlogPassword} from "@/api/blog";
+	import {setBlogVerified} from "@/util/storage";
 
 	export default {
 		name: "BlogPasswordDialog",
@@ -55,7 +56,9 @@
 						checkBlogPassword(this.blogPasswordForm).then(res => {
 							if (res.code === 200) {
 								this.msgSuccess(res.msg)
-								window.localStorage.setItem(`blog${this.blogPasswordForm.blogId}`, res.data)
+								//res.data 可能返回 token 字符串，也可能返回整个文章对象；只在字符串时才把 token 存入 localStorage，
+								//否则仅存"已验证"布尔标记，避免把大对象写入 localStorage
+								setBlogVerified(this.blogPasswordForm.blogId, res.data)
 								this.$router.push(`/blog/${this.blogPasswordForm.blogId}`)
 								this.blogPasswordDialogClosed()
 							} else {

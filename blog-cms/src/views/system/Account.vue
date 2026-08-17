@@ -21,6 +21,7 @@
 
 <script>
 import {changeAccount} from "@/api/account";
+import {logout as logoutApi} from "@/api/login";
 import {clearLoginState, getStoredUser} from "@/util/storage";
 
 export default {
@@ -51,8 +52,11 @@ export default {
 			})
 		},
 		logout() {
-			clearLoginState()
-			this.$router.push('/login')
+			// 先调用后端注销接口，吊销 Redis 会话，防止旧 token 在失效前仍可用
+			logoutApi().catch(() => {}).finally(() => {
+				clearLoginState()
+				this.$router.push('/login')
+			})
 		}
 	}
 }

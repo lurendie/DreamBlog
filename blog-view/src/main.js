@@ -43,6 +43,21 @@ import loadingImage from './assets/img/loading.gif'
 
 const app = createApp(App)
 
+//set canonical link：使用构建期变量注入站点地址，避免 index.html 中硬编码 localhost
+;(function injectCanonical() {
+	const siteUrl = import.meta.env.VITE_SITE_URL || import.meta.env.VUE_APP_SITE_URL
+	if (!siteUrl) {
+		return
+	}
+	let canonical = document.querySelector('link[rel="canonical"]')
+	if (!canonical) {
+		canonical = document.createElement('link')
+		canonical.rel = 'canonical'
+		document.head.appendChild(canonical)
+	}
+	canonical.setAttribute('href', siteUrl)
+})()
+
 app.use(VueViewer)
 app.use(lazyPlugin, {
 	preLoad: 1.2,

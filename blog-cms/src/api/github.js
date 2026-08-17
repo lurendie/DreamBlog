@@ -6,6 +6,9 @@ import {
 	uploadGithubFile
 } from '@/api/pictureHosting'
 
+//注意：name 参数为保留参数，当前实现未使用（仓库名 repos 已包含所需信息），
+//保留签名以避免破坏调用方（如 GithubManage.vue 传入 name 的调用方式）。
+
 export function getUserInfo(token) {
 	return getGithubUser(token)
 }

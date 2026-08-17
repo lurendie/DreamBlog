@@ -6,7 +6,7 @@
 			<el-button class="m-small" size="mini" type="primary" @click="$store.commit(SET_PARENT_COMMENT_ID, -1)" v-show="parentCommentId!==-1">取消回复</el-button>
 		</h3>
 		<el-form :inline="true" :model="commentForm" :rules="formRules" ref="formRef" size="small">
-			<el-input :class="'textarea'" type="textarea" :rows="5" v-model="commentForm.content" placeholder="评论千万条，友善第一条"
+			<el-input ref="contentTextarea" :class="'textarea'" type="textarea" :rows="5" v-model="commentForm.content" placeholder="评论千万条，友善第一条"
 			          maxlength="250" show-word-limit :validate-event="false"></el-input>
 			<div class="el-form-item el-form-item--small emoji">
 				<img src="https://cdn.naccl.top/blog/img/paopao/1.png" @click="showEmojiBox">
@@ -76,16 +76,25 @@
 
 <script>
 	import {mapState} from 'vuex'
-	import {checkEmail, checkUrl} from "@/common/reg";
+	import {checkEmail} from "@/common/reg";
 	import {SET_PARENT_COMMENT_ID} from "@/store/mutations-types";
+	import {safeExternalUrl} from '@/util/url';
+	import {getBlogToken} from '@/util/storage';
 	import tvMapper from '@/plugins/tvMapper.json'
 	import aruMapper from '@/plugins/aruMapper.json'
 	import paopaoMapper from '@/plugins/paopaoMapper.json'
 	import { Message, Position, User } from '@element-plus/icons-vue'
 
+	/**
+	 * website 字段校验：必须先通过 safeExternalUrl 的 scheme 白名单（仅 http/https），
+	 * 存储型 XSS 防御：禁止 javascript:、data:、vbscript: 等危险 scheme 进入评论 website。
+	 */
 	const validateWebsite = (rule, value, callback) => {
 		if (value) {
-			return checkUrl(rule, value, callback)
+			if (safeExternalUrl(value) === null) {
+				return callback(new Error('请输入合法的 URL（仅支持 http/https）'))
+			}
+			return callback()
 		}
 		callback()
 	}
@@ -121,7 +130,6 @@
 				tvMapper: [],
 				aruMapper: [],
 				paopaoMapper: [],
-				textarea: null,
 				start: 0,
 				end: 0,
 			}
@@ -131,15 +139,24 @@
 			this.aruMapper = aruMapper
 			this.paopaoMapper = paopaoMapper
 		},
-		mounted() {
-			this.textarea = document.querySelector('.el-form textarea')
-		},
 		methods: {
+			//获取本组件内的 textarea DOM（el-input type="textarea" 渲染出的内部 textarea）
+			getTextarea() {
+				const el = this.$refs.contentTextarea
+				if (!el) {
+					return null
+				}
+				return el.$el ? el.$el.querySelector('textarea') : el.querySelector && el.querySelector('textarea')
+			},
 			showEmojiBox() {
-				this.start = this.textarea.selectionStart
-				this.end = this.textarea.selectionEnd
-				this.textarea.focus()
-				this.textarea.setSelectionRange(this.start, this.end)
+				const textarea = this.getTextarea()
+				if (!textarea) {
+					return
+				}
+				this.start = textarea.selectionStart
+				this.end = textarea.selectionEnd
+				textarea.focus()
+				textarea.setSelectionRange(this.start, this.end)
 				this.emojiShow = !this.emojiShow
 			},
 			insertEmoji(name) {
@@ -147,15 +164,19 @@
 				this.commentForm.content = str.substring(0, this.start) + name + str.substring(this.end)
 				this.start += name.length
 				this.end = this.start
-				this.textarea.focus()
+				this.getTextarea() && this.getTextarea().focus()
 				this.$nextTick(() => {
-					this.textarea.setSelectionRange(this.start, this.end)
+					const textarea = this.getTextarea()
+					textarea && textarea.setSelectionRange(this.start, this.end)
 				})
 			},
 			hideEmojiBox() {
 				this.emojiShow = false
-				this.textarea.focus()
-				this.textarea.setSelectionRange(this.start, this.end)
+				const textarea = this.getTextarea()
+				if (textarea) {
+					textarea.focus()
+					textarea.setSelectionRange(this.start, this.end)
+				}
 			},
 			postForm() {
 				const adminToken = window.localStorage.getItem('adminToken')
@@ -171,7 +192,7 @@
 						return this.$store.dispatch('submitCommentForm', adminToken)
 					}
 				}
-				const blogToken = window.localStorage.getItem(`blog${this.commentQuery.blogId}`)
+				const blogToken = getBlogToken(this.commentQuery.blogId)
 				this.$refs.formRef.validate(valid => {
 					if (!valid || this.commentForm.content === '' || this.commentForm.content.length > 250) {
 						this.$notify({

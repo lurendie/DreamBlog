@@ -10,12 +10,12 @@
     "build": "vite build"
   },
   "dependencies": {
-    "axios": "0.24.0",
+    "axios": "^1.7.9",
+    "dayjs": "^1.11.13",
     "echarts": "4.9.0",
     "element-plus": "^2.14.2",
-    "lodash": "4.17.19",
+    "lodash": "^4.17.21",
     "md-editor-v3": "^6.5.1",
-    "moment": "2.27.0",
     "normalize.css": "7.0.0",
     "nprogress": "0.2.0",
     "v-viewer": "^3.0.23",

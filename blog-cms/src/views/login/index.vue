@@ -83,12 +83,21 @@
 					if (valid) {
 						this.loading = true
 						login(this.loginForm).then(res => {
-							this.msgSuccess(res.msg);
-							window.localStorage.setItem('token', res.data.token)
-							window.localStorage.setItem('user', JSON.stringify(res.data.user))
-							this.$router.push('/')
+							//res.data && res.data.token 判空，防止后端未返回 token 时报错
+							if (res.code === 200 && res.data && res.data.token) {
+								this.msgSuccess(res.msg)
+								window.localStorage.setItem('token', res.data.token)
+								window.localStorage.setItem('user', JSON.stringify(res.data.user))
+								this.$router.push('/')
+							} else {
+								this.msgError((res && res.msg) || '登录失败')
+							}
+						}).catch(() => {
+							this.msgError('登录失败，请重试')
+						}).finally(() => {
+							//无论成功失败都复位 loading，避免按钮一直处于加载态
+							this.loading = false
 						})
-						this.loading = false
 					}
 				})
 			}

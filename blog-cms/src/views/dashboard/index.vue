@@ -383,7 +383,8 @@
 					//渲染访客地图数据
 					let mapData = this.convertData(res.data.cityVisitor)
 					this.mapOption.series[1].data = mapData
-					this.mapOption.series[2].data = mapData.splice(0, 5)
+					//先拷贝再截取，避免 splice 破坏 series[1].data 对原数组的引用
+					this.mapOption.series[2].data = [...mapData].splice(0, 5)
 					this.initMapEcharts()
 					//渲染一周访问量数据
 					this.visitRecordOption.xAxis.data = res.data.visitRecord.date

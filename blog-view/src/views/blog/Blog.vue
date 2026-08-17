@@ -94,6 +94,7 @@
 	import {mapState} from "vuex";
 	import {SET_FOCUS_MODE, SET_IS_BLOG_RENDER_COMPLETE} from '@/store/mutations-types';
 	import { createDescription, updateSeo } from '@/util/seo'
+	import {getBlogToken} from '@/util/storage'
 
 	export default {
 		name: "Blog",
@@ -122,7 +123,9 @@
 			this.$store.commit(SET_FOCUS_MODE, false)
 			// 从文章页面路由到其它页面时，销毁当前组件的同时，要销毁tocbot实例
 			// 否则tocbot一直在监听页面滚动事件，而文章页面的锚点已经不存在了，会报"Uncaught TypeError: Cannot read property 'className' of null"
-			tocbot.destroy()
+			if (window.tocbot && typeof window.tocbot.destroy === 'function') {
+				window.tocbot.destroy()
+			}
 			next()
 		},
 		beforeRouteUpdate(to, from, next) {
@@ -149,7 +152,8 @@
 		methods: {
 			getBlog(id = this.blogId) {
 				//密码保护的文章，需要发送密码验证通过后保存在localStorage的Token
-				const blogToken = window.localStorage.getItem(`blog${id}`)
+				//getBlogToken 仅在存储值是真实 token 字符串时才返回；若只存了"已验证"标记则返回 ''
+				const blogToken = getBlogToken(id)
 				//如果有则发送博主身份Token
 				const adminToken = window.localStorage.getItem('adminToken')
 				const token = adminToken ? adminToken : (blogToken ? blogToken : '')

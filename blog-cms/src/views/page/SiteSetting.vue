@@ -111,15 +111,20 @@
 			}
 		},
 		methods: {
-			getData() {
-				getSiteSettingData().then(res => {
-					this.typeMap = res.data
-					this.ensureSeoSettings()
-					res.data.type3.forEach(item => {
-						item.value = JSON.parse(item.value)
+				getData() {
+					getSiteSettingData().then(res => {
+						this.typeMap = res.data
+						this.ensureSeoSettings()
+						res.data.type3.forEach(item => {
+							//防御 item.value 非合法 JSON 时 JSON.parse 抛异常
+							try {
+								item.value = JSON.parse(item.value)
+							} catch (e) {
+								item.value = item.value
+							}
+						})
 					})
-				})
-			},
+				},
 			createSetting(nameEn, nameZh) {
 				return {
 					key: nameEn,

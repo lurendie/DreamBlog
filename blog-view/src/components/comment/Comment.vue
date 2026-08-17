@@ -10,7 +10,7 @@
 				<img :src="comment.avatar">
 			</a>
 			<div class="content">
-				<a class="nickname" :href="comment.website!=''&&comment.website!=null?comment.website:null" target="_blank" rel="external nofollow noopener">{{ comment.nickname }}</a>
+				<a class="nickname" :href="safeExternalUrl(comment.website)" target="_blank" rel="external nofollow noopener">{{ comment.nickname }}</a>
 				<div class="ui black left pointing label" v-if="comment.adminComment">{{ $store.state.siteInfo.commentAdminFlag }}</div>
 				<div class="metadata">
 							<strong class="date">{{ dateFormat(comment.createTime, 'YYYY-MM-DD HH:mm') }}</strong>
@@ -25,7 +25,7 @@
 						<img :src="reply.avatar">
 					</a>
 					<div class="content">
-						<a class="nickname" :href="reply.website!=''&&reply.website!=null?reply.website:null" target="_blank" rel="external nofollow noopener">{{ reply.nickname }}</a>
+						<a class="nickname" :href="safeExternalUrl(reply.website)" target="_blank" rel="external nofollow noopener">{{ reply.nickname }}</a>
 						<div class="ui black left pointing label" v-if="reply.adminComment">{{ $store.state.siteInfo.commentAdminFlag }}</div>
 						<div class="metadata">
 							<strong class="date">{{ dateFormat(reply.createTime, 'YYYY-MM-DD HH:mm') }}</strong>
@@ -49,6 +49,7 @@
 	import {mapState} from 'vuex'
 	import CommentForm from "./CommentForm.vue";
 	import {SET_PARENT_COMMENT_ID} from "@/store/mutations-types";
+	import {safeExternalUrl} from "@/util/url";
 
 	export default {
 		name: "Comment",
@@ -57,6 +58,7 @@
 			...mapState(['allComment', 'closeComment', 'comments', 'parentCommentId'])
 		},
 		methods: {
+			safeExternalUrl,
 			setReply(id) {
 				this.$store.commit(SET_PARENT_COMMENT_ID, id)
 			}

@@ -60,7 +60,7 @@
 	import {isImgExt} from "@/util/validate";
 	import {randomUUID} from "@/util/uuid";
 	import {copy} from "@/util/copy";
-	import {taskQueue} from "@/util/task-queue";
+	import {taskQueue, clearTaskQueue} from "@/util/task-queue";
 	import {getConfigs} from "@/api/pictureHosting";
 
 export default {
@@ -123,6 +123,10 @@ export default {
 					this.$router.push('/pictureHosting/setting')
 				}
 			})
+		},
+		beforeUnmount() {
+			//组件卸载时清理上传任务队列，避免定时器继续执行已经离开页面的上传回调
+			clearTaskQueue()
 		},
 		methods: {
 			//获取用户仓库

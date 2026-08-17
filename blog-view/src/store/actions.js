@@ -13,11 +13,12 @@ import tvMapper from '@/plugins/tvMapper.json'
 import aruMapper from '@/plugins/aruMapper.json'
 import paopaoMapper from '@/plugins/paopaoMapper.json'
 import { escapeHtml } from '@/util/sanitizeHtml'
+import {getBlogToken, isBlogVerified} from '@/util/storage'
 
 export default {
 	getCommentList({commit, rootState}) {
 		//密码保护的文章，需要发送密码验证通过后保存在localStorage的Token
-		const blogToken = window.localStorage.getItem(`blog${rootState.commentQuery.blogId}`)
+		const blogToken = getBlogToken(rootState.commentQuery.blogId)
 		//如果有则发送博主身份Token
 		const adminToken = window.localStorage.getItem('adminToken')
 		const token = adminToken ? adminToken : (blogToken ? blogToken : '')
@@ -94,9 +95,9 @@ export default {
 	goBlogPage({commit}, blog) {
 		if (blog.privacy) {
 			const adminToken = window.localStorage.getItem('adminToken')
-			const blogToken = window.localStorage.getItem(`blog${blog.id}`)
-			//对于密码保护文章，博主身份Token和经过密码验证后的Token都可以跳转路由，再由后端验证Token有效性
-			if (adminToken || blogToken) {
+			const blogVerified = isBlogVerified(blog.id)
+			//对于密码保护文章，博主身份Token和经过密码验证后的标记都可以跳转路由，再由后端验证Token有效性
+			if (adminToken || blogVerified) {
 				return router.push(`/blog/${blog.id}`)
 			}
 			commit(SET_BLOG_PASSWORD_FORM, {blogId: blog.id, password: ''})
