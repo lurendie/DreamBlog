@@ -98,8 +98,25 @@ impl HeadingAdapter for CustomHeadingAdapter {
 fn preprocess_markdown(markdown: String) -> String {
     let heimu_re = Regex::new(r"(?s)@@(.*?)@@").unwrap();
     let cover_re = Regex::new(r"(?s)%%(.*?)%%").unwrap();
-    let markdown = heimu_re.replace_all(&markdown, r#"<span class="m-text-heimu">$1</span>"#);
-    cover_re
-        .replace_all(&markdown, r#"<span class="m-text-cover">$1</span>"#)
-        .into_owned()
+    let mut in_code_block = false;
+    let mut result = Vec::with_capacity(markdown.lines().count());
+    // 逐行处理：围栏外才应用 @@/%% 替换，代码块内容原样保留
+    for line in markdown.lines() {
+        // 行首含 ``` 或 ~~~ 即切换围栏状态（围栏可带语言标记，行首匹配即可）
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("```") || trimmed.starts_with("~~~") {
+            in_code_block = !in_code_block;
+            result.push(line.to_string());
+            continue;
+        }
+        if in_code_block {
+            result.push(line.to_string());
+            continue;
+        }
+        let replaced = heimu_re.replace_all(line, r#"<span class="m-text-heimu">$1</span>"#);
+        let replaced = cover_re.replace_all(&replaced, r#"<span class="m-text-cover">$1</span>"#);
+        result.push(replaced.into_owned());
+    }
+    // 使用 \n 连接，保持与原输入行结构一致（末尾不额外加分号）
+    result.join("\n")
 }

@@ -228,7 +228,7 @@ impl EmailServer {
         email_type: EmailType,
         recipient_email: &str,
     ) -> Result<(), EmailServerError> {
-        log::info!("发送邮件给: {}", recipient_email);
+        tracing::info!("发送邮件给: {}", recipient_email);
         let email_config = CONFIG.get_email_config();
         let email_message_build = Message::builder()
             .from(email_config.username.as_str().parse()?)
@@ -253,8 +253,10 @@ impl EmailServer {
             Ok(smtp) => smtp.port(email_config.port).credentials(creds).build(),
             Err(e) => return Err(EmailServerError::Custom(e.to_string())),
         };
-        match mailer.send(&email_message) {
-            Ok(_) => Ok(()),
+        // 阻塞式 SMTP 发送放入阻塞线程池，避免占用 async 执行器
+        match tokio::task::spawn_blocking(move || mailer.send(&email_message)).await {
+            Ok(Ok(_)) => Ok(()),
+            Ok(Err(e)) => return Err(EmailServerError::Custom(e.to_string())),
             Err(e) => return Err(EmailServerError::Custom(e.to_string())),
         }
     }

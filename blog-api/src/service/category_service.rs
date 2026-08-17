@@ -31,7 +31,7 @@ impl CategoryService {
         if let Some(result) = result {
             let arr = match result {
                 Value::Array(arr) => {
-                    log::info!(
+                    tracing::info!(
                         "reids KEY:{} 获取缓存数据成功",
                         RedisKeyConstant::CATEGORY_NAME_LIST.to_string()
                     );
@@ -60,7 +60,7 @@ impl CategoryService {
             )
             .await
         {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::CATEGORY_NAME_LIST
             );
@@ -83,7 +83,7 @@ impl CategoryService {
                     let count = match item.find_related(blog::Entity).count(db).await {
                         Ok(count) => count,
                         Err(e) => {
-                            log::error!("查询分类文章数失败:{}", e);
+                            tracing::error!("查询分类文章数失败:{}", e);
                             0
                         }
                     };
@@ -92,7 +92,7 @@ impl CategoryService {
                 }
             }
             Err(e) => {
-                log::error!("查询分类失败:{}", e);
+                tracing::error!("查询分类失败:{}", e);
             }
         }
         map.insert(value!("legend"), value!(legend));

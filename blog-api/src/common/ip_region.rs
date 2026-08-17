@@ -21,11 +21,28 @@ fn default_detect_xdb_file() -> Result<String, Box<dyn Error>> {
     }
     Err("default filepath not find the xdb file, so you must set xdb_filepath".into())
 }
-static CACHE: LazyLock<Vec<u8>> = LazyLock::new(|| {
-    let mut file = File::open(default_detect_xdb_file().unwrap()).unwrap();
+/// 加载失败的场合不 panic，而是缓存 None；调用方通过 `unwrap_or_default()` 得到空字符串
+static CACHE: LazyLock<Option<Vec<u8>>> = LazyLock::new(|| {
+    let filepath = match default_detect_xdb_file() {
+        Ok(filepath) => filepath,
+        Err(e) => {
+            tracing::warn!("ip2region 数据库未加载: {e}");
+            return None;
+        }
+    };
+    let mut file = match File::open(&filepath) {
+        Ok(file) => file,
+        Err(e) => {
+            tracing::warn!("ip2region 数据库未加载: {e}");
+            return None;
+        }
+    };
     let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer).unwrap();
-    buffer
+    if let Err(e) = file.read_to_end(&mut buffer) {
+        tracing::warn!("ip2region 数据库未加载: {e}");
+        return None;
+    }
+    Some(buffer)
 });
 impl IpRegion {
     const HEADER_INFO_LENGTH: usize = 256;
@@ -41,6 +58,9 @@ impl IpRegion {
     where
         T: ToUIntIP + Display,
     {
+        let Some(cache) = CACHE.as_ref() else {
+            return Err("ip2region 数据库未加载".into());
+        };
         let ip = ip.to_u32_ip()?;
         let il0 = ((ip >> 24) & 0xFF) as usize;
         let il1 = ((ip >> 16) & 0xFF) as usize;
@@ -55,7 +75,7 @@ impl IpRegion {
         while left <= right {
             let mid = (left + right) >> 1;
             let offset = start_ptr + mid * Self::SEGMENT_INDEX_SIZE;
-            let buffer_ip_value = &CACHE[offset..offset + Self::SEGMENT_INDEX_SIZE];
+            let buffer_ip_value = &cache[offset..offset + Self::SEGMENT_INDEX_SIZE];
             let start_ip = Self::get_block_by_size(buffer_ip_value, 0, 4);
             if ip < (start_ip as u32) {
                 right = mid - 1;
@@ -65,7 +85,7 @@ impl IpRegion {
                 let data_length = Self::get_block_by_size(buffer_ip_value, 8, 2);
                 let data_offset = Self::get_block_by_size(buffer_ip_value, 10, 4);
                 let result =
-                    String::from_utf8(CACHE[data_offset..(data_offset + data_length)].to_vec());
+                    String::from_utf8(cache[data_offset..(data_offset + data_length)].to_vec());
                 return Ok(result?);
             }
         }
@@ -75,7 +95,12 @@ impl IpRegion {
     /// it will check ../data/ip2region.xdb, ../../data/ip2region.xdb, ../../../data/ip2region.xdb
 
     pub fn get_vector_index_cache() -> &'static [u8] {
-        &CACHE[Self::HEADER_INFO_LENGTH..(Self::HEADER_INFO_LENGTH + Self::VECTOR_INDEX_LENGTH)]
+        static EMPTY: &[u8] = &[0u8; 0];
+        match CACHE.as_ref() {
+            Some(cache) => &cache
+                [Self::HEADER_INFO_LENGTH..(Self::HEADER_INFO_LENGTH + Self::VECTOR_INDEX_LENGTH)],
+            None => EMPTY,
+        }
     }
 
     pub fn get_block_by_size(bytes: &[u8], offset: usize, length: usize) -> usize {
@@ -108,7 +133,7 @@ impl IpRegion {
                 let ips: Vec<&str> = x_forwarded_for_str.split(',').collect();
                 if !ips.is_empty() {
                     let ip = ips[0].trim();
-                    if !ip.is_empty() {
+                    if valid_ip_like(ip) {
                         return ip.to_string();
                     }
                 }
@@ -119,7 +144,7 @@ impl IpRegion {
         if let Some(x_real_ip) = headers.get("X-Real-IP") {
             if let Ok(x_real_ip_str) = x_real_ip.to_str() {
                 let ip = x_real_ip_str.trim();
-                if !ip.is_empty() {
+                if valid_ip_like(ip) {
                     return ip.to_string();
                 }
             }
@@ -129,7 +154,7 @@ impl IpRegion {
         if let Some(proxy_client_ip) = headers.get("Proxy-Client-IP") {
             if let Ok(proxy_client_ip_str) = proxy_client_ip.to_str() {
                 let ip = proxy_client_ip_str.trim();
-                if !ip.is_empty() {
+                if valid_ip_like(ip) {
                     return ip.to_string();
                 }
             }
@@ -139,7 +164,7 @@ impl IpRegion {
         if let Some(wl_proxy_client_ip) = headers.get("WL-Proxy-Client-IP") {
             if let Ok(wl_proxy_client_ip_str) = wl_proxy_client_ip.to_str() {
                 let ip = wl_proxy_client_ip_str.trim();
-                if !ip.is_empty() {
+                if valid_ip_like(ip) {
                     return ip.to_string();
                 }
             }
@@ -151,6 +176,25 @@ impl IpRegion {
         //"unknown".to_string()
         return conn_info.peer_addr().unwrap_or("unknown").to_string();
     }
+}
+
+/// 校验候选取值是否为合法的 IP 字面量（支持 [v6]:port 与 v4:port 形式），
+/// 防止伪造转发头携带任意非 IP 值污染日志/统计。
+fn valid_ip_like(s: &str) -> bool {
+    if s.trim().is_empty() {
+        return false;
+    }
+    if let Ok(_) = s.parse::<std::net::IpAddr>() {
+        return true;
+    }
+    // 形式 [v6]:port 或 v4:port：剥离最后一个冒号后的端口再解析
+    if let Some(colon_pos) = s.rfind(':') {
+        let candidate = s[..colon_pos].trim_start_matches('[').trim_end_matches(']');
+        if candidate.parse::<std::net::IpAddr>().is_ok() {
+            return true;
+        }
+    }
+    false
 }
 
 #[cfg(test)]

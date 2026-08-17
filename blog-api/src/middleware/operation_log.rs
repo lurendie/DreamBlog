@@ -94,6 +94,13 @@ where
         Box::pin(async move {
             let start_time = Local::now().naive_local();
             let should_log_request = should_log(&method, &uri);
+            // 记录 Content-Type 中的 multipart 标志，用于脱敏时跳过 body 记录
+            let is_multipart = req
+                .headers()
+                .get("Content-Type")
+                .and_then(|v| v.to_str().ok())
+                .map(|v| v.to_lowercase().contains("multipart/"))
+                .unwrap_or(false);
             let body_bytes = if should_log_request {
                 read_request_body(&mut req).await
             } else {
@@ -115,7 +122,7 @@ where
                     let user_agent = UserAgent::parse_user_agent(&user_agent_str).await;
                     let ip_source = IpRegion::search_by_ip::<&str>(&ip).unwrap_or_default();
 
-                    let param = build_param(&query_string, &body_bytes);
+                    let param = build_param(&query_string, &body_bytes, is_multipart);
                     let description = resolve_description(&method, &uri);
 
                     let db = app_state.get_mysql_pool();
@@ -135,7 +142,7 @@ where
                         Some(user_agent.user_agent),
                     )
                     .await
-                    .unwrap_or_else(|e| log::error!("保存操作日志失败{e}"));
+                    .unwrap_or_else(|e| tracing::error!("保存操作日志失败{e}"));
                 }
             }
 
@@ -175,24 +182,66 @@ fn should_log(method: &Method, uri: &str) -> bool {
     true
 }
 
-fn build_param(query: &str, body: &Bytes) -> Option<String> {
+fn build_param(query: &str, body: &Bytes, is_multipart: bool) -> Option<String> {
     let query = query.trim();
-    let body_str = String::from_utf8_lossy(body).trim().to_string();
+    // multipart 请求（如文件上传）body 为二进制/敏感内容，只记录 query
+    let body_str = if is_multipart {
+        String::new()
+    } else {
+        String::from_utf8_lossy(body).trim().to_string()
+    };
 
     let param = match (query.is_empty(), body_str.is_empty()) {
         (true, true) => return None,
-        (false, true) => query.to_string(),
-        (true, false) => body_str,
+        (false, true) => sanitize_plain(&query),
+        (true, false) => sanitize_body(&body_str),
         (false, false) => {
             let value = serde_json::json!({
-                "query": query,
-                "body": body_str
+                "query": sanitize_plain(&query),
+                "body": sanitize_body(&body_str),
             });
             value.to_string()
         }
     };
 
     Some(truncate_param(param, 1900))
+}
+
+/// 对单段文本做脱敏：先尝试按 JSON 解析递归处理，否则用查询串正则替换敏感字段值
+fn sanitize_body(body: &str) -> String {
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(body) {
+        let value = redact_json(&value);
+        return value.to_string();
+    }
+    sanitize_plain(body)
+}
+
+/// 对 a=b&c=d 形式的查询串（或非 JSON 文本）做敏感字段值替换
+fn sanitize_plain(text: &str) -> String {
+    let re = regex::Regex::new(r"(?i)(password|token|secret|authorization)=([^&\s]+)").unwrap();
+    re.replace_all(text, "$1=***").into_owned()
+}
+
+/// 递归地把 key 命中敏感关键字的值替换为 "***"
+fn redact_json(v: &serde_json::Value) -> serde_json::Value {
+    let sensitive = regex::Regex::new(r"(?i)^(.*password.*|.*token.*|.*secret.*|.*authorization.*|.*auth.*)$").unwrap();
+    match v {
+        serde_json::Value::Object(map) => {
+            let mut out = serde_json::Map::new();
+            for (k, val) in map {
+                if sensitive.is_match(k) {
+                    out.insert(k.clone(), serde_json::Value::String("***".to_string()));
+                } else {
+                    out.insert(k.clone(), redact_json(val));
+                }
+            }
+            serde_json::Value::Object(out)
+        }
+        serde_json::Value::Array(arr) => {
+            serde_json::Value::Array(arr.iter().map(redact_json).collect())
+        }
+        other => other.clone(),
+    }
 }
 
 fn truncate_param(value: String, max_len: usize) -> String {

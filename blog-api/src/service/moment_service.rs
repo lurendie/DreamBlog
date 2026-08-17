@@ -79,7 +79,7 @@ impl MomentService {
         )
         .await;
         if let Ok(redis_cache) = redis_cache {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 字段:{} 获取缓存数据成功",
                 RedisKeyConstant::PUBLIC_MOMENT_LIST,
                 cache_field

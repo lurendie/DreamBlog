@@ -52,6 +52,10 @@ impl actix_jwt_session::Claims for AppClaims {
 }
 
 pub fn build_session_storage() -> (SessionStorage, SessionMiddlewareFactory<AppClaims>) {
+    // 修复 fork 的路径不一致问题：
+    // load_from_files 固定读 ./config，而 generate 写 args[1] 目录。
+    // 启动前确保 ./config 存在并且密钥可从配置目录同步过来，避免重启时重新生成密钥导致全量掉线。
+    ensure_jwt_key_files();
     let keys = JwtSigningKeys::load_or_create();
     let encoding_key = Arc::new(keys.encoding_key);
     let decoding_key = Arc::new(keys.decoding_key);
@@ -62,12 +66,12 @@ pub fn build_session_storage() -> (SessionStorage, SessionMiddlewareFactory<AppC
     // 不可用时降级为无状态模式（token 仅依赖签名与过期时间）。
     let session_validation = match &*crate::app::REDIS_CLIENT {
         Some(pool) => {
-            log::info!("JWT 会话存储启用 Redis，支持 token 吊销");
+            tracing::info!("JWT 会话存储启用 Redis，支持 token 吊销");
             builder = builder.with_redis_pool(pool.clone());
             true
         }
         None => {
-            log::warn!("Redis 未启用，JWT 会话无法吊销，token 仅依赖签名与过期时间");
+            tracing::warn!("Redis 未启用，JWT 会话无法吊销，token 仅依赖签名与过期时间");
             builder = builder.with_storage(SessionStorage::new(
                 Arc::new(NoopTokenStorage),
                 encoding_key.clone(),
@@ -84,6 +88,53 @@ pub fn build_session_storage() -> (SessionStorage, SessionMiddlewareFactory<AppC
 
 #[derive(Clone)]
 struct NoopTokenStorage;
+
+/// 启动前 JWT 密钥预检：
+/// 1. 确保 `./config` 目录存在（fork 的 load_from_files 固定读取该路径）；
+/// 2. 若 `./config` 下缺少密钥，但从启动参数指定的配置目录中能找到，则同步过来，
+///    避免 fork 直接重新生成密钥导致所有在线 token 失效；
+/// 3. Unix 下将密钥文件权限收紧为 0600。
+fn ensure_jwt_key_files() {
+    use std::path::Path;
+
+    let config_dir = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "./config".to_string());
+    let alt_dir = Path::new(&config_dir);
+    let local_dir = Path::new("./config");
+
+    if let Err(e) = std::fs::create_dir_all(local_dir) {
+        tracing::error!("创建 JWT 密钥目录 ./config 失败: {e}");
+    }
+
+    for name in ["jwt-encoding.bin", "jwt-decoding.bin"] {
+        let local_path = local_dir.join(name);
+        if !local_path.exists() {
+            let alt_path = alt_dir.join(name);
+            if alt_path.exists() && alt_path != local_path {
+                match std::fs::copy(&alt_path, &local_path) {
+                    Ok(_) => tracing::info!(
+                        "JWT 密钥 {} 已从 {} 同步到 ./config",
+                        name,
+                        alt_path.display()
+                    ),
+                    Err(e) => tracing::error!("同步 JWT 密钥 {} 失败: {}", name, e),
+                }
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        for name in ["jwt-encoding.bin", "jwt-decoding.bin"] {
+            let path = local_dir.join(name);
+            if path.exists() {
+                let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600));
+            }
+        }
+    }
+}
 
 #[async_trait(?Send)]
 impl actix_jwt_session::TokenStorage for NoopTokenStorage {
@@ -172,7 +223,7 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
         };
         // 会话校验（Redis 存储模式）：token 必须仍存在于存储中，吊销后立即失效
         if self.session_validation && self.validate(&decoded_claims, storage).await.is_err() {
-            log::debug!("JWT 会话校验失败（token 已失效或不存在），按匿名处理");
+            tracing::debug!("JWT 会话校验失败（token 已失效或不存在），按匿名处理");
             return Ok(());
         }
         req.extensions_mut().insert(Authenticated {
@@ -197,7 +248,7 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
 
         decode::<ClaimsType>(value, &jwt_decoding_key, &validation)
             .map_err(|e| {
-                log::debug!("Failed to decode claims: {e:?}. {e}");
+                tracing::debug!("Failed to decode claims: {e:?}. {e}");
                 Error::CantDecode
             })
             .map(|t| t.claims)

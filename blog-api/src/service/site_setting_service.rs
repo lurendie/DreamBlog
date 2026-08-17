@@ -23,7 +23,7 @@ impl SiteSettingService {
         let cache_result =
             RedisService::get_string(RedisKeyConstant::SITE_INFO_MAP.to_string()).await;
         if let Ok(cache_result) = cache_result {
-            log::info!(
+            tracing::info!(
                 "reids KEY:{} 获取缓存数据成功",
                 RedisKeyConstant::SITE_INFO_MAP
             );
@@ -121,7 +121,7 @@ impl SiteSettingService {
 
         //缓存数据
         if RedisService::try_set_string(RedisKeyConstant::SITE_INFO_MAP.to_string(), &map).await {
-            log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::SITE_INFO_MAP);
+            tracing::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::SITE_INFO_MAP);
         }
         Ok(map)
     }

@@ -3,7 +3,9 @@
 
 server:
   host: "127.0.0.1"
-  port: 8089
+  port: 8090
+  cors_enabled: true
+  trust_proxy: false ## 部署在可信反向代理(如 Nginx)之后时置为 true，否则不要开启
   view_url: "http://localhost:8080/" ## 前端页面地址 用于跨域访问
   cms_url: "http://localhost:8080/" ## 后台页面地址 用于跨域访问
   token_expires: 7 # token 过期时间 单位:天

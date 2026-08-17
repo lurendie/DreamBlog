@@ -39,7 +39,13 @@ impl UserService {
         refresh_ttl: Data<RefreshTtl>,
         store: Data<SessionStorage>,
     ) -> Result<(ValueMap, String), DataBaseError> {
-        let mut user = UserService::get_by_username(&user_form.username, db).await?;
+        let mut user = match UserService::get_by_username(&user_form.username, db).await {
+            Ok(user) => user,
+            // 用户不存在时返回与密码错误一致的文案，避免枚举已注册用户名
+            Err(_) => {
+                return Err(DataBaseError::Custom("用户名或密码错误".to_string()));
+            }
+        };
         //验证账号密码是否正确,排除非Admin账号登录
         let password_flag = UserBcrypt::verify_password(&user.get_password(), &user_form.password)
             .unwrap_or_default();
@@ -52,7 +58,7 @@ impl UserService {
         }
         let mut map: ValueMap = ValueMap::new();
         //登录成功
-        log::info!("用户:{}登录成功", user_form.username);
+        tracing::info!("用户:{}登录成功", user_form.username);
         let uuid = Uuid::new_v4();
         let now = OffsetDateTime::now_utc();
         //创建认证数据

@@ -12,7 +12,7 @@ use crate::error::AppError;
 use crate::middleware::AppClaims;
 use crate::model::{ApiResponse, LoginUser};
 use crate::service::{LoginLogService, RedisService, UserService};
-use actix_jwt_session::{Authenticated, JwtTtl, RefreshTtl, SessionStorage, JWT_HEADER_NAME};
+use actix_jwt_session::{Authenticated, JwtTtl, RefreshTtl, SessionStorage};
 use actix_web::{
     routes,
     web::{Data, Json},
@@ -78,14 +78,11 @@ pub async fn login(
     .await;
 
     let data = result?;
-    let result = ApiResponse::<Value>::success_with_msg(
+    // token 已通过 body data.token 返回，这里不再额外设置响应头
+    Ok(ApiResponse::<Value>::success_with_msg(
         format!("登录成功!,欢迎用户{}!", user_form.username).as_str(),
         Some(value!(&data.0)),
-    );
-    result
-        .http_response_builder()
-        .append_header((JWT_HEADER_NAME, data.1.to_string()));
-    return Ok(result);
+    ))
 }
 
 #[routes]
@@ -96,7 +93,7 @@ pub async fn logout(
 ) -> Result<ApiResponse<Value>, AppError> {
     // 吊销会话（Redis 存储启用时生效；无状态降级模式下忽略）
     if let Err(e) = store.erase::<AppClaims>(auth.claims.jwt_id).await {
-        log::debug!("退出登录吊销会话失败（可能为无状态模式）: {e}");
+        tracing::debug!("退出登录吊销会话失败（可能为无状态模式）: {e}");
     }
     Ok(ApiResponse::<Value>::success_with_msg(
         "退出登录成功",

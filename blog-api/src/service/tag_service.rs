@@ -23,7 +23,7 @@ impl TagService {
         if let Some(redis_cache) = redis_cache {
             let arr = match redis_cache {
                 Value::Array(arr) => {
-                    log::info!(
+                    tracing::info!(
                         "reids KEY:{} 获取缓存数据成功",
                         RedisKeyConstant::TAG_CLOUD_LIST.to_string()
                     );
@@ -51,7 +51,7 @@ impl TagService {
             )
             .await
         {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::TAG_CLOUD_LIST
             );
@@ -72,7 +72,7 @@ impl TagService {
                     let count = match item.find_related(blog::Entity).count(db).await {
                         Ok(count) => count,
                         Err(e) => {
-                            log::error!("查询标签文章数失败:{}", e);
+                            tracing::error!("查询标签文章数失败:{}", e);
                             0
                         }
                     };
@@ -81,7 +81,7 @@ impl TagService {
                 }
             }
             Err(e) => {
-                log::error!("查询标签失败:{}", e);
+                tracing::error!("查询标签失败:{}", e);
             }
         }
         map.insert(value!("legend"), value!(legend));

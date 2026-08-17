@@ -151,7 +151,7 @@ impl VisitService {
             ..Default::default()
         };
         if let Err(e) = new_visit_log.save(db).await {
-            log::error!("保存访问日志失败: {}", e);
+            tracing::error!("保存访问日志失败: {}", e);
         }
         Ok(())
     }

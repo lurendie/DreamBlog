@@ -58,7 +58,7 @@ impl BlogInfo {
         let category_model = match model.find_related(category::Entity).one(db).await {
             Ok(category_model) => category_model.unwrap_or_default(),
             Err(e) => {
-                log::error!("{:?}", e);
+                tracing::error!("{:?}", e);
                 category::Model::default()
             }
         };

@@ -40,7 +40,7 @@ impl CommentService {
         )
         .await;
         if let Ok(redis_cache) = redis_cache {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 字段:{} 获取缓存数据成功",
                 RedisKeyConstant::COMMENT_LIST,
                 cache_field
@@ -114,8 +114,18 @@ impl CommentService {
             let blog_id = model.blog_id.unwrap_or_default();
             let mut comment = CommentDTO::from(model);
             if matches!(comment.page, 0) {
-                comment.blog_id_and_title =
-                    Some(BlogService::find_blog_id_and_title(db, blog_id).await?);
+                // 文章可能已删除，此时不应让整条列表报错，仅记录并置空标题
+                match BlogService::find_blog_id_and_title(db, blog_id).await {
+                    Ok(info) => comment.blog_id_and_title = Some(info),
+                    Err(e) => {
+                        comment.blog_id_and_title = None;
+                        tracing::debug!(
+                            "评论关联文章查询失败 blog_id:{} 错误:{}（已忽略）",
+                            blog_id,
+                            e
+                        );
+                    }
+                }
             }
             comments.push(comment);
         }
@@ -304,7 +314,7 @@ impl CommentService {
                     let err = EmailService::send_guest_email(db, model, parent_model_dto).await;
                     if let Err(e) = err {
                         //发送邮件失败 不返回异常 否则 页面提示邮件异常 但是实际上评论成功 只是未发送邮件
-                        log::error!("评论成功,发送邮件失败:{e}");
+                        tracing::error!("评论成功,发送邮件失败:{e}");
                     }
                 }
             } else if model.is_notice && model.parent_comment_id == -1 {
@@ -314,7 +324,7 @@ impl CommentService {
                     let err =
                         EmailService::send_owenr_email(model, db, owenr_user.get_email()).await;
                     if let Err(e) = err {
-                        log::error!("评论成功,发送邮件失败:{e}");
+                        tracing::error!("评论成功,发送邮件失败:{e}");
                     }
                 }
             };

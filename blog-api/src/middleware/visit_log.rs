@@ -142,7 +142,7 @@ where
                             );
                             uuid
                         };
-                        log::info!(
+                        tracing::info!(
                                 "访客UUID:{:?} , 访问路径:{:?},访问参数:{:?}, 访问IP:{:?}, 访问行为:{:?},访问内容:{:?}",
                                 &visitor_uuid,
                                 uri,
@@ -179,7 +179,7 @@ where
                             let db = app_stat.get_mysql_pool();
                             VisitorService::save_visitor(visitor, &db)
                                 .await
-                                .unwrap_or_else(|e| log::error!("保存访客失败{e}"));
+                                .unwrap_or_else(|e| tracing::error!("保存访客失败{e}"));
                             VisitService::save_visit(
                                 &db,
                                 &visitor_uuid,
@@ -193,7 +193,7 @@ where
                                 visit_behavior,
                             )
                             .await
-                            .unwrap_or_else(|e| log::error!("保存访问日志失败{e}"));
+                            .unwrap_or_else(|e| tracing::error!("保存访问日志失败{e}"));
                         }
                     }
                     _ => (),

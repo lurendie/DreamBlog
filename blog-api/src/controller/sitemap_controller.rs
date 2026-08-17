@@ -29,7 +29,13 @@ pub async fn sitemap(app: web::Data<AppState>) -> Result<HttpResponse, AppError>
         SitemapEntry::new("/about", Some("monthly"), Some("0.7"), None),
     ];
 
-    for item in blogs {
+    // 密码保护文章（password 非空）不加入 sitemap，避免外部索引暴露受限内容
+    for item in blogs.into_iter().filter(|b| {
+        b.password
+            .as_deref()
+            .map(|p| p.trim().is_empty())
+            .unwrap_or(true)
+    }) {
         entries.push(SitemapEntry::new(
             format!("/blog/{}", item.id),
             Some("monthly"),

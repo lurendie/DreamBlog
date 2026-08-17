@@ -14,6 +14,7 @@ use sea_orm::{
 use serde_json::json;
 use sha1::{Digest, Sha1};
 use std::collections::BTreeMap;
+use std::sync::LazyLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const SETTING_TYPE: i32 = 9;
@@ -22,6 +23,19 @@ const UPYUN_KEY: &str = "pictureHosting.upyun";
 const TXYUN_KEY: &str = "pictureHosting.txyun";
 
 type HmacSha1 = Hmac<Sha1>;
+
+/// 模块级共享的 HTTP 客户端，统一携带超时，防止出站请求长时间挂起
+static HTTP_CLIENT: LazyLock<Client> = LazyLock::new(|| {
+    Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .build()
+        .unwrap_or_else(|_| Client::new())
+});
+
+fn http_client() -> &'static Client {
+    &HTTP_CLIENT
+}
 
 pub struct PictureHostingService;
 
@@ -58,7 +72,7 @@ impl PictureHostingService {
     }
 
     pub async fn github_user(token: &str) -> Result<serde_json::Value, AppError> {
-        let client = Client::new();
+        let client = http_client();
         let response = client
             .get("https://api.github.com/user")
             .header(AUTHORIZATION, format!("token {}", token))
@@ -124,7 +138,7 @@ impl PictureHostingService {
             .and_then(|login| login.as_str())
             .ok_or_else(|| AppError::Custom("GitHub用户信息缺失".to_string()))?;
         let url = format!("https://api.github.com/users/{}/repos", login);
-        Self::github_request(&config.token, Client::new().get(url)).await
+        Self::github_request(&config.token, http_client().get(url)).await
     }
 
     pub async fn github_contents(
@@ -143,7 +157,7 @@ impl PictureHostingService {
             "https://api.github.com/repos/{}/{}/contents{}",
             login, repos, path
         );
-        Self::github_request(&config.token, Client::new().get(url)).await
+        Self::github_request(&config.token, http_client().get(url)).await
     }
 
     pub async fn github_delete(
@@ -167,7 +181,7 @@ impl PictureHostingService {
             "message": "Delete file via PictureHosting",
             "sha": sha,
         });
-        Self::github_request(&config.token, Client::new().delete(url).json(&body)).await
+        Self::github_request(&config.token, http_client().delete(url).json(&body)).await
     }
 
     pub async fn github_upload(
@@ -193,21 +207,21 @@ impl PictureHostingService {
             "message": "Add files via PictureHosting",
             "content": general_purpose::STANDARD.encode(bytes),
         });
-        Self::github_request(&config.token, Client::new().put(url).json(&body)).await
+        Self::github_request(&config.token, http_client().put(url).json(&body)).await
     }
 
     pub async fn upyun_contents(db: &DatabaseConnection, path: &str) -> Result<Value, AppError> {
         let config = Self::require_upyun(db).await?;
         let path = Self::normalize_slash(path);
         let url = format!("https://v0.api.upyun.com/{}{}", config.bucket_name, path);
-        Self::upyun_request(&config, Client::new().get(url)).await
+        Self::upyun_request(&config, http_client().get(url)).await
     }
 
     pub async fn upyun_delete(db: &DatabaseConnection, path: &str) -> Result<Value, AppError> {
         let config = Self::require_upyun(db).await?;
         let path = Self::normalize_slash(path);
         let url = format!("https://v0.api.upyun.com/{}{}", config.bucket_name, path);
-        Self::upyun_request(&config, Client::new().delete(url)).await
+        Self::upyun_request(&config, http_client().delete(url)).await
     }
 
     pub async fn upyun_upload(
@@ -219,7 +233,7 @@ impl PictureHostingService {
         let config = Self::require_upyun(db).await?;
         let path = Self::join_path(path, file_name);
         let url = format!("https://v0.api.upyun.com/{}{}", config.bucket_name, path);
-        Self::upyun_request(&config, Client::new().put(url).body(bytes)).await
+        Self::upyun_request(&config, http_client().put(url).body(bytes)).await
     }
 
     pub async fn txyun_contents(db: &DatabaseConnection, path: &str) -> Result<Value, AppError> {
@@ -395,7 +409,7 @@ impl PictureHostingService {
                 HeaderValue::from_static("application/octet-stream"),
             );
         }
-        let client = Client::new();
+        let client = http_client();
         let request = match method {
             "GET" => client.get(url),
             "PUT" => client.put(url),

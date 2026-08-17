@@ -425,7 +425,7 @@ CREATE TABLE `user`  (
 -- ----------------------------
 -- Records of user
 -- ----------------------------
-INSERT INTO `user` VALUES (1, 'Admin', '$2a$10$QZcWB4ZB.cTxatw090raru5KMxCPePFCJmq5.X9J3WrXfohM0g4.K', 'Admin', '/img/avatar.jpg', 'admin@naccl.top', '2020-09-21 16:47:18', '2020-09-21 16:47:22', 'ROLE_admin');
+INSERT INTO `user` VALUES (1, 'Admin', '$2b$12$fPtDty8kOLzAWYW3c2hCCOyzMhwQTA3p/NeJnhMl.NPDLFf.Xhjy6', 'Admin', '/img/avatar.jpg', 'admin@naccl.top', '2020-09-21 16:47:18', '2020-09-21 16:47:22', 'ROLE_admin');
 
 -- ----------------------------
 -- Table structure for visit_log

@@ -8,7 +8,6 @@ use sea_orm::{
 use serde_json::Value as JsonValue;
 use std::str::FromStr;
 use std::time::Instant;
-use tokio::process::Command;
 
 use crate::{
     constant::RedisKeyConstant,
@@ -227,8 +226,9 @@ async fn execute_job_action(
     if bean_name.starts_with("http") {
         return execute_http_job(&bean_name, &method_name, &params).await;
     }
+    // shell 任务已禁用，防止通过调度执行任意系统命令
     if bean_name == "shell" {
-        return execute_shell_job(&method_name, &params).await;
+        return Err("不支持的任务类型: shell 已禁用".to_string());
     }
     if bean_name == "local" {
         return execute_local_job(&method_name, &params, db).await;
@@ -240,7 +240,16 @@ async fn execute_http_job(bean_name: &str, url: &str, params: &str) -> Result<()
     if url.trim().is_empty() {
         return Err("HTTP任务URL为空".to_string());
     }
-    let client = Client::new();
+    // URL 必须为 http/https，并限制出站目标，防止 SSRF/任意发起到内网
+    if !(url.starts_with("http://") || url.starts_with("https://")) {
+        return Err(format!("HTTP任务URL协议不合法: {}", url));
+    }
+    // 使用带超时的客户端，避免出站请求长时间挂起拖垮调度线程
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
     let http_method = bean_name.split(':').nth(1).unwrap_or("");
     let should_get = http_method.eq_ignore_ascii_case("get") || params.trim().is_empty();
 
@@ -263,37 +272,6 @@ async fn execute_http_job(bean_name: &str, url: &str, params: &str) -> Result<()
     }
     request.send().await.map_err(|e| e.to_string())?;
     Ok(())
-}
-
-async fn execute_shell_job(command: &str, params: &str) -> Result<(), String> {
-    if command.trim().is_empty() {
-        return Err("Shell命令为空".to_string());
-    }
-    let full_command = if params.trim().is_empty() {
-        command.to_string()
-    } else {
-        format!("{} {}", command, params)
-    };
-    let status = if cfg!(windows) {
-        Command::new("cmd")
-            .arg("/C")
-            .arg(full_command)
-            .status()
-            .await
-            .map_err(|e| e.to_string())?
-    } else {
-        Command::new("sh")
-            .arg("-c")
-            .arg(full_command)
-            .status()
-            .await
-            .map_err(|e| e.to_string())?
-    };
-    if status.success() {
-        Ok(())
-    } else {
-        Err(format!("Shell执行失败: {}", status))
-    }
 }
 
 async fn execute_local_job(

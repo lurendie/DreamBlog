@@ -68,7 +68,7 @@ impl RedisService {
         match Self::set_hash_key(key.clone(), hash.clone(), value).await {
             Ok(stored) => stored,
             Err(e) => {
-                log::debug!("redis key: {} hash: {} 缓存写入失败:{}", key, hash, e);
+                tracing::debug!("redis key: {} hash: {} 缓存写入失败:{}", key, hash, e);
                 false
             }
         }
@@ -103,7 +103,7 @@ impl RedisService {
         match Self::set_string(key.clone(), value).await {
             Ok(stored) => stored,
             Err(e) => {
-                log::debug!("redis key: {} 缓存写入失败:{}", key, e);
+                tracing::debug!("redis key: {} 缓存写入失败:{}", key, e);
                 false
             }
         }
@@ -152,7 +152,7 @@ impl RedisService {
         match Self::set_value_vec(key.clone(), value).await {
             Ok(stored) => stored,
             Err(e) => {
-                log::debug!("redis key: {} 缓存写入失败:{}", key, e);
+                tracing::debug!("redis key: {} 缓存写入失败:{}", key, e);
                 false
             }
         }
@@ -174,7 +174,7 @@ impl RedisService {
             Ok(Some(result)) => serde_json::from_str(result.as_str()).ok(),
             Ok(None) => None,
             Err(e) => {
-                log::debug!("redis {} 获取数据错误：{}", key, e);
+                tracing::debug!("redis {} 获取数据错误：{}", key, e);
                 None
             }
         }
@@ -190,7 +190,7 @@ impl RedisService {
         let _ = connection
             .expire::<String, i64>(key.clone(), ttl)
             .await
-            .map_err(|e| log::debug!("redis key: {} 设置过期时间失败:{}", key, e));
+            .map_err(|e| tracing::debug!("redis key: {} 设置过期时间失败:{}", key, e));
         Ok(())
     }
 
@@ -201,7 +201,7 @@ impl RedisService {
         let _ = connection
             .del::<String, i64>(key.to_string())
             .await
-            .map_err(|e| log::debug!("redis key: {} 删除失败:{}", key, e));
+            .map_err(|e| tracing::debug!("redis key: {} 删除失败:{}", key, e));
         Ok(())
     }
 
@@ -217,7 +217,7 @@ impl RedisService {
         match connection.exists::<String, i64>(key.to_string()).await {
             Ok(count) => count > 0,
             Err(e) => {
-                log::debug!("redis key: {} 判断存在失败:{}", key, e);
+                tracing::debug!("redis key: {} 判断存在失败:{}", key, e);
                 false
             }
         }
@@ -231,7 +231,7 @@ impl RedisService {
         let value_str = match serde_json::to_string(value) {
             Ok(s) => s,
             Err(e) => {
-                log::debug!("redis key: {} 序列化失败:{}", key, e);
+                tracing::debug!("redis key: {} 序列化失败:{}", key, e);
                 return false;
             }
         };
@@ -241,7 +241,7 @@ impl RedisService {
         {
             Ok(_) => true,
             Err(e) => {
-                log::debug!("redis key: {} 设置过期值失败:{}", key, e);
+                tracing::debug!("redis key: {} 设置过期值失败:{}", key, e);
                 false
             }
         }
@@ -266,7 +266,7 @@ impl RedisService {
         {
             Ok(n) => n,
             Err(e) => {
-                log::debug!("redis key: {} 自增失败:{}", key, e);
+                tracing::debug!("redis key: {} 自增失败:{}", key, e);
                 return None;
             }
         };

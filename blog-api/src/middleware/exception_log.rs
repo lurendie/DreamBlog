@@ -104,7 +104,7 @@ where
                         };
                         let db = app_state.get_mysql_pool();
                         if let Err(save_err) = model.save(db).await {
-                            log::error!("保存异常日志失败: {save_err}");
+                            tracing::error!("保存异常日志失败: {save_err}");
                         }
                     }
                 }

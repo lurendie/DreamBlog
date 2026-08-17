@@ -5,7 +5,7 @@
  * @LastEditTime: 2024-05-15 19:14:37
  */
 use crate::error::WebError;
-use actix_web::{HttpResponse, HttpResponseBuilder, Responder};
+use actix_web::{HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -117,9 +117,6 @@ impl<T: Serialize> ApiResponse<T> {
         HttpResponse::Ok()
             .content_type("application/json; charset=utf-8")
             .json(&self)
-    }
-    pub fn http_response_builder(&self) -> HttpResponseBuilder {
-        HttpResponse::Ok()
     }
 }
 

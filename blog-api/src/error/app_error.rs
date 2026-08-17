@@ -37,10 +37,13 @@ impl error::ResponseError for AppError {
 
     fn error_response(&self) -> HttpResponse<BoxBody> {
         // 保留 WebError 的业务错误码（400/401/404/500...），避免全部退化为 500
-        match self {
-            AppError::WebError(e) => ApiResponse::<String>::from_error(e).respond(),
-            _ => ApiResponse::<String>::error(&self.to_string()).respond(),
+        if let AppError::WebError(e) = self {
+            return ApiResponse::<String>::from_error(e).respond();
         }
+        // 其它内部异常不在响应中暴露原始信息（可能含 SQL/内部细节），仅记日志
+        let detail = self.to_string();
+        tracing::error!("请求处理失败: {}", detail);
+        ApiResponse::<String>::error("服务器内部错误，请稍后再试").respond()
     }
 }
 

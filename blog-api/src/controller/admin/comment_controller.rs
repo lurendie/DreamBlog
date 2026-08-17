@@ -63,7 +63,7 @@ pub async fn update_comment(
         &req,
         crate::app::CONFIG.get_server_config().trust_proxy,
     );
-    CommentService::save_comment(comment.0, &app.get_mysql_pool(), ip, false).await?;
+    CommentService::save_comment(comment.0, &app.get_mysql_pool(), ip, true).await?;
     Ok(ApiResponse::<Value>::success_with_msg("更新成功！", None))
 }
 

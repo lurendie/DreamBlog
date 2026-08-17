@@ -22,8 +22,8 @@ use sea_orm::prelude::Expr;
 use sea_orm::IntoActiveModel;
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbBackend, EntityTrait,
-    FromQueryResult, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, QueryTrait, Statement,
-    TransactionTrait,
+    FromQueryResult, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, QueryTrait,
+    Statement, TransactionTrait,
 };
 use std::collections::HashMap;
 use std::ops::Index;
@@ -52,7 +52,7 @@ impl BlogService {
         .await;
         //2.缓存不未Null则返回缓存数据
         if let Ok(redis_cache) = redis_cache {
-            log::info!(
+            tracing::info!(
                 "reids KEY:{} 当前页：{} 获取缓存数据成功",
                 RedisKeyConstant::HOME_BLOG_INFO_LIST,
                 page_num
@@ -69,7 +69,7 @@ impl BlogService {
         let list = match page.fetch_page(page_num - 1).await {
             Ok(list) => list,
             Err(e) => {
-                log::error!("查询失败:{}", e);
+                tracing::error!("查询失败:{}", e);
                 vec![]
             }
         };
@@ -93,7 +93,7 @@ impl BlogService {
             )
             .await
         {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::HOME_BLOG_INFO_LIST
             );
@@ -110,7 +110,7 @@ impl BlogService {
         if let Some(redis_cache) = redis_cache {
             let arr = match redis_cache {
                 Value::Array(arr) => {
-                    log::info!(
+                    tracing::info!(
                         "reids KEY:{} 获取缓存数据成功",
                         RedisKeyConstant::RANDOM_BLOG_LIST.to_string()
                     );
@@ -161,7 +161,7 @@ impl BlogService {
             )
             .await
         {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::RANDOM_BLOG_LIST
             );
@@ -179,7 +179,7 @@ impl BlogService {
         if let Some(redis_cache) = redis_cache {
             let arr = match redis_cache {
                 Value::Array(arr) => {
-                    log::info!(
+                    tracing::info!(
                         "reids KEY:{} 获取缓存数据成功",
                         RedisKeyConstant::NEW_BLOG_LIST.to_string()
                     );
@@ -214,7 +214,7 @@ impl BlogService {
             )
             .await
         {
-            log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::NEW_BLOG_LIST);
+            tracing::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::NEW_BLOG_LIST);
         }
 
         Ok(result)
@@ -233,7 +233,7 @@ impl BlogService {
         )
         .await;
         if let Ok(redis_cache) = redis_cache {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 字段:{} 获取缓存数据成功",
                 RedisKeyConstant::CATEGORY_BLOG_LIST,
                 cache_field
@@ -249,7 +249,7 @@ impl BlogService {
         {
             Ok(category_model) => category_model.unwrap_or_default(),
             Err(e) => {
-                log::error!("{:?}", e);
+                tracing::error!("{:?}", e);
                 category::Model::default()
             }
         };
@@ -280,7 +280,7 @@ impl BlogService {
         )
         .await
         {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::CATEGORY_BLOG_LIST
             );
@@ -319,7 +319,7 @@ impl BlogService {
         let blog_model = match blog::Entity::find_by_id(id).one(db).await {
             Ok(blog) => blog.unwrap_or_default(),
             Err(e) => {
-                log::error!("{:?}", e);
+                tracing::error!("{:?}", e);
                 return None;
             }
         };
@@ -346,7 +346,7 @@ impl BlogService {
         )
         .await
         {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::BLOG_DETAIL_MAP
             );
@@ -367,7 +367,7 @@ impl BlogService {
         )
         .await;
         if let Ok(redis_cache) = redis_cache {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 字段:{} 获取缓存数据成功",
                 RedisKeyConstant::TAG_BLOG_LIST,
                 cache_field
@@ -383,7 +383,7 @@ impl BlogService {
         {
             Ok(Some(tag_model)) => tag_model,
             Err(e) => {
-                log::error!("{:?}", e);
+                tracing::error!("{:?}", e);
                 tag::Model::default()
             }
             _ => tag::Model::default(),
@@ -415,7 +415,7 @@ impl BlogService {
         )
         .await
         {
-            log::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::TAG_BLOG_LIST);
+            tracing::info!("redis KEY:{} 缓存数据成功", RedisKeyConstant::TAG_BLOG_LIST);
         }
         map
     }
@@ -425,7 +425,7 @@ impl BlogService {
         let redis_cache =
             RedisService::get_string(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string()).await;
         if let Ok(redis_cache) = redis_cache {
-            log::info!(
+            tracing::info!(
                 "获取 KEY:{} 缓存数据成功",
                 RedisKeyConstant::ARCHIVE_BLOG_MAP
             );
@@ -460,7 +460,8 @@ impl BlogService {
                 r#"SELECT id,title,CONCAT(DAY(create_time),"日") as `day`,password
             FROM blog
             WHERE YEAR(create_time) = ?
-              AND MONTH(create_time) = ?;"#,
+              AND MONTH(create_time) = ?
+              AND is_published = 1;"#,
                 [date_time.year().into(), date_time.month().into()],
             );
             let mut blogs = BlogArchive::find_by_statement(sql).all(db).await?;
@@ -483,7 +484,7 @@ impl BlogService {
             && RedisService::try_set_string(RedisKeyConstant::ARCHIVE_BLOG_MAP.to_string(), &map)
                 .await
         {
-            log::info!(
+            tracing::info!(
                 "redis KEY:{} 缓存数据成功",
                 RedisKeyConstant::ARCHIVE_BLOG_MAP
             );
@@ -509,7 +510,7 @@ impl BlogService {
             RedisService::get_hash_all::<i64, i32>(RedisKeyConstant::BLOG_VIEWS_MAP.to_string())
                 .await
                 .unwrap_or_else(|e| {
-                    log::debug!(
+                    tracing::debug!(
                         "获取 Redis KEY:{} 失败，使用数据库浏览量，错误信息：{}",
                         RedisKeyConstant::BLOG_VIEWS_MAP,
                         e
@@ -521,12 +522,12 @@ impl BlogService {
             if let Ok(Some(blog)) = blog::Entity::find_by_id(id).one(db).await {
                 item.related_handle(blog, db).await;
             } else {
-                log::error!("检索到ID：{} 的文章出现异常，无法处理依赖关系", id);
+                tracing::error!("检索到ID：{} 的文章出现异常，无法处理依赖关系", id);
             }
 
             if blog_view_map.contains_key(&id) {
                 item.views = *blog_view_map.get(&id).unwrap_or_else(|| {
-                    log::error!("获取 Redis KEY:{} 失败", RedisKeyConstant::BLOG_VIEWS_MAP,);
+                    tracing::error!("获取 Redis KEY:{} 失败", RedisKeyConstant::BLOG_VIEWS_MAP,);
                     &0
                 });
             } else {
@@ -568,7 +569,7 @@ impl BlogService {
             Ok(result) if result.rows_affected > 0 => {}
             Ok(_) => return None,
             Err(e) => {
-                log::error!("更新文章浏览量失败 id:{} 错误:{}", id, e);
+                tracing::error!("更新文章浏览量失败 id:{} 错误:{}", id, e);
                 return None;
             }
         }
@@ -758,6 +759,10 @@ impl BlogService {
                             Ok(())
                         }
                         false => {
+                            // 查询数据库中已有记录，用于保护 create_time/views 不被客户端覆盖
+                            let existing = blog::Entity::find_by_id(blog_vo.get_id())
+                                .one(conn)
+                                .await?;
                             let mut active = blog_model.clone().into_active_model();
                             active.is_appreciation = ActiveValue::Set(blog_vo.appreciation);
                             active.category_id = ActiveValue::Set(blog_vo.category_id);
@@ -765,7 +770,12 @@ impl BlogService {
                             active.is_top = ActiveValue::Set(blog_vo.top);
                             active.is_published = ActiveValue::Set(blog_vo.published);
                             active.is_recommend = ActiveValue::Set(blog_vo.recommend);
-                            active.views = ActiveValue::Set(blog_vo.views);
+                            // views：仅当客户端传入正数时更新，否则保留原值（避免被置 0）
+                            if blog_vo.views > 0 {
+                                active.views = ActiveValue::Set(blog_vo.views);
+                            } else if let Some(existing) = &existing {
+                                active.views = ActiveValue::Set(existing.views);
+                            }
                             active.words = ActiveValue::Set(blog_vo.words);
                             active.title = ActiveValue::Set(blog_vo.title);
                             active.content = ActiveValue::Set(blog_vo.content);
@@ -773,8 +783,19 @@ impl BlogService {
                             active.description = ActiveValue::Set(blog_vo.description);
                             active.first_picture = ActiveValue::Set(blog_vo.first_picture);
                             active.read_time = ActiveValue::Set(blog_vo.read_time);
-                            active.create_time =
-                                ActiveValue::Set(blog_vo.create_time.unwrap_or_default());
+                            // create_time：仅当客户端传入且年份 >= 2000 时才更新，否则保留数据库原值
+                            let create_time_usable = blog_vo
+                                .create_time
+                                .as_ref()
+                                .map(|t| t.year() >= 2000)
+                                .unwrap_or(false);
+                            if create_time_usable {
+                                active.create_time = ActiveValue::Set(
+                                    blog_vo.create_time.unwrap_or_default(),
+                                );
+                            } else if let Some(existing) = &existing {
+                                active.create_time = ActiveValue::Set(existing.create_time);
+                            }
                             // 更新时间由服务端设置，不信任客户端传入值
                             active.update_time = ActiveValue::Set(Local::now().naive_local());
                             let model = active.update(conn).await?;
@@ -871,6 +892,11 @@ impl BlogService {
                         .filter(blog_tag::Column::BlogId.eq(id))
                         .exec(conn)
                         .await?;
+                    // 连同删掉该文章下的评论，避免产生孤儿评论
+                    crate::entity::comment::Entity::delete_many()
+                        .filter(crate::entity::comment::Column::BlogId.eq(id))
+                        .exec(conn)
+                        .await?;
                     Ok(())
                 })
             })
@@ -920,6 +946,8 @@ impl BlogService {
         let mut models = blog::Entity::find()
             .filter(blog::Column::IsPublished.eq(true))
             .filter(blog::Column::Content.contains(like))
+            // 限制返回数量，避免全表扫描导致内存/响应过大
+            .limit(Some(20))
             .all(db)
             .await?;
         let mut search_blogs = vec![];
@@ -936,7 +964,7 @@ impl BlogService {
                     search_blogs.push(search_blog);
                 }
                 None => {
-                    log::info!("search_blog 未找到关键词:{:?}", keyword);
+                    tracing::info!("search_blog 未找到关键词:{:?}", keyword);
                 }
             }
         }
@@ -961,7 +989,7 @@ impl BlogService {
                 Ok(count > 0)
             }
             None => {
-                log::error!("分类下 {} 没有检索到文章", category_id);
+                tracing::error!("分类下 {} 没有检索到文章", category_id);
                 Ok(false)
             }
         }
@@ -1085,7 +1113,7 @@ mod tests {
         // let index = match item_content.find(&find_str) {
         //     Some(index) => index,
         //     None => {
-        //         log::error!("search_blog Index 获取失败:{:?}", find_str);
+        //         tracing::error!("search_blog Index 获取失败:{:?}", find_str);
         //         0
         //     }
         // };

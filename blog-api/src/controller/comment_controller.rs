@@ -78,6 +78,11 @@ fn validate_comment_input(comment: &CommentDTO) -> Result<(), WebError> {
     if !is_basic_email(&comment.email) {
         return Err(WebError::Validation("邮箱格式不正确".to_string()));
     }
+    // 网站地址校验：允许为空；非空时必须是以 http:// 或 https:// 开头的简单字符串
+    let website = comment.website.trim();
+    if !website.is_empty() && !is_basic_website(website) {
+        return Err(WebError::Validation("网站地址格式不正确".to_string()));
+    }
     if comment.content.trim().is_empty() {
         return Err(WebError::Validation("评论内容不能为空".to_string()));
     }
@@ -87,6 +92,22 @@ fn validate_comment_input(comment: &CommentDTO) -> Result<(), WebError> {
         ));
     }
     Ok(())
+}
+
+/// 简单的网站地址校验：以 http:// 或 https:// 开头、长度不超过 255，
+/// 且排除包含 javascript: / data: / vbscript: 的危险字符串（避免新增 url 依赖）。
+fn is_basic_website(website: &str) -> bool {
+    if website.len() > 255 {
+        return false;
+    }
+    if !(website.starts_with("http://") || website.starts_with("https://")) {
+        return false;
+    }
+    let lower = website.to_lowercase();
+    if lower.contains("javascript:") || lower.contains("data:") || lower.contains("vbscript:") {
+        return false;
+    }
+    true
 }
 
 fn is_basic_email(email: &str) -> bool {

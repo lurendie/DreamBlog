@@ -32,7 +32,7 @@ impl JobRunner {
             let jobs = match jobs {
                 Ok(jobs) => jobs,
                 Err(e) => {
-                    log::error!("定时任务获取失败: {}", e);
+                    tracing::error!("定时任务获取失败: {}", e);
                     continue;
                 }
             };
@@ -63,7 +63,7 @@ impl JobRunner {
                 let next_run = match ScheduleJobService::next_run_after(&cron, last_run) {
                     Ok(value) => value,
                     Err(e) => {
-                        log::error!("定时任务Cron解析失败 job_id={}: {}", job_id, e);
+                        tracing::error!("定时任务Cron解析失败 job_id={}: {}", job_id, e);
                         running.lock().await.remove(&job_id);
                         continue;
                     }
@@ -78,9 +78,19 @@ impl JobRunner {
                     continue;
                 }
 
-                if let Err(e) = ScheduleJobService::execute_job_model(job, db).await {
-                    log::error!("定时任务执行失败: {}", e);
+                let run_result = tokio::time::timeout(
+                    Duration::from_secs(300),
+                    ScheduleJobService::execute_job_model(job, db),
+                )
+                .await;
+                match run_result {
+                    Ok(Err(e)) => tracing::error!("定时任务执行失败: {}", e),
+                    Ok(Ok(_)) => {}
+                    Err(_) => {
+                        tracing::error!("定时任务执行超时 job_id={}", job_id);
+                    }
                 }
+                // 无论成功、失败还是超时，都必须从 running 集合中移除该任务，避免后续被跳过
                 running.lock().await.remove(&job_id);
 
                 let mut map = last_runs.lock().await;
