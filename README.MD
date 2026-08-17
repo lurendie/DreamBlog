@@ -5,7 +5,7 @@
 </p>
 <p align="center">
 	<img src="https://img.shields.io/badge/RUST-1.85-orange">
-	<img src="https://img.shields.io/badge/Vue-2.6.11-brightgreen">
+	<img src="https://img.shields.io/badge/Vue-3.5-brightgreen">
 	<img src="https://img.shields.io/badge/license-MIT-blue">
 </p>
 
@@ -25,15 +25,15 @@ dream_blog 是一个基于 Rust (actix-web) + Vue 的前后端分离博客系统
 4. NoSQL 缓存：[Redis](https://github.com/redis/redis)
 5. 认证与授权：[actix-jwt-session](https://github.com/orhanbalci/actix-jwt-session)
 6. Markdown 解析：[comrak](https://github.com/kivikakk/comrak) - CommonMark 规范解析器
-7. 日志系统：[log4rs](https://github.com/estk/log4rs)
+7. 日志系统：[tracing](https://github.com/tokio-rs/tracing) + [tracing-subscriber](https://github.com/tokio-rs/tracing/tree/master/tracing-subscriber)（stdout + 滚动文件，可用 `RUST_LOG` 环境变量控制级别与模块过滤）
 8. 序列化/反序列化：[serde](https://github.com/serde-rs/serde), [serde_json](https://github.com/serde-rs/json)
 9. UserAgent 解析：[user-agent-parser](https://github.com/magiclen/user-agent-parser)
 
 ## 前端技术栈
 
-核心框架：Vue2.x、Vue Router、Vuex
+核心框架：Vue3.x、Vue Router、Vuex、Vite
 
-Vue 项目基于 @vue/cli4.x 构建
+前端项目基于 Vite 构建（blog-cms、blog-view 分别为 `vite.config.js` / `vite.config.mjs`）
 
 JS 依赖及参考的 css：[axios](https://github.com/axios/axios)、[moment](https://github.com/moment/moment)、[nprogress](https://github.com/rstacruz/nprogress)、[v-viewer](https://github.com/fengyuanchen/viewerjs)、[prismjs](https://github.com/PrismJS/prism)、[APlayer](https://github.com/DIYgod/APlayer)、[MetingJS](https://github.com/metowolf/MetingJS)、[lodash](https://github.com/lodash/lodash)、[mavonEditor](https://github.com/hinesboy/mavonEditor)、[echarts](https://github.com/apache/echarts)、[tocbot](https://github.com/tscanlin/tocbot)、[iCSS](https://github.com/chokcoco/iCSS)
 
@@ -57,10 +57,11 @@ UI 框架为 [Element UI](https://github.com/ElemeFE/element)
 2. 创建 MySQL 数据库 `blog_api`，并执行 `sql` 文件初始化表数据
 3. 安装 Redis 并启动
 4. 修改后端配置文件 `blog-api/config/app_config.yaml`（推荐：复制 `blog-api/config/app_config.local.yaml.example` 为 `blog-api/config/app_config.local.yaml` 填入本地私密信息）确认 MySQL、Redis 等配置
-5. `cargo run` 启动后端服务
-6. 分别在 `blog-cms` 和 `blog-view` 目录下执行 `npm install` 安装依赖
-7. 分别在 `blog-cms` 和 `blog-view` 目录下执行 `npm run serve` 启动前后台页面
-8. （可选）后台“定时任务”中开启 `local / stats.aggregate_visit`，用于定期聚合 PV/UV 与城市访客统计
+5. （可选）日志级别过滤：设置 `RUST_LOG` 环境变量（如 `RUST_LOG=info,blog_api=debug`），日志默认输出到 stdout 与 `logs/blog-api.log`（按天滚动）
+6. `cargo run` 启动后端服务
+7. 分别在 `blog-cms` 和 `blog-view` 目录下执行 `npm install` 安装依赖
+8. 分别在 `blog-cms` 和 `blog-view` 目录下执行 `npm run serve` 启动前后台页面
+9. （可选）后台“定时任务”中开启 `local / stats.aggregate_visit`，用于定期聚合 PV/UV 与城市访客统计
 
 ## 项目进度
 

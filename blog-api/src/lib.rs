@@ -9,3 +9,4 @@ mod model;
 mod service;
 
 pub use app::AppServer;
+pub use app::init_logger;

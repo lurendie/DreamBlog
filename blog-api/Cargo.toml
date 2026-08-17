@@ -32,8 +32,10 @@ serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
 chrono = { version = "0.4", features = ["serde","now"] }
 serde_yaml = { version = "0.9.27" }
-log = "0.4"
-log4rs = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tracing-appender = "0.2"
+tracing-log = "0.2"
 mime = "0.3.17"
 rand = "0.8"                                                      #随机数
 rbs = { version = "4.5" }
@@ -42,7 +44,7 @@ bytes = "1.6.0"
 futures-util = "0.3.30"
 #redis = { version = "0.25.3", features = ["tokio-comp", "json"] } #redis 异步IO
 deadpool-redis = { version = "0.14.0", features = ["serde","rt_tokio_1"] }
-actix-jwt-session = {git="https://github.com/lurendie/actix-jwt-session-test",branch = "master", features = ["use-redis"]}
+actix-jwt-session = {git="https://github.com/lurendie/actix-jwt-session-test", rev = "663944f0bf83b9b24ed7b3ce45a3c1d855956b66", features = ["use-redis"]}
 regex = "1.11.1"
 comrak = "0.26.0"
 slug = "0.1.5"
