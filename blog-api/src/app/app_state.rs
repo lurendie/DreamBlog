@@ -1,10 +1,13 @@
 use super::app_config::CONFIG;
 //use deadpool_redis::Pool;
+use crate::service::VisitLogWriter;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 
 #[derive(Clone)]
 pub struct AppState {
     pub(crate) mysql_connection: DatabaseConnection,
+    /// 访问日志异步写入器（请求路径只入队，后台批量落库）
+    pub(crate) visit_log_writer: Option<VisitLogWriter>,
     // pub(crate) redis_connection: Pool,
     // pub(crate) config: Config,
 }
@@ -17,6 +20,7 @@ impl AppState {
     ) -> Self {
         Self {
             mysql_connection,
+            visit_log_writer: None,
             //  redis_connection,
             // config,
         }

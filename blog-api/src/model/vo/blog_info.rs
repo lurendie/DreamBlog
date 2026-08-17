@@ -1,11 +1,8 @@
 use chrono::NaiveDateTime;
-use sea_orm::{DatabaseConnection, ModelTrait};
 use serde::{Deserialize, Serialize};
 
-use crate::entity::{category, tag};
+use crate::entity::blog::Model as Blog;
 use crate::model::{Category, TagDTO};
-
-use crate::entity::blog::{self, Model as Blog};
 //博客简要信息
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct BlogInfo {
@@ -50,30 +47,5 @@ impl From<Blog> for BlogInfo {
             category: None,
             first_picture: Some(model.first_picture),
         }
-    }
-}
-
-impl BlogInfo {
-    pub async fn related_handle(&mut self, model: blog::Model, db: &DatabaseConnection) {
-        let category_model = match model.find_related(category::Entity).one(db).await {
-            Ok(category_model) => category_model.unwrap_or_default(),
-            Err(e) => {
-                tracing::error!("{:?}", e);
-                category::Model::default()
-            }
-        };
-
-        self.category = Some(Category::from(category_model));
-
-        let tag_models = model
-            .find_related(tag::Entity)
-            .all(db)
-            .await
-            .unwrap_or_default();
-        let mut tags = vec![];
-        for tag_model in tag_models {
-            tags.push(TagDTO::from(tag_model))
-        }
-        self.tags = Some(tags);
     }
 }

@@ -293,7 +293,15 @@ impl PictureHostingService {
             .one(db)
             .await?;
         match model.and_then(|model| model.value) {
-            Some(value) if !value.trim().is_empty() => Ok(Some(serde_json::from_str(&value)?)),
+            Some(value) if !value.trim().is_empty() => {
+                // 新数据为 v1: 加密格式；历史明文数据兼容读取
+                let json_str = match crate::common::decrypt_secret(&value) {
+                    Ok(plain) => plain,
+                    Err(e) if e == "非加密数据" => value,
+                    Err(e) => return Err(AppError::Custom(format!("图床配置解密失败: {e}"))),
+                };
+                Ok(Some(serde_json::from_str(&json_str)?))
+            }
             _ => Ok(None),
         }
     }
@@ -304,7 +312,9 @@ impl PictureHostingService {
         name_zh: &str,
         config: &T,
     ) -> Result<(), AppError> {
-        let value = serde_json::to_string(config)?;
+        let plain = serde_json::to_string(config)?;
+        // 凭据静态加密后再入库，防止数据库泄露直接暴露 token/密码/SecretKey
+        let value = crate::common::encrypt_secret(&plain).map_err(AppError::Custom)?;
         let model = site_setting::Entity::find()
             .filter(site_setting::Column::NameEn.eq(key))
             .one(db)

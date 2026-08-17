@@ -5,5 +5,6 @@
 nblog.code-workspace
 /config/jwt-decoding.bin
 /config/jwt-encoding.bin
+/config/picture_hosting.key
 /config/app_config.local.yaml
 

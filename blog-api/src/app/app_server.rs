@@ -40,11 +40,11 @@ impl AppServer {
         let refresh_ttl = RefreshTtl(Duration::days(server_config.token_expires));
 
         //Appstate
-        let app_state = AppState::new(
-            app_state::get_connection().await,
-            //,
-            // CONFIG.clone(),
-        );
+        let mut app_state = AppState::new(app_state::get_connection().await);
+        //访问日志异步写入器：请求路径只入队，后台批量落库
+        app_state.visit_log_writer = Some(crate::service::VisitLogWriter::start(
+            app_state.get_mysql_pool().clone(),
+        ));
         let scheduler_state = app_state.clone();
         tokio::spawn(async move {
             JobRunner::start(scheduler_state).await;

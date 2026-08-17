@@ -11,7 +11,7 @@ use crate::error::DataBaseError;
 use crate::model::{
     BlogArchive, BlogDetail, BlogInfo, BlogVO, BlogVisibility, SearchBlog, SearchRequest,
 };
-use crate::model::{BlogDTO, BlogIdAndTitle};
+use crate::model::{BlogDTO, BlogIdAndTitle, Category, TagDTO};
 use crate::service::RedisService;
 use chrono::{Datelike, Local, NaiveDate};
 use rand::Rng;
@@ -504,6 +504,7 @@ impl BlogService {
 
     /**
      * 处理BlogInfo结构体依赖关系
+     * 批量加载分类/标签，消除逐条 find_related 的 N+1 查询
      */
     async fn bloginfo_handle(list: &mut Vec<BlogInfo>, db: &DatabaseConnection) {
         let blog_view_map =
@@ -517,13 +518,14 @@ impl BlogService {
                     );
                     HashMap::new()
                 });
+
+        let ids: Vec<i64> = list.iter().filter_map(|item| item.id).collect();
+        if !ids.is_empty() {
+            Self::load_related_batch(list, &ids, db).await;
+        }
+
         for item in list.iter_mut() {
             let id: i64 = item.id.unwrap_or_default();
-            if let Ok(Some(blog)) = blog::Entity::find_by_id(id).one(db).await {
-                item.related_handle(blog, db).await;
-            } else {
-                tracing::error!("检索到ID：{} 的文章出现异常，无法处理依赖关系", id);
-            }
 
             if blog_view_map.contains_key(&id) {
                 item.views = *blog_view_map.get(&id).unwrap_or_else(|| {
@@ -553,6 +555,82 @@ impl BlogService {
             item.password = None;
             //转HTML
             item.description = MarkdownParser::parser_html(item.description.clone());
+        }
+    }
+
+    /// 批量加载分类与标签并回填 BlogInfo（3 次批量查询替代逐条 N+1）
+    async fn load_related_batch(
+        list: &mut [BlogInfo],
+        ids: &[i64],
+        db: &DatabaseConnection,
+    ) {
+        // 1) 批量加载博客模型（取 category_id）
+        let blog_models: HashMap<i64, blog::Model> = blog::Entity::find()
+            .filter(blog::Column::Id.is_in(ids.iter().copied()))
+            .all(db)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|model| (model.id, model))
+            .collect();
+
+        // 2) 批量加载分类
+        let category_ids: Vec<i64> = blog_models.values().map(|m| m.category_id).collect();
+        let categories: HashMap<i64, category::Model> = category::Entity::find()
+            .filter(category::Column::Id.is_in(category_ids))
+            .all(db)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|model| (model.id, model))
+            .collect();
+
+        // 3) 批量加载标签（经 blog_tag 关联表）
+        let tag_links: Vec<blog_tag::Model> = blog_tag::Entity::find()
+            .filter(blog_tag::Column::BlogId.is_in(ids.iter().copied()))
+            .all(db)
+            .await
+            .unwrap_or_default();
+        let tag_ids: Vec<i64> = tag_links.iter().map(|link| link.tag_id).collect();
+        let tags: HashMap<i64, tag::Model> = if tag_ids.is_empty() {
+            HashMap::new()
+        } else {
+            tag::Entity::find()
+                .filter(tag::Column::Id.is_in(tag_ids))
+                .all(db)
+                .await
+                .unwrap_or_default()
+                .into_iter()
+                .map(|model| (model.id, model))
+                .collect()
+        };
+        let mut tags_by_blog: HashMap<i64, Vec<tag::Model>> = HashMap::new();
+        for link in tag_links {
+            if let Some(tag_model) = tags.get(&link.tag_id) {
+                tags_by_blog
+                    .entry(link.blog_id)
+                    .or_default()
+                    .push(tag_model.clone());
+            }
+        }
+
+        // 回填
+        for item in list.iter_mut() {
+            let id = item.id.unwrap_or_default();
+            match blog_models.get(&id) {
+                Some(blog_model) => {
+                    let category_model = categories
+                        .get(&blog_model.category_id)
+                        .cloned()
+                        .unwrap_or_default();
+                    item.category = Some(Category::from(category_model));
+                    let tag_models = tags_by_blog.get(&id).cloned().unwrap_or_default();
+                    item.tags = Some(tag_models.into_iter().map(TagDTO::from).collect());
+                }
+                None => {
+                    tracing::error!("检索到ID：{} 的文章出现异常，无法处理依赖关系", id);
+                }
+            }
         }
     }
 

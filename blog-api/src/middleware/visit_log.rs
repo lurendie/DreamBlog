@@ -6,9 +6,9 @@
 
 */
 use crate::app::AppState;
+use crate::common::IpRegion;
 use crate::constant::VisitBehaviorType;
-use crate::model::Visitor;
-use crate::service::{VisitService, VisitorService};
+use crate::service::{VisitLogEvent, VisitService};
 use actix_jwt_session::Uuid;
 use actix_web::web;
 use actix_web::{self, web::Data};
@@ -19,7 +19,6 @@ use actix_web::{
 };
 use chrono::Local;
 
-use crate::common::{IpRegion, UserAgent};
 use rbs::value;
 use std::collections::HashMap;
 use std::{
@@ -152,8 +151,6 @@ where
                                 &visit_behavior.get_content()
                             );
 
-                        // 解析用户代理
-                        let user_agent = UserAgent::parse_user_agent(&user_agent_str).await;
                         // 计算请求处理时间
                         let end_time: chrono::NaiveDateTime = Local::now().naive_local();
                         let duration = end_time.signed_duration_since(start_time);
@@ -162,38 +159,28 @@ where
                             true => "".to_string(),
                             false => value!(map).to_string(),
                         };
-                        //保存访问日志
-                        let visitor = Visitor::new(
-                            0,
-                            visitor_uuid.to_string(),
-                            Some(ip.to_string()),
-                            Some(IpRegion::search_by_ip::<&str>(&ip).unwrap_or_default()),
-                            Some(user_agent.os.name.to_string()),
-                            Some(user_agent.browser.name.to_string()),
-                            Local::now().naive_local(),
-                            Local::now().naive_local(),
-                            Some(1),
-                            Some(user_agent.user_agent.to_string()),
-                        );
+                        // 访问日志异步化：仅把原始数据入队，解析/落库由后台 worker 批量完成，
+                        // 请求路径不再产生同步 DB 写与 UA/IP 解析开销
                         if let Some(app_stat) = &app_state {
-                            let db = app_stat.get_mysql_pool();
-                            VisitorService::save_visitor(visitor, &db)
-                                .await
-                                .unwrap_or_else(|e| tracing::error!("保存访客失败{e}"));
-                            VisitService::save_visit(
-                                &db,
-                                &visitor_uuid,
-                                &uri,
-                                &method,
-                                &param,
-                                &ip,
-                                user_agent,
-                                times,
-                                end_time,
-                                visit_behavior,
-                            )
-                            .await
-                            .unwrap_or_else(|e| tracing::error!("保存访问日志失败{e}"));
+                            match &app_stat.visit_log_writer {
+                                Some(writer) => {
+                                    let event = VisitLogEvent {
+                                        visitor_uuid: visitor_uuid.to_string(),
+                                        ip: ip.to_string(),
+                                        user_agent: user_agent_str.clone(),
+                                        uri: uri.clone(),
+                                        method: method.clone(),
+                                        param,
+                                        times,
+                                        end_time,
+                                        behavior: visit_behavior,
+                                    };
+                                    if let Err(e) = writer.send(event).await {
+                                        tracing::error!("访问日志入队失败: {e}");
+                                    }
+                                }
+                                None => tracing::warn!("访问日志写入器未初始化，跳过本次访问日志"),
+                            }
                         }
                     }
                     _ => (),
