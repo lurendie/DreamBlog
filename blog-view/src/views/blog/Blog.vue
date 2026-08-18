@@ -154,10 +154,8 @@
 				//密码保护的文章，需要发送密码验证通过后保存在localStorage的Token
 				//getBlogToken 仅在存储值是真实 token 字符串时才返回；若只存了"已验证"标记则返回 ''
 				const blogToken = getBlogToken(id)
-				//如果有则发送博主身份Token
-				const adminToken = window.localStorage.getItem('adminToken')
-				const token = adminToken ? adminToken : (blogToken ? blogToken : '')
-				getBlogById(token, id).then(res => {
+				//博主身份由 httpOnly Cookie 自动携带，这里仅发送密码解锁 token
+				getBlogById(blogToken, id).then(res => {
 					if (res.code === 200) {
 						this.blog = res.data
 						updateSeo({

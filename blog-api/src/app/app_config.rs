@@ -61,6 +61,8 @@ pub struct ServerConfig {
     pub(crate) view_url: String,  //前端页面地址
     pub(crate) cms_url: String,   //前端页面地址
     pub(crate) token_expires: i64, //token 过期时间
+    #[serde(default)]
+    pub(crate) cookie_secure: bool, //登录 Cookie 是否仅 HTTPS 传输（生产建议 true）
 }
 
 impl ServerConfig {

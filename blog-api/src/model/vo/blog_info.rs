@@ -17,6 +17,7 @@ pub struct BlogInfo {
     pub read_time: i32,
     pub password: Option<String>,
     pub privacy: Option<bool>,
+    #[serde(rename(serialize = "top"))]
     pub is_top: bool,
     pub tags: Option<Vec<TagDTO>>,
     pub category: Option<Category>,

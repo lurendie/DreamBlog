@@ -244,6 +244,18 @@ async fn execute_http_job(bean_name: &str, url: &str, params: &str) -> Result<()
     if !(url.starts_with("http://") || url.starts_with("https://")) {
         return Err(format!("HTTP任务URL协议不合法: {}", url));
     }
+    // 解析 URL 并拒绝内网/本机字面地址（SSRF 防护；域名不做 DNS 解析以免阻塞调度）
+    let parsed = match reqwest::Url::parse(url) {
+        Ok(u) => u,
+        Err(_) => return Err(format!("HTTP任务URL格式不合法: {}", url)),
+    };
+    if let Some(host) = parsed.host_str() {
+        if is_private_host(host) {
+            return Err(format!("HTTP任务URL目标不合法（禁止内网/本机地址）: {}", url));
+        }
+    } else {
+        return Err(format!("HTTP任务URL缺少主机名: {}", url));
+    }
     // 使用带超时的客户端，避免出站请求长时间挂起拖垮调度线程
     let client = Client::builder()
         .timeout(std::time::Duration::from_secs(30))
@@ -272,6 +284,57 @@ async fn execute_http_job(bean_name: &str, url: &str, params: &str) -> Result<()
     }
     request.send().await.map_err(|e| e.to_string())?;
     Ok(())
+}
+
+/// 判断主机名是否为内网/本机字面地址（SSRF 防护）：
+/// 仅检查字面 IP 与 localhost；域名不做 DNS 解析（避免阻塞调度线程）
+fn is_private_host(host: &str) -> bool {
+    let host = host.trim_end_matches('.').to_ascii_lowercase();
+    if host == "localhost" {
+        return true;
+    }
+    match host.parse::<std::net::IpAddr>() {
+        Ok(std::net::IpAddr::V4(v4)) => {
+            v4.is_unspecified() || v4.is_loopback() || v4.is_private() || v4.is_link_local()
+        }
+        Ok(std::net::IpAddr::V6(v6)) => {
+            v6.is_unspecified()
+                || v6.is_loopback()
+                || v6.is_unique_local()
+                || v6.is_unicast_link_local()
+        }
+        Err(_) => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_private_host;
+
+    #[test]
+    fn rejects_private_and_local_hosts() {
+        for host in [
+            "localhost",
+            "127.0.0.1",
+            "0.0.0.0",
+            "10.1.2.3",
+            "172.16.0.1",
+            "192.168.1.1",
+            "169.254.169.254",
+            "::1",
+            "fe80::1",
+            "fc00::1",
+        ] {
+            assert!(is_private_host(host), "{} 应被拒绝", host);
+        }
+    }
+
+    #[test]
+    fn allows_public_hosts() {
+        for host in ["8.8.8.8", "1.1.1.1", "example.com", "api.github.com"] {
+            assert!(!is_private_host(host), "{} 应被放行", host);
+        }
+    }
 }
 
 async fn execute_local_job(

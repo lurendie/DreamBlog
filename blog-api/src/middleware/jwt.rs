@@ -213,7 +213,14 @@ impl<ClaimsType: Claims> SessionExtractor<ClaimsType> for CustomHeaderExtractor<
         if self.validate_login_path(req.path()).await {
             return Ok(());
         }
-        let Some(as_str) = self.extract_token_text(req).await else {
+        // 优先 Authorization 头（密码解锁 token 等），其次 httpOnly Cookie（博主会话）
+        let header_token = self.extract_token_text(req).await.map(|c| c.into_owned());
+        let cookie_token = req.cookie("token").map(|cookie| cookie.value().to_string());
+        let token_text = match header_token {
+            Some(t) if !t.trim().is_empty() => Some(Cow::Owned(t)),
+            _ => cookie_token.map(Cow::Owned),
+        };
+        let Some(as_str) = token_text else {
             return Ok(());
         };
         let decoded_claims = match self.decode(&as_str, jwt_decoding_key, algorithm) {

@@ -31,8 +31,15 @@ impl From<DbErr> for AppError {
 
 impl error::ResponseError for AppError {
     fn status_code(&self) -> StatusCode {
-        // 保持 HTTP 200 + body code 的既有契约；状态码语义问题见 error_response 注释
-        StatusCode::OK
+        // 保持业务错误 HTTP 200 + body code 的既有契约；仅真正的数据库内部错误
+        // （SQL 失败/事务失败）返回 500，让异常日志中间件能够捕获并记录
+        match self {
+            AppError::DataBaseError(DataBaseError::MySQLError(_))
+            | AppError::DataBaseError(DataBaseError::TransactionError(_)) => {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
+            _ => StatusCode::OK,
+        }
     }
 
     fn error_response(&self) -> HttpResponse<BoxBody> {

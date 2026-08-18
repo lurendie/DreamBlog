@@ -179,9 +179,10 @@
 				}
 			},
 			postForm() {
-				const adminToken = window.localStorage.getItem('adminToken')
-				if (adminToken) {
-					//博主登录后，localStorage中会存储token，在后端设置属性，可以不校验昵称、邮箱
+				//isAdmin 仅登录态标记；博主会话由 httpOnly Cookie 携带，后端校验身份
+				const isAdmin = window.localStorage.getItem('isAdmin')
+				if (isAdmin) {
+					//博主登录后，可以不校验昵称、邮箱（后端按 Cookie 会话识别博主）
 					if (this.commentForm.content === '' || this.commentForm.content.length > 250) {
 						return this.$notify({
 							title: '评论失败',
@@ -189,7 +190,7 @@
 							type: 'warning'
 						})
 					} else {
-						return this.$store.dispatch('submitCommentForm', adminToken)
+						return this.$store.dispatch('submitCommentForm', '')
 					}
 				}
 				const blogToken = getBlogToken(this.commentQuery.blogId)

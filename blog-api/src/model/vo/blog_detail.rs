@@ -1,4 +1,4 @@
-use crate::{entity::blog, model::TagDTO};
+use crate::{entity::blog, model::{Category, TagDTO}};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 //博客详情信息
@@ -8,20 +8,26 @@ pub struct BlogDetail {
     pub(crate) title: String,
     pub(crate) content: String,
     pub(crate) description: String,
+    #[serde(rename(serialize = "appreciation", deserialize = "appreciation"))]
     pub(crate) is_appreciation: bool,
-    #[serde(rename(serialize = "commentEnabled"))]
+    #[serde(rename(serialize = "commentEnabled", deserialize = "commentEnabled"))]
     pub(crate) is_comment_enabled: bool,
-    #[serde(rename(serialize = "createTime"))]
+    #[serde(rename(serialize = "createTime", deserialize = "createTime"))]
     pub(crate) create_time: NaiveDateTime,
-    #[serde(rename(serialize = "updateTime"))]
+    #[serde(rename(serialize = "updateTime", deserialize = "updateTime"))]
     pub(crate) update_time: NaiveDateTime,
     pub(crate) views: i32,
     pub(crate) words: i32,
-    #[serde(rename(serialize = "readTime"))]
+    #[serde(rename(serialize = "readTime", deserialize = "readTime"))]
     pub(crate) read_time: i32,
+    #[serde(rename(serialize = "top", deserialize = "top"))]
     pub(crate) is_top: bool,
     pub(crate) privacy: Option<bool>,
     pub(crate) tags: Option<Vec<TagDTO>>,
+    /// 分类信息（详情页展示分类标签）
+    pub(crate) category: Option<Category>,
+    #[serde(rename(serialize = "firstPicture", deserialize = "firstPicture"))]
+    pub(crate) first_picture: Option<String>,
 }
 
 impl BlogDetail {
@@ -47,6 +53,8 @@ impl From<blog::Model> for BlogDetail {
             is_top: model.is_top,
             privacy: model.password.as_ref().map(|p| !p.is_empty()),
             tags: None,
+            category: None,
+            first_picture: Some(model.first_picture),
         }
     }
 }

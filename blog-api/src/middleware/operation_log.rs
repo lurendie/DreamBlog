@@ -9,9 +9,12 @@ use std::{
     future::{ready, Future, Ready},
     pin::Pin,
     rc::Rc,
+    sync::Arc,
 };
 
+use actix_http::{BoxedPayloadStream, Payload};
 use actix_jwt_session::Authenticated;
+use parking_lot::Mutex;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     http::Method,
@@ -101,10 +104,26 @@ where
                 .and_then(|v| v.to_str().ok())
                 .map(|v| v.to_lowercase().contains("multipart/"))
                 .unwrap_or(false);
-            let body_bytes = if should_log_request {
-                read_request_body(&mut req).await
+            // 需要记录时，把请求体 tee 一份到有界缓冲（仅保留前 64KB 用于日志），
+            // 完整 body 原样透传给下游 handler。修复未认证超大请求体被无限缓冲的内存 DoS。
+            let log_buffer: Option<Arc<Mutex<BytesMut>>> = if should_log_request {
+                let buffer = Arc::new(Mutex::new(BytesMut::new()));
+                let tee = Arc::clone(&buffer);
+                let payload = req.take_payload();
+                let stream = payload.map(move |chunk| {
+                    if let Ok(bytes) = &chunk {
+                        let mut buf = tee.lock();
+                        if buf.len() < BODY_LOG_LIMIT {
+                            let room = BODY_LOG_LIMIT - buf.len();
+                            buf.extend_from_slice(&bytes[..bytes.len().min(room)]);
+                        }
+                    }
+                    chunk
+                });
+                req.set_payload(Payload::from(Box::pin(stream) as BoxedPayloadStream));
+                Some(buffer)
             } else {
-                Bytes::new()
+                None
             };
 
             let res = service.call(req).await?;
@@ -122,6 +141,12 @@ where
                     let user_agent = UserAgent::parse_user_agent(&user_agent_str).await;
                     let ip_source = IpRegion::search_by_ip::<&str>(&ip).unwrap_or_default();
 
+                    let body_bytes = log_buffer
+                        .map(|buf| {
+                            let guard = buf.lock();
+                            Bytes::copy_from_slice(&guard[..])
+                        })
+                        .unwrap_or_default();
                     let param = build_param(&query_string, &body_bytes, is_multipart);
                     let description = resolve_description(&method, &uri);
 
@@ -151,19 +176,8 @@ where
     }
 }
 
-async fn read_request_body(req: &mut ServiceRequest) -> Bytes {
-    let mut payload = req.take_payload();
-    let mut body = BytesMut::new();
-    while let Some(chunk) = payload.next().await {
-        if let Ok(bytes) = chunk {
-            body.extend_from_slice(&bytes);
-        }
-    }
-
-    let bytes = body.freeze();
-    req.set_payload(bytes.clone().into());
-    bytes
-}
+/// 日志请求体保留上限（64KB 远超 build_param 的 1900 字符截断，仅用于防止无限缓冲）
+const BODY_LOG_LIMIT: usize = 64 * 1024;
 
 fn should_log(method: &Method, uri: &str) -> bool {
     if method == Method::OPTIONS || method == Method::GET {

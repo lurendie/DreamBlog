@@ -242,10 +242,10 @@ const router = createRouter({
 //挂载路由守卫
 router.beforeEach((to, from, next) => {
 	if (to.path !== '/login') {
-		//获取token
-		const tokenStr = window.localStorage.getItem('token')
+		//登录态标记（真实会话为 httpOnly Cookie，由后端校验）
+		const loggedIn = window.localStorage.getItem('isLoggedIn')
 		const user = getStoredUser()
-		if (!tokenStr || !user) {
+		if (!loggedIn || !user) {
 			clearLoginState()
 			return next("/login")
 		}

@@ -167,11 +167,15 @@
 					type: 'warning',
 					dangerouslyUseHTMLString: true
 				}).then(() => {
-					updateJobStatus(row.jobId, row.status).then(res => {
-						this.msgSuccess(res.msg)
-					})
-				}).catch(() => {
+					return updateJobStatus(row.jobId, row.status)
+				}).then(res => {
+					this.msgSuccess(res.msg)
+				}).catch(err => {
+					//取消或失败都回滚开关状态；仅请求真正失败时提示
 					row.status = !row.status
+					if (err !== 'cancel' && err !== 'close') {
+						this.msgError((err && err.msg) || '操作失败')
+					}
 				})
 			},
 			runOnce(jobId) {
@@ -180,14 +184,14 @@
 					cancelButtonText: '取消',
 					type: 'warning'
 				}).then(() => {
-					runJobOnce(jobId).then(res => {
-						this.msgSuccess(res.msg)
-					})
-				}).catch(() => {
-					this.$message({
-						type: 'info',
-						message: '已取消执行'
-					})
+					return runJobOnce(jobId)
+				}).then(res => {
+					this.msgSuccess(res.msg)
+				}).catch(err => {
+					//取消/关闭对话框不提示；仅请求真正失败时提示
+					if (err !== 'cancel' && err !== 'close') {
+						this.msgError((err && err.msg) || '执行失败')
+					}
 				})
 			},
 			deleteJobById(jobId) {

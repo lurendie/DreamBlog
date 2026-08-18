@@ -81,3 +81,14 @@ pub struct LoginUser {
     pub(crate) username: String,
     pub(crate) password: String,
 }
+
+/// 后台修改账户提交的字段（全部可选，只更新非空项）
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct UpdateAccountDTO {
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub nickname: Option<String>,
+    pub avatar: Option<String>,
+    pub email: Option<String>,
+}

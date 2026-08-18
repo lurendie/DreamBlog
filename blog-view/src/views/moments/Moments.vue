@@ -65,10 +65,8 @@
 		},
 		methods: {
 			getMomentList() {
-				//如果有则发送博主身份Token
-				const adminToken = window.localStorage.getItem('adminToken')
-				const token = adminToken ? adminToken : ''
-				getMomentListByPageNum(token, this.pageNum).then(res => {
+				//博主身份由 httpOnly Cookie 自动携带
+				getMomentListByPageNum('', this.pageNum).then(res => {
 					if (res.code === 200) {
 						this.momentList = res.data.list
 						this.totalPage = res.data.totalPage

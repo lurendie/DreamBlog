@@ -6,7 +6,10 @@ use crate::app::RedisClient;
 use crate::app::CONFIG;
 use crate::error::DataBaseError;
 use deadpool_redis::redis::AsyncCommands;
+use deadpool_redis::redis::ExistenceCheck;
 use deadpool_redis::redis::FromRedisValue;
+use deadpool_redis::redis::SetExpiry;
+use deadpool_redis::redis::SetOptions;
 use rbs::Value;
 use serde::Serialize;
 
@@ -209,21 +212,7 @@ impl RedisService {
         let _ = Self::_del_key(key).await;
     }
 
-    /// 判断 key 是否存在（Redis 关闭时返回 false，调用方应将其视为“不限频”）
-    pub async fn key_exists(key: &str) -> bool {
-        let Some(mut connection) = Self::connection().await else {
-            return false;
-        };
-        match connection.exists::<String, i64>(key.to_string()).await {
-            Ok(count) => count > 0,
-            Err(e) => {
-                tracing::debug!("redis key: {} 判断存在失败:{}", key, e);
-                false
-            }
-        }
-    }
-
-    /// 设置带独立过期时间的字符串值（秒），用于限频等短时效数据
+    /// 设置带独立过期时间的字符串值（秒），用于解锁 token 等短时效数据
     pub async fn set_string_ttl<T: Serialize>(key: String, value: &T, ttl_secs: u64) -> bool {
         let Some(mut connection) = Self::connection().await else {
             return false;
@@ -247,12 +236,26 @@ impl RedisService {
         }
     }
 
-    /// 限频检查：窗口期内已存在则拒绝，否则占用窗口。Redis 关闭时始终放行。
+    /// 限频检查（原子 SET NX EX）：窗口期内已存在则拒绝，否则占用窗口。
+    /// Redis 不可用时放行，避免限频故障导致业务不可用。
     pub async fn check_rate_limit(key: &str, window_secs: u64) -> bool {
-        if Self::key_exists(key).await {
-            return false;
+        let Some(mut connection) = Self::connection().await else {
+            return true;
+        };
+        let options = SetOptions::default()
+            .conditional_set(ExistenceCheck::NX)
+            .with_expiration(SetExpiry::EX(window_secs as usize));
+        match connection
+            .set_options::<String, i32, deadpool_redis::redis::Value>(key.to_string(), 1, options)
+            .await
+        {
+            // NX 失败（key 已存在）Redis 返回 nil；占用成功返回 OK（映射为 Value::Okay）
+            Ok(value) => matches!(value, deadpool_redis::redis::Value::Okay),
+            Err(e) => {
+                tracing::debug!("redis key: {} 限频检查失败:{}", key, e);
+                true
+            }
         }
-        Self::set_string_ttl(key.to_string(), &1u8, window_secs).await
     }
 
     /// 自增计数，首次自增时设置过期时间（秒），用于登录失败锁定等。Redis 关闭时返回 None。

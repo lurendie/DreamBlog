@@ -5,6 +5,8 @@ import 'nprogress/nprogress.css'
 const request = axios.create({
 	baseURL: import.meta.env.VITE_API_BASE_URL || import.meta.env.VUE_APP_API_BASE_URL || 'http://localhost:8090/blog/',
 	timeout: 10000,
+	//httpOnly Cookie 会话需要跨源携带凭证（前端不持有 JWT 明文）
+	withCredentials: true,
 })
 
 // 请求拦截

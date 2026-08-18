@@ -21,9 +21,9 @@ use rbs::Value;
 use sea_orm::prelude::Expr;
 use sea_orm::IntoActiveModel;
 use sea_orm::{
-    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, DbBackend, EntityTrait,
-    FromQueryResult, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, QueryTrait,
-    Statement, TransactionTrait,
+    ActiveModelTrait, ActiveValue, ColumnTrait, Condition, DatabaseConnection, DbBackend,
+    EntityTrait, FromQueryResult, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder,
+    QuerySelect, QueryTrait, Statement, TransactionTrait,
 };
 use std::collections::HashMap;
 use std::ops::Index;
@@ -323,12 +323,17 @@ impl BlogService {
                 return None;
             }
         };
+        let category_id = blog_model.category_id;
         let tag_models = blog_model
             .find_related(tag::Entity)
             .all(db)
             .await
             .unwrap_or_default();
         let mut blog = BlogDetail::from(blog_model);
+        // 分类信息（详情页展示分类标签）
+        if let Ok(Some(category_model)) = category::Entity::find_by_id(category_id).one(db).await {
+            blog.category = Some(Category::from(category_model));
+        }
         blog.tags = Some(
             tag_models
                 .into_iter()
@@ -1024,6 +1029,12 @@ impl BlogService {
         let mut models = blog::Entity::find()
             .filter(blog::Column::IsPublished.eq(true))
             .filter(blog::Column::Content.contains(like))
+            // 密码保护文章（password 非空）不进公开搜索，避免标题与摘要泄露
+            .filter(
+                Condition::any()
+                    .add(blog::Column::Password.is_null())
+                    .add(blog::Column::Password.eq("")),
+            )
             // 限制返回数量，避免全表扫描导致内存/响应过大
             .limit(Some(20))
             .all(db)

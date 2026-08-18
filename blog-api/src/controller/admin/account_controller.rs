@@ -1,6 +1,6 @@
 use crate::error::AppError;
 use crate::middleware::AppClaims;
-use crate::model::User;
+use crate::model::UpdateAccountDTO;
 use crate::service::UserService;
 use crate::{app::AppState, model::ApiResponse};
 use actix_jwt_session::Authenticated;
@@ -12,7 +12,7 @@ use rbs::{value, Value};
 pub async fn change_account(
     auth: Authenticated<AppClaims>,
     app: web::Data<AppState>,
-    user_from: web::Json<User>,
+    user_from: web::Json<UpdateAccountDTO>,
 ) -> Result<ApiResponse<Value>, AppError> {
     let db = app.get_mysql_pool();
     // 通过TOKEN 查询当前用户

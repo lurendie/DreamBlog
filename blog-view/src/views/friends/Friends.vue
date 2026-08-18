@@ -5,7 +5,7 @@
 		</div>
 		<div class="ui attached segment">
 			<div class="ui link three doubling cards">
-				<a :href="item.website" target="_blank" rel="external nofollow noopener" class="card" :style="randomRGB()"
+				<a :href="item.website" target="_blank" rel="external nofollow noopener" class="card" :style="{backgroundColor: item.bgColor}"
 				   v-for="(item,index) in friendList" :key="index" @click="addViews(item.nickname)">
 					<div class="image">
 						<img :src="item.avatar" onerror="this.src = '/img/error.png'">
@@ -58,7 +58,11 @@
 			getData() {
 				getData().then(res => {
 					if (res.code === 200) {
-						this.friendList = res.data.friendList
+						//颜色一次性生成并固定，避免每次渲染随机变化导致卡片闪色
+						this.friendList = res.data.friendList.map(item => ({
+							...item,
+							bgColor: this.bgColor[Math.floor(Math.random() * this.bgColor.length)]
+						}))
 						this.info = res.data.friendInfo
 						updateSeo({
 							title: '友人帐',
@@ -75,10 +79,6 @@
 			},
 			addViews(nickname) {
 				addViewsByNickname(nickname)
-			},
-			randomRGB() {
-				const index = Math.floor((Math.random() * this.bgColor.length))
-				return {backgroundColor: this.bgColor[index]}
 			}
 		}
 	}

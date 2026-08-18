@@ -173,15 +173,15 @@ export default {
 				cancelButtonText: '取消',
 				type: 'warning',
 			}).then(() => {
-				delFile(this.upyunConfig.bucketName, file.path).then(() => {
-					this.msgSuccess('删除成功')
-					this.search()
-				})
-			}).catch(() => {
-				this.$message({
-					type: 'info',
-					message: '已取消删除',
-				})
+				return delFile(this.upyunConfig.bucketName, file.path)
+			}).then(() => {
+				this.msgSuccess('删除成功')
+				this.search()
+			}).catch(err => {
+				//取消/关闭对话框不提示；仅请求真正失败时提示
+				if (err !== 'cancel' && err !== 'close') {
+					this.msgError((err && err.msg) || '删除失败')
+				}
 			})
 		},
 		submitUpload() {

@@ -1,7 +1,7 @@
 const allowedTags = new Set([
 	'a', 'abbr', 'article', 'aside', 'b', 'blockquote', 'br', 'caption', 'code', 'del', 'details', 'div',
 	'em', 'figcaption', 'figure', 'footer', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'i',
-	'img', 'ins', 'kbd', 'li', 'main', 'mark', 'menu', 'nav', 'ol', 'p', 'pre', 'q', 's', 'section',
+	'img', 'ins', 'kbd', 'li', 'main', 'mark', 'menu', 'meting-js', 'nav', 'ol', 'p', 'pre', 'q', 's', 'section',
 	'small', 'span', 'strong', 'sub', 'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr',
 	'u', 'ul'
 ])
@@ -11,7 +11,8 @@ const allowedAttributesByTag = {
 	a: new Set(['href', 'name', 'target', 'rel']),
 	img: new Set(['src', 'alt', 'title', 'width', 'height', 'loading']),
 	code: new Set(['class']),
-	pre: new Set(['class'])
+	pre: new Set(['class']),
+	'meting-js': new Set(['server', 'type', 'id', 'theme', 'autoplay', 'volume', 'mutex', 'listmaxheight', 'preload', 'loop', 'mini', 'fixed', 'order', 'storage'])
 }
 
 const allowedSchemes = new Set(['http:', 'https:', 'mailto:', 'tel:'])

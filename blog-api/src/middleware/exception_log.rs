@@ -76,36 +76,44 @@ where
 
         Box::pin(async move {
             let res = service.call(req).await;
-            // 仅记录 5xx 服务端错误，避免无效 token、404 等常见请求刷屏
-            if let Err(e) = &res {
-                if e.as_response_error().status_code().is_server_error() {
-                    if let Some(app_state) = app_state {
-                        let user_agent = UserAgent::parse_user_agent(&user_agent_str).await;
-                        let param = if query.is_empty() {
-                            None
-                        } else {
-                            Some(query.clone())
-                        };
-                        let model = exception_log::ActiveModel {
-                            uri: Set(uri.clone()),
-                            method: Set(method.clone()),
-                            param: Set(param),
-                            description: Set(None),
-                            error: Set(Some(e.to_string())),
-                            ip: Set(Some(ip.clone())),
-                            ip_source: Set(Some(
-                                IpRegion::search_by_ip::<&str>(&ip).unwrap_or_default(),
-                            )),
-                            os: Set(Some(user_agent.os.name)),
-                            browser: Set(Some(user_agent.browser.name)),
-                            create_time: Set(Local::now().naive_local()),
-                            user_agent: Set(Some(user_agent.user_agent)),
-                            ..Default::default()
-                        };
-                        let db = app_state.get_mysql_pool();
-                        if let Err(save_err) = model.save(db).await {
-                            tracing::error!("保存异常日志失败: {save_err}");
-                        }
+            // 记录真正的服务端错误：传输层 5xx，或业务响应为 500（内部 DB 错误等）。
+            // 业务错误（HTTP 200 + body code）不记录，避免校验类错误刷屏。
+            let server_error = match &res {
+                Err(e) if e.as_response_error().status_code().is_server_error() => {
+                    Some(e.to_string())
+                }
+                Ok(r) if r.status().is_server_error() => {
+                    Some("HTTP 500 服务器内部错误（详见服务端日志）".to_string())
+                }
+                _ => None,
+            };
+            if let Some(error) = server_error {
+                if let Some(app_state) = app_state {
+                    let user_agent = UserAgent::parse_user_agent(&user_agent_str).await;
+                    let param = if query.is_empty() {
+                        None
+                    } else {
+                        Some(query.clone())
+                    };
+                    let model = exception_log::ActiveModel {
+                        uri: Set(uri.clone()),
+                        method: Set(method.clone()),
+                        param: Set(param),
+                        description: Set(None),
+                        error: Set(Some(error)),
+                        ip: Set(Some(ip.clone())),
+                        ip_source: Set(Some(
+                            IpRegion::search_by_ip::<&str>(&ip).unwrap_or_default(),
+                        )),
+                        os: Set(Some(user_agent.os.name)),
+                        browser: Set(Some(user_agent.browser.name)),
+                        create_time: Set(Local::now().naive_local()),
+                        user_agent: Set(Some(user_agent.user_agent)),
+                        ..Default::default()
+                    };
+                    let db = app_state.get_mysql_pool();
+                    if let Err(save_err) = model.save(db).await {
+                        tracing::error!("保存异常日志失败: {save_err}");
                     }
                 }
             }

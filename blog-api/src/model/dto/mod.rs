@@ -54,6 +54,7 @@ pub use schedule_job_log::ScheduleJobLog;
 pub use site_setting::SiteSetting;
 pub use tag_dto::TagDTO;
 pub use user::LoginUser;
+pub use user::UpdateAccountDTO;
 pub use user::User;
 pub use visit_log::LogIdParam;
 pub use visit_log::VisitLog;

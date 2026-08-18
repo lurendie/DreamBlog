@@ -62,10 +62,17 @@ impl From<visitor::Model> for Visitor {
 
 #[derive(Debug, Deserialize)]
 pub struct VisitorQuery {
+    #[serde(default)]
     pub page_num: Option<u32>,
+    #[serde(default)]
     pub page_size: Option<u32>,
+    #[serde(default)]
     pub ip: Option<String>,
+    #[serde(default)]
     pub ip_source: Option<String>,
+    /// 最后访问时间范围："开始时间,结束时间"（YYYY-MM-DD HH:mm:ss），可只给开始
+    #[serde(default)]
+    pub date: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

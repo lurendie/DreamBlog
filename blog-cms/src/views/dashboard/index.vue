@@ -76,9 +76,11 @@
 
 <script>
 	import SvgIcon from "@/components/SvgIcon";
-	import echarts from 'echarts'
-	import 'echarts/map/js/china'
+	import * as echarts from 'echarts'
 	import {getDashboard} from "@/api/dashboard";
+	//echarts 5 不再内置中国地图，用项目内自带数据注册（省级粒度）
+	import chinaJson from '@/util/china.json'
+	echarts.registerMap('china', chinaJson)
 	//城市经纬度数据来自 https://github.com/Naccl/region2coord
 	import geoCoordMap from '@/util/city2coord.json'
 
@@ -159,26 +161,23 @@
 						roam: false,//关闭拖拽
 						zoom: 1.24,
 						center: [104.2, 36],//调整地图位置
+						//echarts 5 已移除 normal 层级，默认样式写在顶层
 						label: {
-							normal: {
-								show: false,//关闭省份名展示
-								fontSize: "10",
-								color: "rgba(0,0,0,0.7)"
-							},
+							show: false,//关闭省份名展示
+							fontSize: "10",
+							color: "rgba(0,0,0,0.7)",
 							emphasis: {
 								show: false
 							}
 						},
 						itemStyle: {
-							normal: {
-								areaColor: "#0d0059",
-								borderColor: "#389dff",
-								borderWidth: 1,//设置外层边框
-								shadowBlur: 5,
-								shadowOffsetY: 8,
-								shadowOffsetX: 0,
-								shadowColor: "#01012a"
-							},
+							areaColor: "#0d0059",
+							borderColor: "#389dff",
+							borderWidth: 1,//设置外层边框
+							shadowBlur: 5,
+							shadowOffsetY: 8,
+							shadowOffsetX: 0,
+							shadowColor: "#01012a",
 							emphasis: {
 								areaColor: "#184cff",
 								shadowOffsetX: 0,
@@ -197,29 +196,25 @@
 							zoom: 1.24,
 							center: [104.2, 36],
 							showLegendSymbol: false,
-							label: {
-								normal: {
-									show: false
-								},
-								emphasis: {
-									show: false
-								}
-							},
-							itemStyle: {
-								normal: {
-									areaColor: "#0d0059",
-									borderColor: "#389dff",
-									borderWidth: 0.5
-								},
-								emphasis: {
-									areaColor: "#17008d",
-									shadowOffsetX: 0,
-									shadowOffsetY: 0,
-									shadowBlur: 5,
-									borderWidth: 0,
-									shadowColor: "rgba(0, 0, 0, 0.5)"
-								}
+						label: {
+							show: false,
+							emphasis: {
+								show: false
 							}
+						},
+						itemStyle: {
+							areaColor: "#0d0059",
+							borderColor: "#389dff",
+							borderWidth: 0.5,
+							emphasis: {
+								areaColor: "#17008d",
+								shadowOffsetX: 0,
+								shadowOffsetY: 0,
+								shadowBlur: 5,
+								borderWidth: 0,
+								shadowColor: "rgba(0, 0, 0, 0.5)"
+							}
+						}
 						},
 						{
 							name: "",
@@ -361,6 +356,13 @@
 					]
 				},
 			}
+		},
+		beforeUnmount() {
+			//销毁 echarts 实例，避免路由切换后内存泄漏
+			if (this.categoryEcharts) this.categoryEcharts.dispose()
+			if (this.tagEcharts) this.tagEcharts.dispose()
+			if (this.mapEcharts) this.mapEcharts.dispose()
+			if (this.visitRecordEcharts) this.visitRecordEcharts.dispose()
 		},
 		mounted() {
 			this.getData()

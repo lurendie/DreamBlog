@@ -13,10 +13,11 @@ use crate::middleware::AppClaims;
 use crate::model::{ApiResponse, LoginUser};
 use crate::service::{LoginLogService, RedisService, UserService};
 use actix_jwt_session::{Authenticated, JwtTtl, RefreshTtl, SessionStorage};
+use actix_web::cookie::{self, Cookie, SameSite};
 use actix_web::{
     routes,
     web::{Data, Json},
-    HttpRequest,
+    HttpRequest, HttpResponse,
 };
 use rbs::{value, Value};
 
@@ -29,7 +30,7 @@ pub async fn login(
     refresh_ttl: Data<RefreshTtl>,
     app: Data<AppState>,
     req: HttpRequest,
-) -> Result<ApiResponse<Value>, AppError> {
+) -> Result<HttpResponse, AppError> {
     let ip = IpRegion::get_real_client_ip(&req, crate::app::CONFIG.get_server_config().trust_proxy);
     // 登录失败锁定：同一 IP 连续失败 5 次后锁定 10 分钟（Redis 关闭时跳过）
     let fail_key = format!("login:fail:{}", ip);
@@ -78,11 +79,25 @@ pub async fn login(
     .await;
 
     let data = result?;
-    // token 已通过 body data.token 返回，这里不再额外设置响应头
-    Ok(ApiResponse::<Value>::success_with_msg(
+    let mut resp = ApiResponse::<Value>::success_with_msg(
         format!("登录成功!,欢迎用户{}!", user_form.username).as_str(),
         Some(value!(&data.0)),
-    ))
+    )
+    .respond();
+    // JWT 同时写入 httpOnly Cookie（SameSite=Lax 防 CSRF），前端不再持有 token 明文
+    let cookie = Cookie::build("token", &data.1)
+        .http_only(true)
+        .same_site(SameSite::Lax)
+        .path("/")
+        .max_age(cookie::time::Duration::days(
+            crate::app::CONFIG.get_server_config().token_expires,
+        ))
+        .secure(crate::app::CONFIG.get_server_config().cookie_secure)
+        .finish();
+    if let Err(e) = resp.add_cookie(&cookie) {
+        return Err(AppError::Custom(format!("设置登录 Cookie 失败: {e}")));
+    }
+    Ok(resp)
 }
 
 #[routes]
@@ -90,13 +105,20 @@ pub async fn login(
 pub async fn logout(
     auth: Authenticated<AppClaims>,
     store: Data<SessionStorage>,
-) -> Result<ApiResponse<Value>, AppError> {
+) -> Result<HttpResponse, AppError> {
     // 吊销会话（Redis 存储启用时生效；无状态降级模式下忽略）
     if let Err(e) = store.erase::<AppClaims>(auth.claims.jwt_id).await {
         tracing::debug!("退出登录吊销会话失败（可能为无状态模式）: {e}");
     }
-    Ok(ApiResponse::<Value>::success_with_msg(
-        "退出登录成功",
-        None,
-    ))
+    let mut resp = ApiResponse::<Value>::success_with_msg("退出登录成功", None).respond();
+    // 清除 httpOnly 会话 Cookie（与登录时相同的 Path/SameSite 属性）
+    let removal = Cookie::build("token", "")
+        .path("/")
+        .http_only(true)
+        .same_site(SameSite::Lax)
+        .finish();
+    if let Err(e) = resp.add_removal_cookie(&removal) {
+        return Err(AppError::Custom(format!("清除登录 Cookie 失败: {e}")));
+    }
+    Ok(resp)
 }

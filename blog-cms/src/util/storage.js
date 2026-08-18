@@ -15,6 +15,6 @@ export function getStoredUser() {
 }
 
 export function clearLoginState() {
-	window.localStorage.removeItem('token')
+	window.localStorage.removeItem('isLoggedIn')
 	window.localStorage.removeItem('user')
 }

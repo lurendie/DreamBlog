@@ -1,12 +1,11 @@
 import axios from '@/plugins/axios'
 
 export function getBlogById(token, id) {
+	const headers = token ? {Authorization: token} : {}
 	return axios({
 		url: 'blog',
 		method: 'GET',
-		headers: {
-			Authorization: token,
-		},
+		headers,
 		params: {
 			id
 		}

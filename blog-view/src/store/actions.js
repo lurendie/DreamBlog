@@ -15,13 +15,15 @@ import paopaoMapper from '@/plugins/paopaoMapper.json'
 import { escapeHtml } from '@/util/sanitizeHtml'
 import {getBlogToken, isBlogVerified} from '@/util/storage'
 
+//评论列表请求序号：路由快速切换时丢弃过期响应，避免旧页面评论覆盖新页面
+let commentRequestSeq = 0
+
 export default {
 	getCommentList({commit, rootState}) {
+		const seq = ++commentRequestSeq
 		//密码保护的文章，需要发送密码验证通过后保存在localStorage的Token
 		const blogToken = getBlogToken(rootState.commentQuery.blogId)
-		//如果有则发送博主身份Token
-		const adminToken = window.localStorage.getItem('adminToken')
-		const token = adminToken ? adminToken : (blogToken ? blogToken : '')
+		//博主身份由 httpOnly Cookie 自动携带，无需再发 JWT 头
 
 		function replaceEmoji(comment, emoji) {
 			comment.content = comment.content.replace(new RegExp(emoji.reg, 'g'), `<img src="${emoji.src}">`)
@@ -39,7 +41,11 @@ export default {
 			})
 		}
 
-		getCommentListByQuery(token, rootState.commentQuery).then(res => {
+		getCommentListByQuery(blogToken, rootState.commentQuery).then(res => {
+			//过期响应（已切换到其它页面）直接丢弃
+			if (seq !== commentRequestSeq) {
+				return
+			}
 			if (res.code === 200) {
 				res.data.comments.list.forEach(comment => {
 					//转义评论中的html
@@ -60,7 +66,9 @@ export default {
 				commit(SAVE_COMMENT_RESULT, res.data)
 			}
 		}).catch(() => {
-			ElMessage.error("请求失败")
+			if (seq === commentRequestSeq) {
+				ElMessage.error("请求失败")
+			}
 		})
 	},
 	submitCommentForm({rootState, dispatch, commit}, token) {
@@ -94,10 +102,11 @@ export default {
 	},
 	goBlogPage({commit}, blog) {
 		if (blog.privacy) {
-			const adminToken = window.localStorage.getItem('adminToken')
+			//isAdmin 仅登录态标记（httpOnly Cookie 中的会话由后端校验）
+			const isAdmin = window.localStorage.getItem('isAdmin')
 			const blogVerified = isBlogVerified(blog.id)
-			//对于密码保护文章，博主身份Token和经过密码验证后的标记都可以跳转路由，再由后端验证Token有效性
-			if (adminToken || blogVerified) {
+			//密码保护文章：博主登录态或已验证标记都可以进入，后端会校验会话有效性
+			if (isAdmin || blogVerified) {
 				return router.push(`/blog/${blog.id}`)
 			}
 			commit(SET_BLOG_PASSWORD_FORM, {blogId: blog.id, password: ''})

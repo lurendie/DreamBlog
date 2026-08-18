@@ -35,6 +35,10 @@
 		},
 		methods: {
 			initTocbot() {
+				//先销毁旧实例，避免文章内跳转文章时目录叠加、监听器泄漏
+				if (window.tocbot && typeof window.tocbot.destroy === 'function') {
+					window.tocbot.destroy()
+				}
 				tocbot.init({
 					// Where to render the table of contents.
 					tocSelector: '.js-toc',

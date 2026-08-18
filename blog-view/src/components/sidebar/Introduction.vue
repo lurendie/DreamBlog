@@ -68,6 +68,11 @@
 
 	export default {
 		name: "Introduction",
+		data() {
+			return {
+				rollTimer: null
+			}
+		},
 		computed: {
 			...mapState(['introduction']),
 			safeIntroduction() {
@@ -114,6 +119,11 @@
 				if (!r || this.rollTextList.length === 0) {
 					return
 				}
+				//先清除旧动画链，避免 watch 重复触发时叠加多条链
+				if (this.rollTimer) {
+					clearTimeout(this.rollTimer)
+					this.rollTimer = null
+				}
 				let l = ""
 				let o = this.rollTextList.map(function (r) {
 					return r + ""
@@ -141,12 +151,18 @@
 					return n
 				}
 
-				function i() {
+				const i = () => {
 					let t = o[c.skillI]
-					c.step ? c.step-- : (c.step = g, c.prefixP < l.length ? (c.prefixP >= 0 && (c.text += l[c.prefixP]), c.prefixP++) : "forward" === c.direction ? c.skillP < t.length ? (c.text += t[c.skillP], c.skillP++) : c.delay ? c.delay-- : (c.direction = "backward", c.delay = a) : c.skillP > 0 ? (c.text = c.text.slice(0, -1), c.skillP--) : (c.skillI = (c.skillI + 1) % o.length, c.direction = "forward")), r.textContent = c.text, r.appendChild(n(c.prefixP < l.length ? Math.min(s, s + c.prefixP) : Math.min(s, t.length - c.skillP))), setTimeout(i, d)
+					c.step ? c.step-- : (c.step = g, c.prefixP < l.length ? (c.prefixP >= 0 && (c.text += l[c.prefixP]), c.prefixP++) : "forward" === c.direction ? c.skillP < t.length ? (c.text += t[c.skillP], c.skillP++) : c.delay ? c.delay-- : (c.direction = "backward", c.delay = a) : c.skillP > 0 ? (c.text = c.text.slice(0, -1), c.skillP--) : (c.skillI = (c.skillI + 1) % o.length, c.direction = "forward")), r.textContent = c.text, r.appendChild(n(c.prefixP < l.length ? Math.min(s, s + c.prefixP) : Math.min(s, t.length - c.skillP))), this.rollTimer = setTimeout(i, d)
 				}
 
 				i()
+			}
+		},
+		beforeUnmount() {
+			if (this.rollTimer) {
+				clearTimeout(this.rollTimer)
+				this.rollTimer = null
 			}
 		}
 	}

@@ -7,7 +7,9 @@ import router from '@/router'
 
 const request = axios.create({
 	baseURL: import.meta.env.VITE_ADMIN_API_BASE_URL || import.meta.env.VUE_APP_ADMIN_API_BASE_URL || 'http://localhost:8090/admin/',
-	timeout: 5000
+	timeout: 5000,
+	//httpOnly Cookie 会话需要跨源携带凭证（前端不持有 JWT 明文）
+	withCredentials: true
 })
 
 //后端约定：业务失败时统一返回 HTTP 200 + body.code 错误码；仅当发生 JWT 相关错误时为 401/403/502。
@@ -39,10 +41,6 @@ request.interceptors.request.use(config => {
 		}
 
 		NProgress.start()
-		const token = window.localStorage.getItem('token')
-		if (token) {
-			config.headers.Authorization = token
-		}
 		return config
 	},
 	error => {

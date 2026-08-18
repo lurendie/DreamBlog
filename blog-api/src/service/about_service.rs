@@ -7,8 +7,8 @@ use crate::service::RedisService;
 use rbs::value;
 use rbs::value::map::ValueMap;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbBackend, EntityTrait, FromQueryResult,
-    QueryFilter, Statement,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait,
+    FromQueryResult, QueryFilter, Statement, TransactionTrait,
 };
 
 pub struct AboutService;
@@ -75,33 +75,41 @@ impl AboutService {
             ),
         ];
 
-        for (name_en, name_zh, value) in updates {
-            let existing = about::Entity::find()
-                .filter(about::Column::NameEn.eq(name_en))
-                .one(db)
-                .await?;
-            if let Some(model) = existing {
-                let mut active: about::ActiveModel = model.into();
-                active.name_zh = sea_orm::ActiveValue::set(Some(name_zh.to_string()));
-                active.value = sea_orm::ActiveValue::set(Some(value));
-                active.update(db).await?;
-            } else {
-                let next_id = Self::next_about_id(db).await?;
-                let active = about::ActiveModel {
-                    id: sea_orm::ActiveValue::set(next_id),
-                    name_en: sea_orm::ActiveValue::set(Some(name_en.to_string())),
-                    name_zh: sea_orm::ActiveValue::set(Some(name_zh.to_string())),
-                    value: sea_orm::ActiveValue::set(Some(value)),
-                };
-                about::Entity::insert(active).exec(db).await?;
-            }
-        }
+        // 事务内完成全部写入；主键生成带 FOR UPDATE，避免并发时 MAX(id)+1 冲突
+        db.transaction(|txn| {
+            Box::pin(async move {
+                for (name_en, name_zh, value) in updates {
+                    let existing = about::Entity::find()
+                        .filter(about::Column::NameEn.eq(name_en))
+                        .one(txn)
+                        .await?;
+                    if let Some(model) = existing {
+                        let mut active: about::ActiveModel = model.into();
+                        active.name_zh = sea_orm::ActiveValue::set(Some(name_zh.to_string()));
+                        active.value = sea_orm::ActiveValue::set(Some(value));
+                        active.update(txn).await?;
+                    } else {
+                        let next_id = AboutService::next_about_id(txn).await?;
+                        let active = about::ActiveModel {
+                            id: sea_orm::ActiveValue::set(next_id),
+                            name_en: sea_orm::ActiveValue::set(Some(name_en.to_string())),
+                            name_zh: sea_orm::ActiveValue::set(Some(name_zh.to_string())),
+                            value: sea_orm::ActiveValue::set(Some(value)),
+                        };
+                        about::Entity::insert(active).exec(txn).await?;
+                    }
+                }
+                Ok(())
+            })
+        })
+        .await?;
 
         RedisService::try_del_key(RedisKeyConstant::ABOUT_INFO_MAP).await;
         Ok(())
     }
 
-    async fn next_about_id(db: &DatabaseConnection) -> Result<i64, DataBaseError> {
+    /// 生成下一条 about 主键：事务内 FOR UPDATE 锁住 MAX 扫描区间，串行化并发插入
+    async fn next_about_id(conn: &impl ConnectionTrait) -> Result<i64, sea_orm::DbErr> {
         #[derive(FromQueryResult)]
         struct MaxId {
             id: i64,
@@ -109,10 +117,10 @@ impl AboutService {
 
         let sql = Statement::from_sql_and_values(
             DbBackend::MySql,
-            "SELECT COALESCE(MAX(id), 0) + 1 as id FROM about",
+            "SELECT COALESCE(MAX(id), 0) + 1 as id FROM about FOR UPDATE",
             [],
         );
-        let result = MaxId::find_by_statement(sql).one(db).await?;
+        let result = MaxId::find_by_statement(sql).one(conn).await?;
         Ok(result.map(|item| item.id).unwrap_or(1))
     }
 }

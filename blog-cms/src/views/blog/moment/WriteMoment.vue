@@ -10,7 +10,7 @@
 			</el-form-item>
 
 			<el-form-item label="创建时间" prop="createTime">
-				<el-date-picker v-model="form.createTime" type="datetime" placeholder="可选，默认此刻" :editable="false"></el-date-picker>
+				<el-date-picker v-model="form.createTime" type="datetime" placeholder="可选，默认此刻" :editable="false" value-format="YYYY-MM-DD HH:mm:ss"></el-date-picker>
 			</el-form-item>
 
 			<el-form-item style="text-align: right;">
@@ -46,7 +46,12 @@
 		methods: {
 			getMoment(id) {
 				getMomentById(id).then(res => {
-					this.form = res.data
+					//后端返回的 createTime 为 "YYYY-MM-DDTHH:mm:ss"，转成与 value-format 一致的格式，避免回显失败
+					const createTime = res.data.createTime
+					const normalized = typeof createTime === 'string' && createTime.includes('T')
+						? createTime.replace('T', ' ')
+						: createTime
+					this.form = {...res.data, createTime: normalized}
 				})
 			},
 			submit(published) {

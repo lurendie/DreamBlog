@@ -6,9 +6,10 @@ use std::sync::LazyLock;
 static BROWSER_REGEXES: LazyLock<Vec<(Regex, &str)>> = LazyLock::new(|| {
     vec![
         (Regex::new(r"Firefox/([0-9.]+)").unwrap(), "Firefox"),
+        // Edge UA 同时含 Chrome 与 Edg/Edge 标记，必须先于 Chrome 匹配，否则被误判为 Chrome
+        (Regex::new(r"Edg[e]?/([0-9.]+)").unwrap(), "Edge"),
         (Regex::new(r"Chrome/([0-9.]+)").unwrap(), "Chrome"),
         (Regex::new(r"Safari/([0-9.]+)").unwrap(), "Safari"),
-        (Regex::new(r"Edge/([0-9.]+)").unwrap(), "Edge"),
         (Regex::new(r"Opera/([0-9.]+)").unwrap(), "Opera"),
         (Regex::new(r"OPR/([0-9.]+)").unwrap(), "Opera"),
         (Regex::new(r"MSIE ([0-9.]+)").unwrap(), "Internet Explorer"),

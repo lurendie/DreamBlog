@@ -10,7 +10,7 @@ use crate::common::UserBcrypt;
 use crate::entity::user;
 use crate::error::{AppError, DataBaseError};
 use crate::middleware::AppClaims;
-use crate::model::{LoginUser, User};
+use crate::model::{LoginUser, UpdateAccountDTO, User};
 
 pub struct UserService;
 
@@ -100,7 +100,7 @@ impl UserService {
     }
 
     pub async fn update(
-        user_from: User,
+        user_from: UpdateAccountDTO,
         username: &str,
         db: &DatabaseConnection,
     ) -> Result<(), AppError> {
@@ -109,37 +109,45 @@ impl UserService {
         let user_model = user::Model::from(user);
         let mut active_user: user::ActiveModel = user_model.into();
         let now = Utc::now().naive_utc();
-        // 更新字段
-        if !user_from.get_username().is_empty() {
-            // 检查用户名是否已被其他用户使用（排除自己）
-            let new_username = user_from.get_username();
-            let exists = user::Entity::find()
-                .filter(user::Column::Username.eq(&new_username))
-                .filter(user::Column::Id.ne(current_user_id))
-                .one(db)
-                .await?;
-            if exists.is_some() {
-                return Err(DataBaseError::Custom(format!(
-                    "用户名 {} 已被使用",
-                    new_username
-                ))
-                .into());
+        // 更新字段（只处理非空项）
+        if let Some(new_username) = user_from.username.as_deref() {
+            if !new_username.is_empty() {
+                // 检查用户名是否已被其他用户使用（排除自己）
+                let exists = user::Entity::find()
+                    .filter(user::Column::Username.eq(new_username))
+                    .filter(user::Column::Id.ne(current_user_id))
+                    .one(db)
+                    .await?;
+                if exists.is_some() {
+                    return Err(DataBaseError::Custom(format!(
+                        "用户名 {} 已被使用",
+                        new_username
+                    ))
+                    .into());
+                }
+                active_user.username = Set(new_username.to_string());
             }
-            active_user.username = Set(new_username);
         }
-        if !user_from.get_nickname().is_empty() {
-            active_user.nickname = Set(user_from.get_nickname());
+        if let Some(nickname) = user_from.nickname.as_deref() {
+            if !nickname.is_empty() {
+                active_user.nickname = Set(nickname.to_string());
+            }
         }
-        if !user_from.get_avatar().is_empty() {
-            active_user.avatar = Set(user_from.get_avatar());
+        if let Some(avatar) = user_from.avatar.as_deref() {
+            if !avatar.is_empty() {
+                active_user.avatar = Set(avatar.to_string());
+            }
         }
-
-        if !user_from.get_email().is_empty() {
-            active_user.email = Set(user_from.get_email());
+        if let Some(email) = user_from.email.as_deref() {
+            if !email.is_empty() {
+                active_user.email = Set(email.to_string());
+            }
         }
-        if !user_from.get_password().is_empty() {
-            let password = UserBcrypt::hash_password(&user_from.get_password())?;
-            active_user.password = Set(password);
+        if let Some(password) = user_from.password.as_deref() {
+            if !password.is_empty() {
+                let password = UserBcrypt::hash_password(password)?;
+                active_user.password = Set(password);
+            }
         }
         active_user.update_time = Set(now);
         if let Err(e) = active_user.update(db).await {

@@ -8,6 +8,7 @@ use sea_orm::{
 use crate::entity::visitor;
 use crate::error::DataBaseError;
 use crate::model::{Visitor, VisitorQuery};
+use chrono::NaiveDateTime;
 
 pub struct VisitorService;
 
@@ -109,6 +110,22 @@ impl VisitorService {
 
         if let Some(ip_source) = &query.ip_source {
             query_builder = query_builder.filter(visitor::Column::IpSource.contains(ip_source));
+        }
+
+        if let Some(date) = &query.date {
+            // "开始,结束"（YYYY-MM-DD HH:mm:ss），过滤 last_time 区间；只给开始则只限下限
+            let parts: Vec<&str> = date.split(',').collect();
+            if let Some(start) = parts
+                .first()
+                .and_then(|p| NaiveDateTime::parse_from_str(p.trim(), "%Y-%m-%d %H:%M:%S").ok())
+            {
+                query_builder = query_builder.filter(visitor::Column::LastTime.gte(start));
+                if let Some(end) = parts.get(1).and_then(|p| {
+                    NaiveDateTime::parse_from_str(p.trim(), "%Y-%m-%d %H:%M:%S").ok()
+                }) {
+                    query_builder = query_builder.filter(visitor::Column::LastTime.lte(end));
+                }
+            }
         }
 
         // 获取分页数据

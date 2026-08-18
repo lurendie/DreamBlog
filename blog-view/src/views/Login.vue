@@ -66,7 +66,8 @@
 						login(this.loginForm).then(res => {
 							if (res.code === 200) {
 								this.msgSuccess(res.msg)
-								window.localStorage.setItem('adminToken', res.data.token)
+								//JWT 已通过 httpOnly Cookie 下发，这里只保存登录态标记（非凭证）
+								window.localStorage.setItem('isAdmin', '1')
 								this.$router.push('/home')
 							} else {
 								this.msgError(res.msg)

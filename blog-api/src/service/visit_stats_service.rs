@@ -140,6 +140,7 @@ fn today_range() -> (String, NaiveDateTime, NaiveDateTime) {
     let today = Local::now().naive_local().date();
     let start = NaiveDateTime::new(today, NaiveTime::from_hms_opt(0, 0, 0).unwrap());
     let end = NaiveDateTime::new(today, NaiveTime::from_hms_opt(23, 59, 59).unwrap());
-    let date_str = Local::now().format("%m-%d").to_string();
+    // 完整日期（YYYY-MM-DD），避免跨年同月同日互相覆盖
+    let date_str = Local::now().format("%Y-%m-%d").to_string();
     (date_str, start, end)
 }

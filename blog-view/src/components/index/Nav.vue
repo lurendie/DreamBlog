@@ -148,6 +148,10 @@
 			document.addEventListener('click', this.handleDocumentClick)
 		},
 		beforeUnmount() {
+			if (this.timer) {
+				clearTimeout(this.timer)
+				this.timer = null
+			}
 			if (this.handleScroll) {
 				window.removeEventListener('scroll', this.handleScroll)
 			}
@@ -201,7 +205,8 @@
 			},
 			handleSelect(item) {
 				if (item.id) {
-					this.$router.push(`/blog/${item.id}`)
+					//复用统一的隐私判断：密码保护文章未验证时弹密码框，而不是直接跳转
+					this.$store.dispatch('goBlogPage', item)
 				}
 			}
 		}

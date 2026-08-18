@@ -47,6 +47,10 @@
 			this.$refs.imgbg1.onload = () => {
 				this.loaded = true
 			}
+			//图片已缓存时 load 事件不会再次触发，直接置为已加载
+			if (this.$refs.imgbg1.complete) {
+				this.loaded = true
+			}
 			this.setHeaderHeight()
 			let startingPoint
 			const header = this.$refs.header

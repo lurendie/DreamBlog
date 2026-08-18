@@ -86,7 +86,8 @@
 							//res.data && res.data.token 判空，防止后端未返回 token 时报错
 							if (res.code === 200 && res.data && res.data.token) {
 								this.msgSuccess(res.msg)
-								window.localStorage.setItem('token', res.data.token)
+								//JWT 已通过 httpOnly Cookie 下发，这里只保存登录态标记与用户信息（非凭证）
+								window.localStorage.setItem('isLoggedIn', '1')
 								window.localStorage.setItem('user', JSON.stringify(res.data.user))
 								this.$router.push('/')
 							} else {

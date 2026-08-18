@@ -46,7 +46,7 @@ impl DashboardService {
      * 获取今日PV/UV
      */
     pub async fn get_today_pv_uv(db: &DatabaseConnection) -> (i32, i32) {
-        let today = Local::now().format("%m-%d").to_string();
+        let today = Local::now().format("%Y-%m-%d").to_string();
         let record = visit_record::Entity::find()
             .filter(visit_record::Column::Date.eq(today))
             .one(db)

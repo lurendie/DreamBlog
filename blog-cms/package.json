@@ -12,7 +12,7 @@
   "dependencies": {
     "axios": "^1.7.9",
     "dayjs": "^1.11.13",
-    "echarts": "4.9.0",
+    "echarts": "^5.6.0",
     "element-plus": "^2.14.2",
     "lodash": "^4.17.21",
     "md-editor-v3": "^6.5.1",
