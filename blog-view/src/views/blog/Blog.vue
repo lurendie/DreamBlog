@@ -1,76 +1,54 @@
 <template>
-	<div>
-		<div class="ui padded attached segment m-padded-tb-large">
-			<div class="ui large red right corner label" v-if="blog.top">
-				<i class="arrow alternate circle up icon"></i>
+	<div class="reader-page">
+		<article class="reader-card m-box">
+			<div class="reader-hero" v-if="blog.firstPicture" :style="{backgroundImage: 'url(' + blog.firstPicture + ')'}">
+				<span v-if="blog.top" class="reader-pin">置顶</span>
 			</div>
-			<div class="ui middle aligned mobile reversed stackable">
-				<div class="ui grid m-margin-lr">
-					<!--标题-->
-					<div class="row m-padded-tb-small">
-						<h2 class="ui header m-center">{{ blog.title }}</h2>
-					</div>
-					<!--文章简要信息-->
-					<div class="row m-padded-tb-small">
-						<div class="ui horizontal link list m-center">
-							<div class="item m-datetime">
-								<i class="small calendar icon"></i><span>{{ dateFormat(blog.createTime, 'YYYY-MM-DD') }}</span>
-							</div>
-							<div class="item m-views">
-								<i class="small eye icon"></i><span>{{ blog.views }}</span>
-							</div>
-							<div class="item m-common-black">
-								<i class="small pencil alternate icon"></i><span>字数≈{{ blog.words }}字</span>
-							</div>
-							<div class="item m-common-black">
-								<i class="small clock icon"></i><span>阅读时长≈{{ blog.readTime }}分</span>
-							</div>
-							<a class="item m-common-black" @click.prevent="bigFontSize=!bigFontSize">
-								<div data-inverted="" data-tooltip="点击切换字体大小" data-position="top center">
-									<i class="font icon"></i>
-								</div>
-							</a>
-							<a class="item m-common-black" @click.prevent="changeFocusMode">
-								<div data-inverted="" data-tooltip="专注模式" data-position="top center">
-									<i class="book icon"></i>
-								</div>
-							</a>
-						</div>
-					</div>
-					<!--分类-->
-					<router-link :to="`/category/${blog.category.name}`" class="ui orange large ribbon label" v-if="blog.category">
-						<i class="small folder open icon"></i><span class="m-text-500">{{ blog.category.name }}</span>
-					</router-link>
-					<!--文章Markdown正文-->
-					<div class="typo js-toc-content m-padded-tb-small match-braces rainbow-braces" v-lazy-container="{selector: 'img'}" v-viewer :class="{'m-big-fontsize':bigFontSize}" v-safe-html="blog.content"></div>
-					<!--赞赏-->
-					<div style="margin: 2em auto">
-						<el-popover placement="top" width="220" trigger="click" v-if="blog.appreciation">
-							<div class="ui orange basic label" style="width: 100%">
-								<div class="image">
-									<div style="font-size: 12px;text-align: center;margin-bottom: 5px;">一毛是鼓励</div>
-									<img :src="$store.state.siteInfo.reward" alt="" class="ui rounded bordered image" style="width: 100%">
-									<div style="font-size: 12px;text-align: center;margin-top: 5px;">一块是真爱</div>
-								</div>
-							</div>
-							<template #reference>
-								<el-button class="ui orange inverted circular button m-text-500">赞赏</el-button>
-							</template>
-						</el-popover>
-					</div>
-					<!--横线-->
-					<el-divider></el-divider>
-					<!--标签-->
-					<div class="row m-padded-tb-no">
-						<div class="column m-padding-left-no blog-tag-list">
-							<router-link :to="`/tag/${tag.name}`" class="ui tag label m-text-500 m-margin-small" :class="tag.color" v-for="(tag,index) in blog.tags" :key="index">{{ tag.name }}</router-link>
-						</div>
-					</div>
+			<header class="reader-header">
+				<router-link :to="`/category/${blog.category.name}`" class="reader-category" v-if="blog.category">
+					{{ blog.category.name }}
+				</router-link>
+				<h1>{{ blog.title }}</h1>
+				<div class="reader-meta">
+					<span>{{ dateFormat(blog.createTime, 'YYYY-MM-DD') }}</span>
+					<span>{{ blog.views }} 次浏览</span>
+					<span>约 {{ blog.words }} 字</span>
+					<span>{{ blog.readTime }} 分钟</span>
+					<button type="button" @click.prevent="bigFontSize=!bigFontSize">字体</button>
+					<button type="button" @click.prevent="changeFocusMode">专注</button>
 				</div>
+			</header>
+
+			<div
+				class="typo reader-content js-toc-content match-braces rainbow-braces"
+				v-lazy-container="{selector: 'img'}"
+				v-viewer
+				:class="{'m-big-fontsize':bigFontSize}"
+				v-safe-html="blog.content"
+			></div>
+
+			<div class="reader-reward">
+				<el-popover placement="top" width="220" trigger="click" v-if="blog.appreciation">
+					<div class="ui orange basic label" style="width: 100%">
+						<div class="image">
+							<div style="font-size: 12px;text-align: center;margin-bottom: 5px;">一毛是鼓励</div>
+							<img :src="$store.state.siteInfo.reward" alt="" class="ui rounded bordered image" style="width: 100%">
+							<div style="font-size: 12px;text-align: center;margin-top: 5px;">一块是真爱</div>
+						</div>
+					</div>
+					<template #reference>
+						<el-button round>赞赏</el-button>
+					</template>
+				</el-popover>
 			</div>
-		</div>
+
+			<div class="reader-tags" v-if="blog.tags && blog.tags.length">
+				<router-link :to="`/tag/${tag.name}`" v-for="(tag,index) in blog.tags" :key="index">{{ tag.name }}</router-link>
+			</div>
+		</article>
+
 		<!--博客信息-->
-		<div class="ui attached positive message">
+		<div class="ui attached positive message reader-info">
 			<ul class="list">
 				<li>作者：{{ $store.state.introduction.name }}
 					<router-link to="/about">（联系作者）</router-link>
@@ -81,7 +59,7 @@
 			</ul>
 		</div>
 		<!--评论-->
-		<div class="ui bottom teal attached segment threaded comments">
+		<div class="ui bottom teal attached segment threaded comments reader-comments">
 			<CommentList :page="0" :blogId="blogId" v-if="blog.commentEnabled"/>
 			<h3 class="ui header" v-else>评论已关闭</h3>
 		</div>
@@ -200,55 +178,141 @@
 		margin: 1rem 0 !important;
 	}
 
+	.reader-page {
+		max-width: 920px;
+		margin: 0 auto;
+	}
+
+	.reader-card {
+		overflow: hidden;
+		background: rgba(255, 255, 255, 0.98);
+	}
+
+	.reader-hero {
+		position: relative;
+		min-height: 360px;
+		background-size: cover;
+		background-position: center;
+	}
+
+	.reader-hero:after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(180deg, transparent 45%, rgba(15, 23, 42, 0.30));
+	}
+
+	.reader-pin {
+		position: absolute;
+		z-index: 1;
+		top: 22px;
+		left: 22px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.92);
+		color: #b91c1c;
+		font-size: 12px;
+		font-weight: 800;
+		padding: 7px 12px;
+	}
+
+	.reader-header {
+		padding: 34px 44px 18px;
+		text-align: left;
+	}
+
+	.reader-category {
+		display: inline-flex;
+		border-radius: 999px;
+		background: #eef7f6;
+		color: #0f766e !important;
+		font-size: 12px;
+		font-weight: 800;
+		padding: 7px 11px;
+	}
+
+	.reader-header h1 {
+		margin: 16px 0 14px;
+		color: #172033;
+		font-size: clamp(30px, 5vw, 48px);
+		font-weight: 760;
+		line-height: 1.18;
+	}
+
+	.reader-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px 16px;
+		color: #64748b;
+		font-size: 13px;
+	}
+
+	.reader-meta button {
+		border: 0;
+		border-radius: 999px;
+		background: #f1f5f9;
+		color: #334155;
+		font-size: 12px;
+		font-weight: 700;
+		padding: 3px 10px;
+		cursor: pointer;
+	}
+
+	.reader-content {
+		padding: 12px 44px 26px !important;
+		color: #1f2937;
+		font-size: 16px;
+		line-height: 1.9;
+	}
+
+	.reader-content :deep(img) {
+		border-radius: 8px;
+	}
+
+	.reader-reward {
+		display: flex;
+		justify-content: center;
+		padding: 0 44px 22px;
+	}
+
+	.reader-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		border-top: 1px solid rgba(148, 163, 184, 0.18);
+		padding: 22px 44px 30px;
+	}
+
+	.reader-tags a {
+		border-radius: 999px;
+		background: #f1f5f9;
+		color: #475569 !important;
+		font-size: 12px;
+		font-weight: 700;
+		padding: 7px 10px;
+	}
+
+	.reader-info,
+	.reader-comments {
+		margin-top: 16px !important;
+		border-radius: 10px !important;
+		box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
+	}
+
 	@media screen and (max-width: 767px) {
-		.ui.padded.attached.segment {
-			padding-left: 1rem !important;
-			padding-right: 1rem !important;
+		.reader-page {
+			max-width: none;
 		}
 
-		.ui.grid.m-margin-lr {
-			margin-left: 0 !important;
-			margin-right: 0 !important;
+		.reader-hero {
+			min-height: 220px;
 		}
 
-		.ui.grid.m-margin-lr > .row > h2.ui.header {
-			font-size: 1.65rem !important;
-			line-height: 1.35 !important;
-			margin-bottom: 0.2rem !important;
-		}
-
-		.ui.horizontal.link.list.m-center {
-			display: flex;
-			flex-wrap: wrap;
-			justify-content: center;
-			row-gap: 8px;
-			column-gap: 12px;
-			font-size: 13px;
-		}
-
-		.ui.horizontal.link.list.m-center .item {
-			margin-left: 0 !important;
-			margin-right: 0 !important;
-		}
-
-		.typo.js-toc-content {
-			padding-top: 0.75rem !important;
-			padding-bottom: 0.75rem !important;
-		}
-
-		.ui.orange.large.ribbon.label {
-			margin-left: -1rem !important;
-			font-size: 0.95rem !important;
-		}
-
-		.blog-tag-list {
-			display: flex;
-			flex-wrap: wrap;
-			row-gap: 8px;
-		}
-
-		.blog-tag-list .ui.label {
-			margin: 0 0.45rem 0 0 !important;
+		.reader-header,
+		.reader-content,
+		.reader-reward,
+		.reader-tags {
+			padding-left: 20px !important;
+			padding-right: 20px !important;
 		}
 
 		.ui.attached.positive.message,

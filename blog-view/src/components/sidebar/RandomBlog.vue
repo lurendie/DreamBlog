@@ -1,8 +1,8 @@
 <template>
 	<!--随机文章-->
-	<div class="ui segments m-box">
-		<div class="ui secondary segment"><i class="bookmark icon"></i>随机文章</div>
-		<div class="ui yellow segment">
+	<div class="ui segments m-box sidebar-panel">
+		<div class="ui secondary segment sidebar-panel__title"><i class="bookmark icon"></i>随机文章</div>
+		<div class="ui yellow segment sidebar-panel__body">
 			<div class="ui divided items">
 				<div class="m-item" v-for="blog in safeRandomBlogList" :key="blog.id" @click.prevent="toBlog(blog)">
 					<div class="img" :style="{'background-image':'url(' + blog.firstPicture + ')'}"></div>
@@ -43,7 +43,7 @@
 
 <style scoped>
 	.secondary.segment {
-		padding: 10px;
+		padding: 12px 14px !important;
 	}
 
 	.ui.divided.items .m-item:first-child {
@@ -52,12 +52,13 @@
 
 	.ui.divided.items .m-item {
 		margin-top: 1rem;
-		height: 7rem;
+		height: 8rem;
 		position: relative;
 		overflow: hidden;
-		border-radius: 5px;
+		border-radius: 8px;
 		cursor: pointer;
 		user-select: none;
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 	}
 
 	.ui.divided.items .m-item .img {
@@ -82,6 +83,14 @@
 		padding: .5rem !important;
 		font-size: 12px;
 		color: white;
+	}
+
+	.sidebar-panel {
+		overflow: hidden;
+	}
+
+	.sidebar-panel__body {
+		padding: 12px !important;
 	}
 
 	.ui.divided.items .m-item .info .title {

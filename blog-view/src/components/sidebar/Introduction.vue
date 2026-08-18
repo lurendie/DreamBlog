@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<div class="ui segments m-box">
+		<div class="ui segments m-box intro-panel">
 			<div class="ui card">
 				<div class="image intro-cover">
 					<img :src="safeIntroduction.avatar">
@@ -172,10 +172,17 @@
 	.ui.card {
 		width: 100%;
 		overflow: hidden;
+		border: 0 !important;
+		box-shadow: none !important;
+	}
+
+	.intro-panel {
+		overflow: hidden;
+		background: #fff;
 	}
 
 	.intro-cover {
-		height: 320px;
+		height: 280px;
 		overflow: hidden;
 	}
 
@@ -187,14 +194,14 @@
 	}
 
 	.intro-content {
-		min-height: 132px;
+		min-height: 118px;
 		display: flex !important;
 		flex-direction: column;
 		justify-content: center;
 	}
 
 	.intro-content .header {
-		font-size: 28px !important;
+		font-size: 25px !important;
 		line-height: 1.2;
 		word-break: break-word;
 	}
@@ -208,13 +215,13 @@
 	}
 
 	.intro-social {
-		min-height: 102px;
+		min-height: 86px;
 		display: flex !important;
 		align-items: center;
 		justify-content: center;
 		flex-wrap: wrap;
-		gap: 14px;
-		padding: 18px 20px !important;
+		gap: 10px;
+		padding: 14px 18px !important;
 	}
 
 	.ui.circular.icon.button {
@@ -223,9 +230,9 @@
 
 	.intro-social__button {
 		margin: 0 !important;
-		flex: 0 0 56px;
-		width: 56px !important;
-		height: 56px !important;
+		flex: 0 0 44px;
+		width: 44px !important;
+		height: 44px !important;
 		display: inline-flex !important;
 		align-items: center;
 		justify-content: center;

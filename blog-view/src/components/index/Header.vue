@@ -83,7 +83,20 @@
 <style scoped>
 	header {
 		--percentage: 0.5;
+		position: relative;
+		overflow: hidden;
 		user-select: none;
+	}
+
+	header:after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: 30;
+		background:
+			linear-gradient(180deg, rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.16) 38%, rgba(15, 23, 42, 0.48)),
+			radial-gradient(circle at 50% 40%, rgba(20, 184, 166, 0.18), transparent 28rem);
+		pointer-events: none;
 	}
 
 	.view {
@@ -133,32 +146,27 @@
 
 	.text-malfunction {
 		position: absolute;
+		z-index: 60;
 		padding: 0 4px;
-		top: 40%;
-		left: 50.5%;
-		transform: translate(-50%, -50%) scale(2.5);
-		font-size: 34px;
-		font-family: sans-serif;
-		color: transparent;
+		top: 42%;
+		left: 50%;
+		max-width: min(920px, calc(100vw - 40px));
+		transform: translate(-50%, -50%);
+		font-size: clamp(42px, 8vw, 92px);
+		font-family: Georgia, "Times New Roman", "Noto Serif SC", serif;
+		font-weight: 700;
+		line-height: 1.05;
+		color: #fff;
+		text-align: center;
+		text-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
 	}
 
 	.line {
-		position: absolute;
-		width: calc(100% - 8px);
-		left: -0.5px;
-		height: 1px;
-		background: black;
-		z-index: 50;
-		animation: lineMove 5s ease-out infinite;
+		display: none;
 	}
 
 	.text-malfunction:before, .text-malfunction:after {
-		content: attr(data-word);
-		position: absolute;
-		top: 0;
-		line-height: 50px;
-		overflow: hidden;
-		filter: contrast(200%);
+		content: none;
 	}
 
 	.text-malfunction:before {
@@ -250,12 +258,14 @@
 	.wrapper {
 		position: absolute;
 		width: 100px;
-		bottom: 150px;
+		bottom: 110px;
 		left: 0;
 		right: 0;
 		margin: auto;
 		font-size: 26px;
-		z-index: 100;
+		z-index: 70;
+		color: #fff;
+		text-align: center;
 	}
 
 	.wrapper i {

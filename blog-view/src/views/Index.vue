@@ -158,22 +158,26 @@
 	}
 
 	.main {
-		margin-top: 40px;
+		margin-top: 34px;
 		flex: 1;
 	}
 
 	.main .ui.container {
-		width: min(1400px, calc(100vw - 24px)) !important;
+		width: min(1440px, calc(100vw - 28px)) !important;
 		margin-left: auto !important;
 		margin-right: auto !important;
 	}
 
 	.ui.grid .three.column {
-		padding: 0;
+		padding-top: 0 !important;
 	}
 
 	.ui.grid .ten.column {
 		padding-top: 0;
+	}
+
+	.main :deep(.ui.stackable.grid) {
+		align-items: flex-start;
 	}
 
 	.m-display-none {

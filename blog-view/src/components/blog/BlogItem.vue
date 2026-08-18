@@ -1,62 +1,30 @@
 <template>
-	<div>
-		<div class="ui padded attached segment m-padded-tb-large m-margin-bottom-big m-box" v-for="item in blogList" :key="item.id">
-			<div class="ui large red right corner label" v-if="item.top">
-				<i class="arrow alternate circle up icon"></i>
+	<div class="article-list">
+		<article class="article-card m-box" :class="{'article-card--no-cover': !item.firstPicture}" v-for="item in blogList" :key="item.id">
+			<div class="article-card__cover" v-if="item.firstPicture" :style="{ backgroundImage: 'url(' + item.firstPicture + ')' }">
+				<span v-if="item.top" class="article-card__pin">置顶</span>
 			</div>
-			<div class="ui middle aligned mobile reversed stackable">
-				<div class="ui grid m-margin-lr">
-					<!--标题-->
-					<div class="row m-padded-tb-small">
-						<h2 class="ui header m-center m-scaleup">
-							<a href="javascript:;" @click.prevent="toBlog(item)" class="m-black">{{ item.title }}</a>
-						</h2>
-					</div>
-					<!--文章简要信息-->
-					<div class="row m-padded-tb-small">
-						<div class="ui horizontal link list m-center">
-							<div class="item m-datetime">
-								<i class="small calendar icon"></i><span>{{ dateFormat(item.createTime, 'YYYY-MM-DD')}}</span>
-							</div>
-							<div class="item m-views">
-								<i class="small eye icon"></i><span>{{ item.views }}</span>
-							</div>
-							<div class="item m-common-black">
-								<i class="small pencil alternate icon"></i><span>字数≈{{ item.words }}字</span>
-							</div>
-							<div class="item m-common-black">
-								<i class="small clock icon"></i><span>阅读时长≈{{ item.readTime }}分</span>
-							</div>
-						</div>
-					</div>
-					<!--分类-->
-					<router-link :to="`/category/${item.category.name}`" class="ui orange large ribbon label">
-						<i class="small folder open icon"></i><span class="m-text-500">{{ item.category.name }}</span>
+			<div class="article-card__body">
+				<div class="article-card__meta">
+					<span>{{ dateFormat(item.createTime, 'YYYY-MM-DD')}}</span>
+					<span>{{ item.views }} 次浏览</span>
+					<span>{{ item.readTime }} 分钟</span>
+				</div>
+				<h2>
+					<a href="javascript:;" @click.prevent="toBlog(item)">{{ item.title }}</a>
+				</h2>
+				<p class="article-card__summary">{{ getBlogPreview(item) }}</p>
+				<div class="article-card__footer">
+					<router-link v-if="item.category" :to="`/category/${item.category.name}`" class="article-card__category">
+						{{ item.category.name }}
 					</router-link>
-					<!--封面图-->
-					<div class="row m-padded-tb-small" v-if="item.firstPicture">
-						<div class="blog-cover" :style="{ backgroundImage: 'url(' + item.firstPicture + ')' }"></div>
+					<div class="article-card__tags">
+						<router-link :to="`/tag/${tag.name}`" v-for="(tag,index) in item.tags" :key="index">{{ tag.name }}</router-link>
 					</div>
-					<!--文章Markdown描述（无封面图时显示）-->
-					<div
-						class="typo m-padded-tb-small line-numbers match-braces rainbow-braces"
-						v-if="!item.firstPicture"
-					>{{ getBlogPreview(item) }}</div>
-					<!--阅读全文按钮-->
-					<div class="row m-padded-tb-small m-margin-top">
-						<a href="javascript:;" @click.prevent="toBlog(item)" class="color-btn">阅读全文</a>
-					</div>
-					<!--横线-->
-					<div class="ui section divider m-margin-lr-no"></div>
-					<!--标签-->
-					<div class="row m-padded-tb-no">
-						<div class="column m-padding-left-no">
-							<router-link :to="`/tag/${tag.name}`" class="ui tag label m-text-500 m-margin-small" :class="tag.color" v-for="(tag,index) in item.tags" :key="index">{{ tag.name }}</router-link>
-						</div>
-					</div>
+					<a href="javascript:;" @click.prevent="toBlog(item)" class="color-btn">阅读全文</a>
 				</div>
 			</div>
-		</div>
+		</article>
 	</div>
 </template>
 
@@ -86,19 +54,133 @@
 </script>
 
 <style scoped>
-.blog-cover {
-	width: 100%;
-	height: 220px;
-	border-radius: 8px;
-	background-size: cover;
-	background-position: center;
-	background-repeat: no-repeat;
-}
+	.article-list {
+		display: flex;
+		flex-direction: column;
+		gap: 22px;
+	}
+
+	.article-card {
+		display: grid;
+		grid-template-columns: minmax(220px, 34%) minmax(0, 1fr);
+		overflow: hidden;
+		background: rgba(255, 255, 255, 0.96);
+	}
+
+	.article-card__cover {
+		position: relative;
+		min-height: 270px;
+		background-size: cover;
+		background-position: center;
+	}
+
+	.article-card--no-cover {
+		display: block;
+	}
+
+	.article-card__cover:after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(180deg, transparent 35%, rgba(15, 23, 42, 0.32));
+	}
+
+	.article-card__pin {
+		position: absolute;
+		z-index: 1;
+		left: 18px;
+		top: 18px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.92);
+		color: #b91c1c;
+		font-size: 12px;
+		font-weight: 800;
+		padding: 6px 10px;
+	}
+
+	.article-card__body {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		padding: 28px;
+	}
+
+	.article-card__meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px 16px;
+		color: #64748b;
+		font-size: 12px;
+		font-weight: 650;
+	}
+
+	.article-card h2 {
+		margin: 14px 0 12px;
+		font-size: 27px;
+		font-weight: 750;
+		line-height: 1.28;
+	}
+
+	.article-card h2 a {
+		color: #172033;
+	}
+
+	.article-card h2 a:hover {
+		color: #0f766e;
+	}
+
+	.article-card__summary {
+		display: -webkit-box;
+		overflow: hidden;
+		margin: 0;
+		color: #475569;
+		font-size: 15px;
+		line-height: 1.75;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+	}
+
+	.article-card__footer {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 12px;
+		margin-top: auto;
+		padding-top: 22px;
+	}
+
+	.article-card__category,
+	.article-card__tags a {
+		border-radius: 999px;
+		background: #eef7f6;
+		color: #0f766e !important;
+		font-size: 12px;
+		font-weight: 700;
+		padding: 7px 10px;
+	}
+
+	.article-card__tags {
+		display: flex;
+		flex: 1;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
 
 @media (max-width: 768px) {
-	.blog-cover {
-		height: 160px;
-		border-radius: 0;
+	.article-card {
+		display: block;
+	}
+
+	.article-card__cover {
+		min-height: 190px;
+	}
+
+	.article-card__body {
+		padding: 20px;
+	}
+
+	.article-card h2 {
+		font-size: 22px;
 	}
 }
 </style>

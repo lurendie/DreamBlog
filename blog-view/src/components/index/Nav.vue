@@ -221,15 +221,24 @@
 	}
 
 	.ui.fixed.menu {
-		background: rgba(255, 255, 255, 0.96) !important;
+		background: rgba(255, 255, 255, 0.9) !important;
 		border: 0 !important;
-		box-shadow: 0 10px 30px rgba(31, 41, 55, 0.08) !important;
+		backdrop-filter: blur(16px);
+		box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08) !important;
 		transition: background .3s ease-out, box-shadow .3s ease-out, min-height .25s ease;
 	}
 
 	.ui.inverted.pointing.menu.transparent {
 		background: transparent !important;
 		box-shadow: none !important;
+	}
+
+	.ui.inverted.pointing.menu.transparent .item,
+	.ui.inverted.pointing.menu.transparent .item > i,
+	.ui.inverted.pointing.menu.transparent .el-dropdown-link,
+	.ui.inverted.pointing.menu.transparent .ui.header.item {
+		color: #fff !important;
+		text-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 	}
 
 	.ui.inverted.pointing.menu.transparent .active.item:after {
@@ -244,20 +253,20 @@
 	.ui.inverted.pointing.menu .item,
 	.ui.inverted.pointing.menu .item > i,
 	.ui.inverted.pointing.menu .el-dropdown-link {
-		color: #4b5563 !important;
+		color: #334155 !important;
 	}
 
 	.ui.inverted.pointing.menu .item:hover,
 	.ui.inverted.pointing.menu .el-dropdown-link:hover {
-		background: rgba(72, 219, 251, 0.08) !important;
+		background: rgba(20, 184, 166, 0.08) !important;
 	}
 
 	.ui.inverted.pointing.menu .active.item {
-		background: rgba(72, 219, 251, 0.12) !important;
+		background: rgba(20, 184, 166, 0.12) !important;
 	}
 
 	.ui.inverted.pointing.menu .active.item:after {
-		background: #48dbfb !important;
+		background: #14b8a6 !important;
 	}
 
 	.el-dropdown-link {
@@ -499,7 +508,7 @@
 			padding: 0 10px !important;
 			border-radius: 10px !important;
 			background: rgba(255, 255, 255, 0.9) !important;
-			box-shadow: inset 0 0 0 1px rgba(72, 219, 251, 0.18) !important;
+			box-shadow: inset 0 0 0 1px rgba(20, 184, 166, 0.18) !important;
 		}
 
 		.m-search .el-input__inner {
@@ -518,14 +527,14 @@
 			width: 42px !important;
 			height: 42px !important;
 			border-radius: 12px !important;
-			background: rgba(72, 219, 251, 0.14) !important;
+			background: rgba(20, 184, 166, 0.14) !important;
 			color: #1f2937 !important;
 			box-shadow: none !important;
 		}
 
 		.m-right-top:hover,
 		.m-right-top:active {
-			background: rgba(72, 219, 251, 0.22) !important;
+			background: rgba(20, 184, 166, 0.22) !important;
 		}
 
 		@keyframes mobileMenuFadeIn {
