@@ -20,12 +20,21 @@
 	}
 
 	.app-main {
-		/*50 = navbar  */
-		min-height: calc(100vh - 50px);
+		min-height: calc(100vh - 58px);
 		width: 100%;
 		position: relative;
-		overflow: hidden;
-		padding: 20px;
+		overflow-x: hidden;
+		overflow-y: auto;
+		padding: 26px;
+		background:
+			linear-gradient(180deg, rgba(37, 99, 235, 0.05), rgba(37, 99, 235, 0) 220px),
+			#f6f8fb;
+	}
+
+	@media screen and (max-width: 768px) {
+		.app-main {
+			padding: 16px;
+		}
 	}
 </style>
 

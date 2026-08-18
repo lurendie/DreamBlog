@@ -26,9 +26,9 @@
 	import SidebarItem from './SidebarItem'
 
 	const variables = {
-		menuText: '#bfcbd9',
-		menuActiveText: '#409EFF',
-		menuBg: '#304156',
+		menuText: '#58677f',
+		menuActiveText: '#2563eb',
+		menuBg: '#ffffff',
 	}
 
 	export default {

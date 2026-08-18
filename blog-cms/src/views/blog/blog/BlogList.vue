@@ -1,63 +1,88 @@
 <template>
-	<div>
-		<!--搜索-->
-		<el-row>
-			<el-col :span="8">
-				<el-input placeholder="请输入标题" v-model="queryInfo.title" :clearable="true" @clear="search" @keyup.enter="search" size="small" style="min-width: 500px">
-					<template #prepend>
-						<el-select v-model="queryInfo.categoryId" placeholder="请选择分类" :clearable="true" @change="search" style="width: 160px">
-							<el-option :label="item.name" :value="item.id" v-for="item in categoryList" :key="item.id"></el-option>
-						</el-select>
-					</template>
-					<template #append>
-						<el-button icon="el-icon-search" @click="search"></el-button>
-					</template>
-				</el-input>
-			</el-col>
-		</el-row>
+	<div class="blog-list-page">
+		<PageHeader
+			eyebrow="内容管理"
+			title="文章管理"
+			description="筛选、编辑、置顶、推荐和可见性控制都在这里完成。"
+		>
+			<template #actions>
+				<el-button @click="search">刷新</el-button>
+				<el-button type="primary" @click="$router.push('/blog/write')">写文章</el-button>
+			</template>
+		</PageHeader>
 
-		<el-table :data="blogList">
-			<el-table-column label="序号" type="index" width="50"></el-table-column>
-			<el-table-column label="标题" prop="title" show-overflow-tooltip></el-table-column>
-			<el-table-column label="分类" prop="category.name" width="150"></el-table-column>
-			<el-table-column label="置顶" width="80">
-				<template v-slot="scope">
-					<el-switch v-model="scope.row.top" @change="blogTopChanged(scope.row)"></el-switch>
-				</template>
-			</el-table-column>
-			<el-table-column label="推荐" width="80">
-				<template v-slot="scope">
-					<el-switch v-model="scope.row.recommend" @change="blogRecommendChanged(scope.row)"></el-switch>
-				</template>
-			</el-table-column>
-			<el-table-column label="可见性" width="100">
-				<template v-slot="scope">
-					<el-link icon="el-icon-edit" :underline="false" @click="editBlogVisibility(scope.row)">
-						{{ scope.row.published ? (scope.row.password !== '' ? '密码保护' : '公开') : '私密' }}
-					</el-link>
-				</template>
-			</el-table-column>
-			<el-table-column label="创建时间" width="170">
-				<template v-slot="scope">{{ dateFormat(scope.row.createTime) }}</template>
-			</el-table-column>
-			<el-table-column label="最近更新" width="170">
-				<template v-slot="scope">{{ dateFormat(scope.row.updateTime) }}</template>
-			</el-table-column>
-			<el-table-column label="操作" width="200">
-				<template v-slot="scope">
-					<el-button type="primary" icon="el-icon-edit" size="mini" @click="goBlogEditPage(scope.row.id)">编辑</el-button>
-					<el-popconfirm title="确定删除吗？" icon="el-icon-delete" icon-color="red" @confirm="deleteBlogById(scope.row.id)">
-						<template #reference><el-button size="mini" type="danger" icon="el-icon-delete">删除</el-button></template>
-					</el-popconfirm>
-				</template>
-			</el-table-column>
-		</el-table>
+		<el-card class="search-card">
+			<div class="search-bar">
+				<el-select v-model="queryInfo.categoryId" clearable placeholder="全部分类" @change="search">
+					<el-option v-for="item in categoryList" :key="item.id" :label="item.name" :value="item.id" />
+				</el-select>
+				<el-input
+					v-model="queryInfo.title"
+					clearable
+					placeholder="搜索标题"
+					@clear="search"
+					@keyup.enter="search"
+				/>
+				<el-button type="primary" @click="search">搜索</el-button>
+			</div>
+		</el-card>
 
-		<!--分页-->
-		<el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="queryInfo.pageNum"
-		               :page-sizes="[10, 20, 30, 50]" :page-size="queryInfo.pageSize" :total="total"
-		               layout="total, sizes, prev, pager, next, jumper" background>
-		</el-pagination>
+		<el-card>
+			<el-table :data="blogList" :empty-text="'暂无文章'">
+				<el-table-column label="序号" type="index" width="70" />
+				<el-table-column label="标题" prop="title" min-width="260" show-overflow-tooltip />
+				<el-table-column label="分类" prop="category.name" width="140" />
+				<el-table-column label="状态" width="120">
+					<template #default="scope">
+						<el-tag :type="visibilityType(scope.row)">
+							{{ visibilityText(scope.row) }}
+						</el-tag>
+					</template>
+				</el-table-column>
+				<el-table-column label="置顶" width="90">
+					<template #default="scope">
+						<el-switch v-model="scope.row.top" @change="blogTopChanged(scope.row)" />
+					</template>
+				</el-table-column>
+				<el-table-column label="推荐" width="90">
+					<template #default="scope">
+						<el-switch v-model="scope.row.recommend" @change="blogRecommendChanged(scope.row)" />
+					</template>
+				</el-table-column>
+				<el-table-column label="创建时间" width="170">
+					<template #default="scope">{{ dateFormat(scope.row.createTime) }}</template>
+				</el-table-column>
+				<el-table-column label="最近更新" width="170">
+					<template #default="scope">{{ dateFormat(scope.row.updateTime) }}</template>
+				</el-table-column>
+				<el-table-column label="操作" width="220" fixed="right">
+					<template #default="scope">
+						<el-button text type="primary" @click="goBlogEditPage(scope.row.id)">编辑</el-button>
+						<el-button text @click="editBlogVisibility(scope.row)">可见性</el-button>
+						<el-popconfirm
+							title="确定删除吗？"
+							icon-color="red"
+							@confirm="deleteBlogById(scope.row.id)"
+						>
+							<template #reference>
+								<el-button text type="danger">删除</el-button>
+							</template>
+						</el-popconfirm>
+					</template>
+				</el-table-column>
+			</el-table>
+
+			<el-pagination
+				:current-page="queryInfo.pageNum"
+				:page-sizes="[10, 20, 30, 50]"
+				:page-size="queryInfo.pageSize"
+				:total="total"
+				background
+				layout="total, sizes, prev, pager, next, jumper"
+				@size-change="handleSizeChange"
+				@current-change="handleCurrentChange"
+			/>
+		</el-card>
 
 		<!--编辑可见性状态对话框-->
 		<el-dialog title="博客可见性" width="30%" v-model="dialogVisible">
@@ -100,12 +125,12 @@
 </template>
 
 <script>
-	import Breadcrumb from "@/components/Breadcrumb";
+	import PageHeader from '@/components/PageHeader'
 	import {getDataByQuery, deleteBlogById, updateTop, updateRecommend, updateVisibility} from '@/api/blog'
 
 	export default {
 		name: "BlogList",
-		components: {Breadcrumb},
+		components: {PageHeader},
 		data() {
 			return {
 				queryInfo: {
@@ -225,14 +250,53 @@
 						this.msgError((err && err.msg) || '删除失败')
 					}
 				})
+			},
+			visibilityText(row) {
+				return row.published ? (row.password !== '' ? '密码保护' : '公开') : '私密'
+			},
+			visibilityType(row) {
+				if (!row.published) return 'info'
+				return row.password !== '' ? 'warning' : 'success'
 			}
 		}
 	}
 </script>
 
 <style scoped>
-	.el-button + span {
-		margin-left: 10px;
+	.blog-list-page {
+		max-width: 1480px;
+		margin: 0 auto;
+	}
+
+	.search-card {
+		margin-bottom: 16px;
+	}
+
+	.search-bar {
+		display: grid;
+		grid-template-columns: 220px 1fr auto;
+		gap: 12px;
+	}
+
+	.search-bar :deep(.el-select),
+	.search-bar :deep(.el-input) {
+		width: 100%;
+	}
+
+	:deep(.el-pagination) {
+		margin-top: 18px;
+		justify-content: flex-end;
+	}
+
+	:deep(.el-table .cell) {
+		padding-top: 10px;
+		padding-bottom: 10px;
+	}
+
+	@media screen and (max-width: 768px) {
+		.search-bar {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>
 

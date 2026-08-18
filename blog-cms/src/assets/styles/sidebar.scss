@@ -5,12 +5,14 @@
     transition: margin-left .28s;
     margin-left: $sideBarWidth;
     position: relative;
+    background: #f6f8fb;
   }
 
   .sidebar-container {
     transition: width 0.28s;
     width: $sideBarWidth !important;
     background-color: $menuBg;
+    border-right: 1px solid #e4e9f2;
     height: 100%;
     position: fixed;
     font-size: 0px;
@@ -69,6 +71,28 @@
       border: none;
       height: 100%;
       width: 100% !important;
+      padding: 10px 10px 18px;
+      background: transparent !important;
+    }
+
+    .el-menu-item,
+    .el-sub-menu__title,
+    .el-submenu__title {
+      height: 44px;
+      margin: 4px 0;
+      border-radius: 8px;
+      color: $menuText !important;
+      line-height: 44px;
+      transition: color .2s, background-color .2s;
+    }
+
+    .el-menu-item.is-active,
+    .submenu-title-noDropdown.is-active,
+    .el-sub-menu.is-active > .el-sub-menu__title,
+    .el-submenu.is-active > .el-submenu__title {
+      background: #eaf2ff !important;
+      color: $menuActiveText !important;
+      font-weight: 700;
     }
 
     // menu hover
@@ -87,6 +111,7 @@
     & .el-submenu .el-menu-item {
       min-width: $sideBarWidth !important;
       background-color: $subMenuBg !important;
+      padding-left: 46px !important;
 
       &:hover {
         background-color: $subMenuHover !important;
@@ -105,13 +130,15 @@
 
     .submenu-title-noDropdown {
       padding: 0 !important;
+      margin-left: 0;
+      margin-right: 0;
       position: relative;
 
       .el-tooltip {
         padding: 0 !important;
 
         .svg-icon {
-          margin-left: 20px;
+          margin-left: 19px;
         }
 
         .sub-el-icon {
@@ -125,9 +152,11 @@
 
       &>.el-submenu__title {
         padding: 0 !important;
+        margin-left: 0;
+        margin-right: 0;
 
         .svg-icon {
-          margin-left: 20px;
+          margin-left: 19px;
         }
 
         .sub-el-icon {

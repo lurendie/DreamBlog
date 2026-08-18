@@ -1,118 +1,108 @@
 <template>
-	<div>
-		<el-form :model="form" :rules="formRules" ref="formRef" label-position="top">
-			<el-row :gutter="20">
-				<el-col :span="12">
-					<el-form-item label="文章标题" prop="title">
-						<el-input v-model="form.title" placeholder="请输入标题"></el-input>
-					</el-form-item>
-				</el-col>
-				<el-col :span="12">
-					<el-form-item label="文章首图URL" prop="firstPicture">
-						<el-input v-model="form.firstPicture" placeholder="文章首图，用于随机文章展示"></el-input>
-					</el-form-item>
-				</el-col>
-			</el-row>
-			<el-form-item label="文章描述" prop="description">
-				<MdEditor v-model="form.description" />
-			</el-form-item>
-
-			<el-form-item label="文章正文" prop="content">
-				<MdEditor v-model="form.content" />
-			</el-form-item>
-
-			<el-row :gutter="20">
-				<el-col :span="12">
-					<el-form-item label="分类" prop="cate">
-						<el-select v-model="form.cate" placeholder="请选择分类（输入可添加新分类）" :allow-create="true"
-							:filterable="true" style="width: 100%;">
-							<el-option :label="item.name" :value="item.id" v-for="item in categoryList"
-								:key="item.id"></el-option>
-						</el-select>
-					</el-form-item>
-				</el-col>
-				<el-col :span="12">
-					<el-form-item label="标签" prop="tagList">
-						<el-select v-model="form.tagList" placeholder="请选择标签（输入可添加新标签）" :allow-create="true"
-							:filterable="true" :multiple="true" style="width: 100%;">
-							<el-option :label="item.name" :value="item.id" v-for="item in tagList"
-								:key="item.id"></el-option>
-						</el-select>
-					</el-form-item>
-				</el-col>
-			</el-row>
-
-			<el-row :gutter="20">
-				<el-col :span="8">
-					<el-form-item label="字数" prop="words">
-						<el-input v-model="form.words" placeholder="请输入文章字数（自动计算阅读时长）" type="number"></el-input>
-					</el-form-item>
-				</el-col>
-				<el-col :span="8">
-					<el-form-item label="阅读时长(分钟)" prop="readTime">
-						<el-input v-model="form.readTime" placeholder="请输入阅读时长（可选）默认 Math.round(字数 / 200)"
-							type="number"></el-input>
-					</el-form-item>
-				</el-col>
-				<el-col :span="8">
-					<el-form-item label="浏览次数" prop="views">
-						<el-input v-model="form.views" placeholder="请输入文章字数（可选）默认为 0" type="number"></el-input>
-					</el-form-item>
-				</el-col>
-			</el-row>
-
-			<el-form-item style="text-align: right;">
-				<el-button type="primary" @click="dialogVisible = true">保存</el-button>
-			</el-form-item>
-		</el-form>
-
-		<!--编辑可见性状态对话框-->
-		<el-dialog title="博客可见性" width="30%" v-model="dialogVisible">
-			<!--内容主体-->
-			<el-form label-width="50px" @submit.prevent>
-				<el-form-item>
-					<el-radio-group v-model="radio">
-						<el-radio :label="1">公开</el-radio>
-						<el-radio :label="2">私密</el-radio>
-						<el-radio :label="3">密码保护</el-radio>
-					</el-radio-group>
-				</el-form-item>
-				<el-form-item label="密码" v-if="radio === 3">
-					<el-input v-model="form.password"></el-input>
-				</el-form-item>
-				<el-form-item v-if="radio !== 2">
-					<el-row>
-						<el-col :span="6">
-							<el-switch v-model="form.appreciation" active-text="赞赏"></el-switch>
-						</el-col>
-						<el-col :span="6">
-							<el-switch v-model="form.recommend" active-text="推荐"></el-switch>
-						</el-col>
-						<el-col :span="6">
-							<el-switch v-model="form.commentEnabled" active-text="评论"></el-switch>
-						</el-col>
-						<el-col :span="6">
-							<el-switch v-model="form.top" active-text="置顶"></el-switch>
-						</el-col>
-					</el-row>
-				</el-form-item>
-			</el-form>
-			<!--底部-->
-			<template #footer>
-				<el-button @click="dialogVisible = false">取 消</el-button>
-				<el-button type="primary" @click="submit">保存</el-button>
+	<div class="write-page">
+		<PageHeader
+			eyebrow="内容编辑"
+			:title="isEditing ? '编辑文章' : '写文章'"
+			description="先把正文写清楚，再处理分类、标签和发布状态。"
+		>
+			<template #actions>
+				<el-button @click="$router.push('/blog/list')">返回列表</el-button>
+				<el-button type="primary" @click="submit">保存文章</el-button>
 			</template>
-		</el-dialog>
+		</PageHeader>
+
+		<el-form :model="form" :rules="formRules" ref="formRef" label-position="top" class="write-layout">
+			<div class="write-main">
+				<el-card class="editor-card">
+					<el-form-item label="文章标题" prop="title">
+						<el-input v-model="form.title" placeholder="请输入标题" size="large" />
+					</el-form-item>
+					<el-form-item label="文章首图 URL" prop="firstPicture">
+						<el-input v-model="form.firstPicture" placeholder="文章首图，用于随机文章展示" />
+					</el-form-item>
+					<el-form-item label="文章描述" prop="description">
+						<MdEditor v-model="form.description" class="description-editor" />
+					</el-form-item>
+					<el-form-item label="文章正文" prop="content">
+						<MdEditor v-model="form.content" class="content-editor" />
+					</el-form-item>
+				</el-card>
+			</div>
+
+			<aside class="write-aside">
+				<el-card class="side-card">
+					<div class="side-card__title">发布设置</div>
+					<el-form-item label="可见性">
+						<el-radio-group v-model="radio" class="visibility-group">
+							<el-radio-button :label="1">公开</el-radio-button>
+							<el-radio-button :label="2">私密</el-radio-button>
+							<el-radio-button :label="3">密码</el-radio-button>
+						</el-radio-group>
+					</el-form-item>
+					<el-form-item label="访问密码" v-if="radio === 3">
+						<el-input v-model="form.password" placeholder="请输入访问密码" show-password />
+					</el-form-item>
+					<div v-if="radio !== 2" class="switch-grid">
+						<el-switch v-model="form.appreciation" active-text="赞赏" />
+						<el-switch v-model="form.recommend" active-text="推荐" />
+						<el-switch v-model="form.commentEnabled" active-text="评论" />
+						<el-switch v-model="form.top" active-text="置顶" />
+					</div>
+				</el-card>
+
+				<el-card class="side-card">
+					<div class="side-card__title">分类标签</div>
+					<el-form-item label="分类" prop="cate">
+						<el-select
+							v-model="form.cate"
+							allow-create
+							filterable
+							placeholder="请选择分类（输入可添加）"
+							style="width: 100%;"
+						>
+							<el-option v-for="item in categoryList" :key="item.id" :label="item.name" :value="item.id" />
+						</el-select>
+					</el-form-item>
+					<el-form-item label="标签" prop="tagList">
+						<el-select
+							v-model="form.tagList"
+							allow-create
+							filterable
+							multiple
+							placeholder="请选择标签（输入可添加）"
+							style="width: 100%;"
+						>
+							<el-option v-for="item in tagList" :key="item.id" :label="item.name" :value="item.id" />
+						</el-select>
+					</el-form-item>
+				</el-card>
+
+				<el-card class="side-card">
+					<div class="side-card__title">阅读数据</div>
+					<el-form-item label="字数" prop="words">
+						<el-input v-model="form.words" placeholder="自动计算阅读时长" type="number" />
+					</el-form-item>
+					<el-form-item label="阅读时长（分钟）" prop="readTime">
+						<el-input v-model="form.readTime" placeholder="默认按 200 字/分钟" type="number" />
+					</el-form-item>
+					<el-form-item label="浏览次数" prop="views">
+						<el-input v-model="form.views" placeholder="默认为 0" type="number" />
+					</el-form-item>
+				</el-card>
+
+				<el-button type="primary" class="submit-button" @click="submit">保存文章</el-button>
+			</aside>
+		</el-form>
 	</div>
 </template>
 
 <script>
-	import Breadcrumb from "@/components/Breadcrumb";
+	import PageHeader from '@/components/PageHeader'
 	import { getCategoryAndTag, saveBlog, getBlogById, updateBlog } from '@/api/blog'
 
 	export default {
 		name: "WriteBlog",
-		components: { Breadcrumb },
+		components: { PageHeader },
 		data() {
 			return {
 				categoryList: [],
@@ -143,6 +133,11 @@
 					tagList: [{ required: true, message: '请选择标签', trigger: 'change' }],
 					words: [{ required: true, message: '请输入文章字数', trigger: 'change' }],
 				},
+			}
+		},
+		computed: {
+			isEditing() {
+				return !!this.$route.params.id
 			}
 		},
 		watch: {
@@ -223,6 +218,81 @@
 	}
 </script>
 
-<style scoped></style>
+<style scoped>
+	.write-page {
+		max-width: 1480px;
+		margin: 0 auto;
+	}
+
+	.write-layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 360px;
+		gap: 18px;
+		align-items: start;
+	}
+
+	.write-main,
+	.write-aside {
+		min-width: 0;
+	}
+
+	.write-aside {
+		position: sticky;
+		top: 86px;
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+	}
+
+	.editor-card :deep(.el-form-item:last-child) {
+		margin-bottom: 0;
+	}
+
+	.side-card__title {
+		margin-bottom: 16px;
+		color: #172033;
+		font-size: 15px;
+		font-weight: 700;
+	}
+
+	.visibility-group {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		width: 100%;
+	}
+
+	.visibility-group :deep(.el-radio-button__inner) {
+		width: 100%;
+	}
+
+	.switch-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px;
+	}
+
+	.submit-button {
+		width: 100%;
+		height: 44px;
+	}
+
+	.description-editor {
+		min-height: 240px;
+	}
+
+	.content-editor {
+		min-height: 620px;
+	}
+
+	@media screen and (max-width: 1180px) {
+		.write-layout {
+			grid-template-columns: 1fr;
+		}
+
+		.write-aside {
+			position: static;
+		}
+	}
+</style>
 
 

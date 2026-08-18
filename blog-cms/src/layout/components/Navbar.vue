@@ -1,10 +1,13 @@
 <template>
 	<div class="navbar">
-		<hamburger :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar"/>
+		<div class="navbar-left">
+			<hamburger :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar"/>
 
-		<breadcrumb class="breadcrumb-container"/>
+			<breadcrumb class="breadcrumb-container"/>
+		</div>
 
 		<div class="right-menu">
+			<el-button text @click="$router.push('/blog/write')">写文章</el-button>
 			<el-dropdown class="avatar-container" trigger="click">
 				<div class="avatar-wrapper">
 					<img :src="user.avatar" class="user-avatar" v-if="user">
@@ -78,15 +81,26 @@
 
 <style lang="scss" scoped>
 	.navbar {
-		height: 50px;
-		overflow: hidden;
+		display: flex;
+		height: 58px;
+		align-items: center;
+		justify-content: space-between;
+		overflow: visible;
 		position: relative;
 		background: #fff;
-		box-shadow: 0 1px 4px rgba(0, 21, 41, .08);
+		border-bottom: 1px solid #e4e9f2;
+		box-shadow: 0 10px 28px rgba(30, 41, 59, .04);
 		user-select: none;
 
+		.navbar-left {
+			display: flex;
+			min-width: 0;
+			align-items: center;
+			height: 100%;
+		}
+
 		.hamburger-container {
-			line-height: 46px;
+			line-height: 54px;
 			height: 100%;
 			float: left;
 			cursor: pointer;
@@ -103,9 +117,13 @@
 		}
 
 		.right-menu {
-			float: right;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			float: none;
 			height: 100%;
-			line-height: 50px;
+			padding-right: 20px;
+			line-height: 58px;
 
 			&:focus {
 				outline: none;
@@ -130,17 +148,21 @@
 			}
 
 			.avatar-container {
-				margin-right: 20px;
+				margin-right: 0;
 
 				.avatar-wrapper {
-					margin-top: 5px;
+					display: flex;
+					align-items: center;
+					margin-top: 0;
 					position: relative;
 
 					.user-avatar {
 						cursor: pointer;
 						width: 40px;
 						height: 40px;
-						border-radius: 10px;
+						border: 2px solid #e4e9f2;
+						border-radius: 50%;
+						object-fit: cover;
 					}
 
 					.el-icon-caret-bottom {

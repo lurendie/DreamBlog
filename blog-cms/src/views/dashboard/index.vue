@@ -1,83 +1,64 @@
 <template>
-	<div>
-		<el-row class="panel-group" :gutter="50">
-			<el-col :span="6">
-				<el-card class="card-panel" body-style="padding: 0">
-					<div class="card-panel-icon-wrapper">
-						<SvgIcon icon-class="pv" class-name="card-panel-icon"/>
-					</div>
-					<div class="card-panel-description">
-						<div class="card-panel-text">今日PV</div>
-						<span class="card-panel-num">{{ pv }}</span>
-					</div>
-				</el-card>
-			</el-col>
+	<div class="dashboard-page">
+		<PageHeader
+			eyebrow="ZeroBlog Console"
+			title="Dashboard"
+			:description="`${greeting}，${userName}。先看今天的访问和内容状态。`"
+		>
+			<template #actions>
+				<el-button @click="$router.push('/blog/list')">文章管理</el-button>
+				<el-button type="primary" @click="$router.push('/blog/write')">写文章</el-button>
+			</template>
+		</PageHeader>
 
-			<el-col :span="6">
-				<el-card class="card-panel" body-style="padding: 0">
-					<div class="card-panel-icon-wrapper">
-						<SvgIcon icon-class="yonghu" class-name="card-panel-icon"/>
-					</div>
-					<div class="card-panel-description">
-						<div class="card-panel-text">今日UV</div>
-						<span class="card-panel-num">{{ uv }}</span>
-					</div>
-				</el-card>
-			</el-col>
+		<section class="dashboard-hero">
+			<div>
+				<div class="dashboard-hero__date">{{ todayText }}</div>
+				<h2>写作台已就绪</h2>
+				<p>这里集中展示访问趋势、内容构成和访客分布，便于判断今天该写什么、该维护什么。</p>
+			</div>
+			<div class="dashboard-hero__stamp">
+				<span>PV</span>
+				<strong>{{ pv }}</strong>
+			</div>
+		</section>
 
-			<el-col :span="6">
-				<el-card class="card-panel" body-style="padding: 0">
-					<div class="card-panel-icon-wrapper">
-						<SvgIcon icon-class="article" class-name="card-panel-icon"/>
-					</div>
-					<div class="card-panel-description">
-						<div class="card-panel-text">文章数</div>
-						<span class="card-panel-num">{{ blogCount }}</span>
-					</div>
-				</el-card>
-			</el-col>
+		<div class="metric-grid">
+			<MetricCard
+				v-for="item in metricCards"
+				:key="item.title"
+				:title="item.title"
+				:value="item.value"
+				:description="item.description"
+				:icon="item.icon"
+				:accent="item.accent"
+			/>
+		</div>
 
-			<el-col :span="6">
-				<el-card class="card-panel" body-style="padding: 0">
-					<div class="card-panel-icon-wrapper">
-						<SvgIcon icon-class="pinglun-blue" class-name="card-panel-icon"/>
-					</div>
-					<div class="card-panel-description">
-						<div class="card-panel-text">评论数</div>
-						<span class="card-panel-num">{{ commentCount }}</span>
-					</div>
-				</el-card>
-			</el-col>
-		</el-row>
-
-		<el-row class="panel-group" :gutter="20">
-			<el-col :span="8">
-				<el-card>
-					<div ref="categoryEcharts" style="height:500px;"></div>
-				</el-card>
-			</el-col>
-			<el-col :span="8">
-				<el-card>
-					<div ref="tagEcharts" style="height:500px;"></div>
-				</el-card>
-			</el-col>
-			<el-col :span="8">
-				<el-card>
-					<div ref="mapEcharts" style="height:500px;"></div>
-				</el-card>
-			</el-col>
-		</el-row>
-
-		<el-card class="panel-group">
-			<div ref="visitRecordEcharts" style="height:500px;"></div>
-		</el-card>
+		<div class="dashboard-grid">
+			<ChartPanel title="访问趋势" description="最近一周 PV / UV" :height="420" class="dashboard-grid__wide">
+				<div ref="visitRecordEcharts" class="chart-box"></div>
+			</ChartPanel>
+			<ChartPanel title="访客地图" description="按城市聚合的访问分布" :height="420">
+				<div ref="mapEcharts" class="chart-box"></div>
+			</ChartPanel>
+			<ChartPanel title="分类构成" description="分类下文章数量" :height="360">
+				<div ref="categoryEcharts" class="chart-box"></div>
+			</ChartPanel>
+			<ChartPanel title="标签构成" description="标签下文章数量" :height="360">
+				<div ref="tagEcharts" class="chart-box"></div>
+			</ChartPanel>
+		</div>
 	</div>
 </template>
 
 <script>
-	import SvgIcon from "@/components/SvgIcon";
 	import * as echarts from 'echarts'
 	import {getDashboard} from "@/api/dashboard";
+	import ChartPanel from '@/components/ChartPanel'
+	import MetricCard from '@/components/MetricCard'
+	import PageHeader from '@/components/PageHeader'
+	import {getStoredUser} from '@/util/storage'
 	//echarts 5 不再内置中国地图，用项目内自带数据注册（省级粒度）
 	import chinaJson from '@/util/china.json'
 	echarts.registerMap('china', chinaJson)
@@ -86,9 +67,10 @@
 
 	export default {
 		name: "Dashboard",
-		components: {SvgIcon},
+		components: {ChartPanel, MetricCard, PageHeader},
 		data() {
 			return {
+				user: getStoredUser(),
 				pv: 0,
 				uv: 0,
 				blogCount: 0,
@@ -97,11 +79,9 @@
 				tagEcharts: null,
 				mapEcharts: null,
 				visitRecordEcharts: null,
+				_resizeHandler: null,
 				categoryOption: {
-					title: {
-						text: '分类下文章数量',
-						x: 'center'
-					},
+					title: { show: false },
 					tooltip: {
 						trigger: 'item',
 						formatter: '{a} <br/>{b} : {c} ({d}%)'
@@ -122,10 +102,7 @@
 					]
 				},
 				tagOption: {
-					title: {
-						text: '标签下文章数量',
-						x: 'center'
-					},
+					title: { show: false },
 					tooltip: {
 						trigger: 'item',
 						formatter: '{a} <br/>{b} : {c} ({d}%)'
@@ -149,10 +126,7 @@
 				//地图效果 reference https://www.jianshu.com/p/028525cbd080
 				//reference https://echarts.apache.org/examples/zh/editor.html?c=map-polygon
 				mapOption: {
-					title: {
-						text: '访客地图',
-						x: 'center'
-					},
+					title: { show: false },
 					tooltip: {
 						show: false
 					},
@@ -171,15 +145,15 @@
 							}
 						},
 						itemStyle: {
-							areaColor: "#0d0059",
-							borderColor: "#389dff",
+							areaColor: "#eef4fb",
+							borderColor: "#9db8de",
 							borderWidth: 1,//设置外层边框
-							shadowBlur: 5,
+							shadowBlur: 10,
 							shadowOffsetY: 8,
 							shadowOffsetX: 0,
-							shadowColor: "#01012a",
+							shadowColor: "rgba(30, 41, 59, 0.08)",
 							emphasis: {
-								areaColor: "#184cff",
+								areaColor: "#dbeafe",
 								shadowOffsetX: 0,
 								shadowOffsetY: 0,
 								shadowBlur: 5,
@@ -203,11 +177,11 @@
 							}
 						},
 						itemStyle: {
-							areaColor: "#0d0059",
-							borderColor: "#389dff",
+							areaColor: "#eef4fb",
+							borderColor: "#9db8de",
 							borderWidth: 0.5,
 							emphasis: {
-								areaColor: "#17008d",
+								areaColor: "#dbeafe",
 								shadowOffsetX: 0,
 								shadowOffsetY: 0,
 								shadowBlur: 5,
@@ -239,7 +213,7 @@
 								show: false
 							},
 							itemStyle: {
-								color: "#0efacc"
+								color: "#14b8a6"
 							},
 							emphasis: {
 								label: {
@@ -266,7 +240,7 @@
 							showEffectOn: "render",
 							rippleEffect: {
 								brushType: "stroke",
-								color: "#0efacc",
+								color: "#14b8a6",
 								period: 9,
 								scale: 5
 							},
@@ -277,7 +251,7 @@
 								show: true
 							},
 							itemStyle: {
-								color: "#0efacc",
+								color: "#14b8a6",
 								shadowBlur: 2,
 								shadowColor: "#333"
 							},
@@ -322,9 +296,9 @@
 							type: 'line',
 							itemStyle: {
 								normal: {
-									color: '#FF005A',
+									color: '#2563eb',
 									lineStyle: {
-										color: '#FF005A',
+										color: '#2563eb',
 										width: 2
 									}
 								}
@@ -339,13 +313,13 @@
 							type: 'line',
 							itemStyle: {
 								normal: {
-									color: '#3888fa',
+									color: '#14b8a6',
 									lineStyle: {
-										color: '#3888fa',
+										color: '#14b8a6',
 										width: 2
 									},
 									areaStyle: {
-										color: '#f3f8ff'
+										color: 'rgba(20, 184, 166, 0.12)'
 									}
 								}
 							},
@@ -357,8 +331,40 @@
 				},
 			}
 		},
+		computed: {
+			userName() {
+				return this.user?.nickname || this.user?.username || '管理员'
+			},
+			greeting() {
+				const hour = new Date().getHours()
+				if (hour < 6) return '夜深了'
+				if (hour < 9) return '早上好'
+				if (hour < 12) return '上午好'
+				if (hour < 14) return '中午好'
+				if (hour < 18) return '下午好'
+				return '晚上好'
+			},
+			todayText() {
+				return new Date().toLocaleDateString('zh-CN', {
+					month: 'long',
+					day: 'numeric',
+					weekday: 'long'
+				})
+			},
+			metricCards() {
+				return [
+					{title: '今日 PV', value: this.pv, description: '页面访问量', icon: 'pv', accent: 'blue'},
+					{title: '今日 UV', value: this.uv, description: '独立访客数', icon: 'yonghu', accent: 'teal'},
+					{title: '文章数', value: this.blogCount, description: '已收录文章', icon: 'article', accent: 'amber'},
+					{title: '评论数', value: this.commentCount, description: '读者互动', icon: 'pinglun-blue', accent: 'violet'}
+				]
+			}
+		},
 		beforeUnmount() {
 			//销毁 echarts 实例，避免路由切换后内存泄漏
+			if (this._resizeHandler) {
+				window.removeEventListener('resize', this._resizeHandler)
+			}
 			if (this.categoryEcharts) this.categoryEcharts.dispose()
 			if (this.tagEcharts) this.tagEcharts.dispose()
 			if (this.mapEcharts) this.mapEcharts.dispose()
@@ -366,6 +372,8 @@
 		},
 		mounted() {
 			this.getData()
+			this._resizeHandler = () => this.resizeCharts()
+			window.addEventListener('resize', this._resizeHandler)
 		},
 		methods: {
 			getData() {
@@ -425,46 +433,142 @@
 				this.visitRecordEcharts = echarts.init(this.$refs.visitRecordEcharts)
 				this.visitRecordEcharts.setOption(this.visitRecordOption)
 			},
+			resizeCharts() {
+				if (this.categoryEcharts) this.categoryEcharts.resize()
+				if (this.tagEcharts) this.tagEcharts.resize()
+				if (this.mapEcharts) this.mapEcharts.resize()
+				if (this.visitRecordEcharts) this.visitRecordEcharts.resize()
+			},
 		}
 	}
 </script>
 
 <style scoped>
-	.panel-group {
-		margin-bottom: 30px;
+	.dashboard-page {
+		max-width: 1480px;
+		margin: 0 auto;
 	}
 
-	.panel-group .card-panel {
-		height: 108px;
+	.dashboard-hero {
 		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 24px;
 		overflow: hidden;
+		margin-bottom: 20px;
+		border: 1px solid #dce6f5;
+		border-radius: 8px;
+		background:
+			linear-gradient(135deg, rgba(37, 99, 235, .10), rgba(20, 184, 166, .08)),
+			#fff;
+		padding: 26px 28px;
+		box-shadow: 0 14px 34px rgba(30, 41, 59, 0.06);
 	}
 
-	.panel-group .card-panel .card-panel-icon-wrapper {
-		float: left;
-		margin: 14px 0 0 14px;
-		padding: 16px;
+	.dashboard-hero:after {
+		content: '';
+		position: absolute;
+		right: 168px;
+		top: 18px;
+		width: 1px;
+		height: calc(100% - 36px);
+		background: #dce6f5;
 	}
 
-	.panel-group .card-panel .card-panel-icon {
-		float: left;
-		font-size: 48px;
-	}
-
-	.panel-group .card-panel .card-panel-description {
-		float: right;
+	.dashboard-hero__date {
+		color: #64748b;
+		font-size: 13px;
 		font-weight: 700;
-		margin: 26px 26px 26px 0;
 	}
 
-	.panel-group .card-panel .card-panel-description .card-panel-text {
-		color: rgba(0, 0, 0, 0.45);
-		font-size: 16px;
-		margin-bottom: 12px;
+	.dashboard-hero h2 {
+		margin: 8px 0;
+		color: #172033;
+		font-size: 28px;
+		font-weight: 650;
+		line-height: 1.2;
 	}
 
-	.panel-group .card-panel .card-panel-description .card-panel-num {
-		font-size: 20px;
+	.dashboard-hero p {
+		max-width: 660px;
+		margin: 0;
+		color: #64748b;
+		font-size: 14px;
+		line-height: 1.7;
+	}
+
+	.dashboard-hero__stamp {
+		position: relative;
+		z-index: 1;
+		min-width: 116px;
+		text-align: right;
+	}
+
+	.dashboard-hero__stamp span {
+		display: block;
+		color: #64748b;
+		font-size: 12px;
+		font-weight: 700;
+	}
+
+	.dashboard-hero__stamp strong {
+		display: block;
+		margin-top: 8px;
+		color: #2563eb;
+		font-size: 42px;
+		line-height: 1;
+	}
+
+	.metric-grid {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 16px;
+		margin-bottom: 18px;
+	}
+
+	.dashboard-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 18px;
+	}
+
+	.dashboard-grid__wide {
+		grid-column: span 2;
+	}
+
+	.chart-box {
+		width: 100%;
+		height: 100%;
+		min-height: 280px;
+	}
+
+	@media screen and (max-width: 1200px) {
+		.metric-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media screen and (max-width: 768px) {
+		.dashboard-hero,
+		.metric-grid,
+		.dashboard-grid {
+			display: block;
+		}
+
+		.dashboard-hero {
+			padding: 20px;
+		}
+
+		.dashboard-hero:after,
+		.dashboard-hero__stamp {
+			display: none;
+		}
+
+		.metric-grid :deep(.metric-card),
+		.dashboard-grid :deep(.chart-panel) {
+			margin-bottom: 14px;
+		}
 	}
 </style>
 

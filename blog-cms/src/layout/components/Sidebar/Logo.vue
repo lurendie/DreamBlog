@@ -44,10 +44,11 @@
 	.sidebar-logo-container {
 		position: relative;
 		width: 100%;
-		height: 50px;
-		line-height: 50px;
-		background: #2b2f3a;
-		text-align: center;
+		height: 58px;
+		line-height: 58px;
+		background: #fff;
+		border-bottom: 1px solid #e4e9f2;
+		text-align: left;
 		overflow: hidden;
 
 		& .sidebar-logo-link {
@@ -58,17 +59,18 @@
 				width: 32px;
 				height: 32px;
 				vertical-align: middle;
-				margin-right: 12px;
+				margin: 0 12px 0 18px;
+				border-radius: 8px;
 			}
 
 			& .sidebar-title {
 				display: inline-block;
 				margin: 0;
-				color: #fff;
-				font-weight: 600;
-				line-height: 50px;
-				font-size: 14px;
-				font-family: Avenir, Helvetica Neue, Arial, Helvetica, sans-serif;
+				color: #172033;
+				font-weight: 750;
+				line-height: 58px;
+				font-size: 16px;
+				font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 				vertical-align: middle;
 			}
 		}
@@ -76,6 +78,7 @@
 		&.collapse {
 			.sidebar-logo {
 				margin-right: 0px;
+				margin-left: 11px;
 			}
 		}
 	}
