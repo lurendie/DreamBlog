@@ -1,13 +1,13 @@
 <template>
 	<div>
 		<el-alert title="图床配置及用法请查看：https://github.com/Naccl/PictureHosting" type="warning" show-icon v-if="hintShow"></el-alert>
-		<el-card>
+		<el-card class="hosting-config-card">
 			<template #header>
 				<span>GitHub配置</span>
 			</template>
 			<el-row>
 				<el-col>
-					<el-input placeholder="请输入token进行初始化" v-model="githubToken" :clearable="true" show-password @keyup.enter="searchGithubUser" style="min-width: 500px">
+					<el-input class="github-token-input" placeholder="请输入token进行初始化" v-model="githubToken" :clearable="true" show-password @keyup.enter="searchGithubUser">
 						<template #append>
 							<el-button icon="el-icon-search" :disabled="!githubToken" @click="searchGithubUser">查询</el-button>
 						</template>
@@ -29,7 +29,7 @@
 			</el-row>
 		</el-card>
 
-		<el-card>
+		<el-card class="hosting-config-card">
 			<template #header>
 				<span>又拍云存储配置</span>
 			</template>
@@ -51,7 +51,7 @@
 			</el-form>
 		</el-card>
 
-		<el-card>
+		<el-card class="hosting-config-card">
 			<template #header>
 				<span>腾讯云存储配置</span>
 			</template>
@@ -228,12 +228,38 @@ export default {
 	vertical-align: middle;
 }
 
-.el-card {
-	width: 50%;
+.hosting-config-card {
+	width: min(100%, 680px);
 }
 
-.el-card + .el-card {
+.github-token-input {
+	max-width: 560px;
+}
+
+.hosting-config-card + .hosting-config-card {
 	margin-top: 20px;
+}
+
+@media screen and (max-width: 768px) {
+	.github-token-input {
+		max-width: 100%;
+	}
+
+	.el-row .el-button + .el-button,
+	.el-form .el-button + .el-button {
+		margin-left: 0;
+	}
+
+	.el-row .el-col,
+	.el-form {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	.el-form :deep(.el-form-item) {
+		width: 100%;
+	}
 }
 </style>
 

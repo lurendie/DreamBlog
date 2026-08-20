@@ -139,15 +139,35 @@ div:focus {
 @media screen and (max-width: 768px) {
   .app-container {
     padding: 12px;
+    overflow-x: hidden;
   }
 
   .app-main {
     padding: 12px !important;
   }
 
+  .el-card {
+    width: 100% !important;
+  }
+
+  .el-card__body {
+    padding: 16px !important;
+  }
+
   .el-dialog {
-    width: 95% !important;
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px);
     margin-top: 10vh !important;
+  }
+
+  .el-drawer.rtl,
+  .el-drawer.ltr {
+    width: calc(100vw - 24px) !important;
+  }
+
+  .el-message-box {
+    width: calc(100vw - 24px) !important;
+    max-width: 420px;
   }
 
   .el-form--inline .el-form-item {
@@ -155,17 +175,59 @@ div:focus {
     margin-right: 0;
   }
 
+  .el-form-item {
+    max-width: 100%;
+  }
+
+  .el-form-item__label {
+    line-height: 1.35;
+  }
+
+  .el-input,
+  .el-textarea,
+  .el-select,
+  .el-cascader,
+  .el-input-number,
+  .el-date-editor,
+  .el-date-editor.el-input,
+  .el-date-editor.el-input__wrapper {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100%;
+  }
+
+  .el-table {
+    width: 100% !important;
+  }
+
   .el-table__header-wrapper,
-  .el-table__body-wrapper {
+  .el-table__body-wrapper,
+  .el-table__inner-wrapper {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .el-pagination {
     white-space: normal;
+    justify-content: center;
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
 
   .el-pagination__sizes,
   .el-pagination__jump {
     display: none !important;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 16px 16px;
+  }
+
+  .el-dialog__footer .dialog-footer,
+  .el-dialog__footer .el-form-item__content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
   }
 }

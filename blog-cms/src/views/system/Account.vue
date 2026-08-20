@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<el-card>
+		<el-card class="account-card">
 			<template #header>
 				<span>修改当前登录账户</span>
 			</template>
@@ -63,8 +63,8 @@ export default {
 </script>
 
 <style scoped>
-.el-card {
-	width: 50%;
+.account-card {
+	width: min(100%, 560px);
 }
 </style>
 

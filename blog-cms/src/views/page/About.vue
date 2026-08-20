@@ -1,11 +1,11 @@
 <template>
 	<div>
 		<el-form :model="form" :rules="formRules" ref="formRef" label-position="top">
-			<el-form-item label="标题" prop="title" style="width: 50%">
+			<el-form-item class="about-title-field" label="标题" prop="title">
 				<el-input v-model="form.title" placeholder="请输入标题"></el-input>
 			</el-form-item>
 
-			<el-row :gutter="20" style="width: 50%">
+			<el-row class="about-meta-row" :gutter="20">
 				<el-col :span="12">
 					<el-form-item label="网易云歌曲ID" prop="musicId">
 						<el-input v-model="form.musicId" type="number" placeholder="请输入网易云歌曲ID（可选）"></el-input>
@@ -84,6 +84,11 @@
 </script>
 
 <style scoped>
+	.about-title-field,
+	.about-meta-row {
+		width: min(100%, 720px);
+	}
+
 	.md-editor-panel {
 		width: 100%;
 		overflow: hidden;
@@ -100,6 +105,22 @@
 
 	.about-editor {
 		height: 460px;
+	}
+
+	@media screen and (max-width: 768px) {
+		.about-title-field,
+		.about-meta-row {
+			width: 100%;
+		}
+
+		.about-meta-row :deep(.el-col) {
+			max-width: 100%;
+			flex: 0 0 100%;
+		}
+
+		.about-editor {
+			height: 360px;
+		}
 	}
 </style>
 

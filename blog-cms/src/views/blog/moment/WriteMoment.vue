@@ -7,7 +7,7 @@
 				</div>
 			</el-form-item>
 
-			<el-form-item label="点赞数" prop="likes" style="width: 50%">
+			<el-form-item class="moment-count-field" label="点赞数" prop="likes">
 				<el-input v-model="form.likes" type="number" placeholder="可选，默认为 0"></el-input>
 			</el-form-item>
 
@@ -75,6 +75,10 @@
 </script>
 
 <style scoped>
+	.moment-count-field {
+		width: min(100%, 520px);
+	}
+
 	.md-editor-panel {
 		width: 100%;
 		overflow: hidden;
@@ -93,5 +97,25 @@
 		height: 460px;
 	}
 
+	@media screen and (max-width: 768px) {
+		.moment-count-field {
+			width: 100%;
+		}
+
+		.moment-editor {
+			height: 340px;
+		}
+
+		.el-form-item:last-child :deep(.el-form-item__content) {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			justify-content: flex-end;
+		}
+
+		.el-form-item:last-child :deep(.el-button + .el-button) {
+			margin-left: 0;
+		}
+	}
 </style>
 

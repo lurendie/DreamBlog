@@ -7,6 +7,7 @@
     width: 100%;
     text-align: justify;
     word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .typo img {
@@ -35,6 +36,12 @@
 /* HTML5 媒体文件跟 img 保持一致 */
 .typo audio, canvas, video {
     display: block;
+    max-width: 100%;
+}
+
+.typo iframe {
+    display: block;
+    max-width: 100%;
 }
 
 /* 要注意表单元素并不继承父级 font 的问题 */
@@ -256,6 +263,11 @@
     padding: 1.25rem 1.5rem;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
+
+.typo pre code {
+    white-space: pre;
 }
 
 /* 保证块/段落之间的空白隔行 */
@@ -410,6 +422,10 @@
         text-align: left;
     }
 
+    .typo a {
+        overflow-wrap: anywhere;
+    }
+
     .typo h1 {
         font-size: 1.7em;
     }
@@ -436,6 +452,13 @@
         font-size: 13px;
         padding: 0.9rem 1rem;
         border-radius: 10px;
+    }
+
+    .typo audio,
+    .typo canvas,
+    .typo video,
+    .typo iframe {
+        width: 100%;
     }
 
     .typo p code, .typo ul code, .typo ol code {

@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<el-row>
+		<el-row class="hosting-toolbar">
 			<el-select v-model="activeRepos" placeholder="请选择仓库" :filterable="true" @change="changeRepos" style="min-width: 300px">
 				<el-option v-for="item in reposList" :key="item.id" :label="item.name" :value="item.name"></el-option>
 			</el-select>
@@ -12,7 +12,7 @@
 		<el-alert title="只显示<img>标签支持的 apng,avif,bmp,gif,ico,cur,jpg,jpeg,jfif,pjpeg,pjp,png,svg,tif,tiff,webp 格式的图片，见 https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/img" type="warning" show-icon close-text="不再提示" v-if="hintShow1" @close="noDisplay(1)"></el-alert>
 		<el-alert title="仅支持获取1000个文件内的目录，超出则将请求失败" type="warning" show-icon close-text="不再提示" v-if="hintShow2" @close="noDisplay(2)"></el-alert>
 		<el-alert title="不可上传同名文件，否则将收到422错误码，如需替换，请先删除原文件" type="warning" show-icon close-text="不再提示" v-if="hintShow3" @close="noDisplay(3)"></el-alert>
-		<el-row v-viewer>
+		<el-row class="hosting-image-grid" v-viewer>
 			<div class="image-container" v-for="(file,index) in fileList" :key="index">
 				<el-image :src="imgUrl(file)" fit="scale-down"></el-image>
 				<div class="image-content">
@@ -394,6 +394,43 @@ export default {
 
 	.image-container:hover .image-content::before {
 		height: 80px;
+	}
+
+	@media screen and (max-width: 768px) {
+		.hosting-toolbar {
+			display: grid;
+			grid-template-columns: 1fr;
+			gap: 10px;
+		}
+
+		.hosting-toolbar :deep(.el-select),
+		.hosting-toolbar :deep(.el-cascader),
+		.hosting-toolbar :deep(.el-button) {
+			width: 100%;
+			margin-left: 0;
+		}
+
+		.hosting-toolbar :deep(.el-switch) {
+			margin-left: 0;
+			justify-content: flex-start;
+		}
+
+		.hosting-image-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 8px;
+		}
+
+		.image-container {
+			width: 100%;
+			aspect-ratio: 1;
+			height: auto;
+			margin: 0;
+		}
+
+		.icon {
+			transform: translateY(0);
+		}
 	}
 </style>
 
