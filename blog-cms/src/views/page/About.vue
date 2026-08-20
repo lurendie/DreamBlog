@@ -66,9 +66,9 @@
 			submit() {
 				this.$refs.formRef.validate(valid => {
 					if (valid) {
-						//纯数字
+						// 允许留空；只有填写时才校验纯数字
 						const reg = /^\d{1,}$/
-						if (!reg.test(this.form.musicId)) {
+						if (this.form.musicId !== null && this.form.musicId !== '' && !reg.test(this.form.musicId)) {
 							return this.msgError("歌曲ID有误")
 						}
 						updateAbout(this.form).then(res => {
