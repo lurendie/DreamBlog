@@ -473,11 +473,11 @@
 			padding: 0.78rem 0.9rem;
 			margin: 0.3rem 0;
 			border-radius: 12px;
-			color: #2563eb !important;
+			color: #0f766e !important;
 			font-size: 16px;
 			font-weight: 500;
 			background: #ffffff;
-			box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
+			box-shadow: inset 0 0 0 1px rgba(20, 184, 166, 0.08);
 		}
 
 		.mobile-category-empty {
