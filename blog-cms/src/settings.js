@@ -3,7 +3,7 @@ export default {
 	 * @type {string}
 	 * @description page title
 	 */
-	title: 'Zero\'s Blog Admin',
+	title: 'Dream\'s Blog Admin',
 
 	/**
 	 * @type {string}
@@ -27,5 +27,5 @@ export default {
 	 * @type {Array}
 	 * @description 默认展开的父级菜单
 	 */
-	defaultOpeneds: ['/blog', '/page', '/pictureHosting', '/system', '/log', '/statistics']
+	defaultOpeneds: []
 }

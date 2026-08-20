@@ -19,7 +19,9 @@
 			</el-row>
 
 			<el-form-item label="正文" prop="content">
-				<MdEditor v-model="form.content"/>
+				<div class="md-editor-panel about-editor">
+					<MdEditor v-model="form.content" />
+				</div>
 			</el-form-item>
 
 			<el-form-item style="text-align: right;">
@@ -82,6 +84,22 @@
 </script>
 
 <style scoped>
+	.md-editor-panel {
+		width: 100%;
+		overflow: hidden;
+		border: 1px solid #e4e9f2;
+		border-radius: 8px;
+		background: #fff;
+	}
 
+	.md-editor-panel :deep(.md-editor) {
+		height: 100% !important;
+		border: 0 !important;
+		border-radius: 0 !important;
+	}
+
+	.about-editor {
+		height: 460px;
+	}
 </style>
 

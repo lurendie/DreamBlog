@@ -2,7 +2,9 @@
 	<div>
 		<el-form :model="form" label-position="top">
 			<el-form-item label="动态内容" prop="content">
-				<MdEditor v-model="form.content"/>
+				<div class="md-editor-panel moment-editor">
+					<MdEditor v-model="form.content" />
+				</div>
 			</el-form-item>
 
 			<el-form-item label="点赞数" prop="likes" style="width: 50%">
@@ -73,6 +75,23 @@
 </script>
 
 <style scoped>
+	.md-editor-panel {
+		width: 100%;
+		overflow: hidden;
+		border: 1px solid #e4e9f2;
+		border-radius: 8px;
+		background: #fff;
+	}
+
+	.md-editor-panel :deep(.md-editor) {
+		height: 100% !important;
+		border: 0 !important;
+		border-radius: 0 !important;
+	}
+
+	.moment-editor {
+		height: 460px;
+	}
 
 </style>
 

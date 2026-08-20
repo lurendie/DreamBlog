@@ -11,18 +11,6 @@
 			</template>
 		</PageHeader>
 
-		<section class="dashboard-hero">
-			<div>
-				<div class="dashboard-hero__date">{{ todayText }}</div>
-				<h2>写作台已就绪</h2>
-				<p>这里集中展示访问趋势、内容构成和访客分布，便于判断今天该写什么、该维护什么。</p>
-			</div>
-			<div class="dashboard-hero__stamp">
-				<span>PV</span>
-				<strong>{{ pv }}</strong>
-			</div>
-		</section>
-
 		<div class="metric-grid">
 			<MetricCard
 				v-for="item in metricCards"
@@ -145,15 +133,15 @@
 							}
 						},
 						itemStyle: {
-							areaColor: "#eef4fb",
-							borderColor: "#9db8de",
+							areaColor: "#eef2ff",
+							borderColor: "#c7d2fe",
 							borderWidth: 1,//设置外层边框
 							shadowBlur: 10,
 							shadowOffsetY: 8,
 							shadowOffsetX: 0,
 							shadowColor: "rgba(30, 41, 59, 0.08)",
 							emphasis: {
-								areaColor: "#dbeafe",
+								areaColor: "#e0e7ff",
 								shadowOffsetX: 0,
 								shadowOffsetY: 0,
 								shadowBlur: 5,
@@ -177,11 +165,11 @@
 							}
 						},
 						itemStyle: {
-							areaColor: "#eef4fb",
-							borderColor: "#9db8de",
+							areaColor: "#eef2ff",
+							borderColor: "#c7d2fe",
 							borderWidth: 0.5,
 							emphasis: {
-								areaColor: "#dbeafe",
+								areaColor: "#e0e7ff",
 								shadowOffsetX: 0,
 								shadowOffsetY: 0,
 								shadowBlur: 5,
@@ -213,7 +201,7 @@
 								show: false
 							},
 							itemStyle: {
-								color: "#14b8a6"
+								color: "#4f46e5"
 							},
 							emphasis: {
 								label: {
@@ -240,7 +228,7 @@
 							showEffectOn: "render",
 							rippleEffect: {
 								brushType: "stroke",
-								color: "#14b8a6",
+								color: "#4f46e5",
 								period: 9,
 								scale: 5
 							},
@@ -251,7 +239,7 @@
 								show: true
 							},
 							itemStyle: {
-								color: "#14b8a6",
+								color: "#4f46e5",
 								shadowBlur: 2,
 								shadowColor: "#333"
 							},
@@ -313,13 +301,13 @@
 							type: 'line',
 							itemStyle: {
 								normal: {
-									color: '#14b8a6',
+								color: '#4f46e5',
 									lineStyle: {
-										color: '#14b8a6',
+										color: '#4f46e5',
 										width: 2
 									},
 									areaStyle: {
-										color: 'rgba(20, 184, 166, 0.12)'
+										color: 'rgba(79, 70, 229, 0.12)'
 									}
 								}
 							},
@@ -344,17 +332,10 @@
 				if (hour < 18) return '下午好'
 				return '晚上好'
 			},
-			todayText() {
-				return new Date().toLocaleDateString('zh-CN', {
-					month: 'long',
-					day: 'numeric',
-					weekday: 'long'
-				})
-			},
 			metricCards() {
 				return [
 					{title: '今日 PV', value: this.pv, description: '页面访问量', icon: 'pv', accent: 'blue'},
-					{title: '今日 UV', value: this.uv, description: '独立访客数', icon: 'yonghu', accent: 'teal'},
+					{title: '今日 UV', value: this.uv, description: '独立访客数', icon: 'yonghu', accent: 'indigo'},
 					{title: '文章数', value: this.blogCount, description: '已收录文章', icon: 'article', accent: 'amber'},
 					{title: '评论数', value: this.commentCount, description: '读者互动', icon: 'pinglun-blue', accent: 'violet'}
 				]
@@ -449,77 +430,6 @@
 		margin: 0 auto;
 	}
 
-	.dashboard-hero {
-		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 24px;
-		overflow: hidden;
-		margin-bottom: 20px;
-		border: 1px solid #dce6f5;
-		border-radius: 8px;
-		background:
-			linear-gradient(135deg, rgba(37, 99, 235, .10), rgba(20, 184, 166, .08)),
-			#fff;
-		padding: 26px 28px;
-		box-shadow: 0 14px 34px rgba(30, 41, 59, 0.06);
-	}
-
-	.dashboard-hero:after {
-		content: '';
-		position: absolute;
-		right: 168px;
-		top: 18px;
-		width: 1px;
-		height: calc(100% - 36px);
-		background: #dce6f5;
-	}
-
-	.dashboard-hero__date {
-		color: #64748b;
-		font-size: 13px;
-		font-weight: 700;
-	}
-
-	.dashboard-hero h2 {
-		margin: 8px 0;
-		color: #172033;
-		font-size: 28px;
-		font-weight: 650;
-		line-height: 1.2;
-	}
-
-	.dashboard-hero p {
-		max-width: 660px;
-		margin: 0;
-		color: #64748b;
-		font-size: 14px;
-		line-height: 1.7;
-	}
-
-	.dashboard-hero__stamp {
-		position: relative;
-		z-index: 1;
-		min-width: 116px;
-		text-align: right;
-	}
-
-	.dashboard-hero__stamp span {
-		display: block;
-		color: #64748b;
-		font-size: 12px;
-		font-weight: 700;
-	}
-
-	.dashboard-hero__stamp strong {
-		display: block;
-		margin-top: 8px;
-		color: #2563eb;
-		font-size: 42px;
-		line-height: 1;
-	}
-
 	.metric-grid {
 		display: grid;
 		grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -550,19 +460,9 @@
 	}
 
 	@media screen and (max-width: 768px) {
-		.dashboard-hero,
 		.metric-grid,
 		.dashboard-grid {
 			display: block;
-		}
-
-		.dashboard-hero {
-			padding: 20px;
-		}
-
-		.dashboard-hero:after,
-		.dashboard-hero__stamp {
-			display: none;
 		}
 
 		.metric-grid :deep(.metric-card),

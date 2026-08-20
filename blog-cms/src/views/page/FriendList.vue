@@ -45,11 +45,13 @@
 		               layout="total, sizes, prev, pager, next, jumper" background>
 		</el-pagination>
 
-		<!--友链页面信息-->
-		<el-form label-position="top">
-			<el-form-item label="友链页面信息">
-				<MdEditor v-model="infoForm.content"/>
-			</el-form-item>
+			<!--友链页面信息-->
+			<el-form label-position="top">
+				<el-form-item label="友链页面信息">
+					<div class="md-editor-panel friend-editor">
+						<MdEditor v-model="infoForm.content" />
+					</div>
+				</el-form-item>
 			<el-form-item style="text-align: right;">
 				<el-button type="primary" icon="el-icon-check" @click="updateContent">保存</el-button>
 			</el-form-item>
@@ -241,6 +243,24 @@
 </script>
 
 <style scoped>
+	.md-editor-panel {
+		width: 100%;
+		overflow: hidden;
+		border: 1px solid #e4e9f2;
+		border-radius: 8px;
+		background: #fff;
+	}
+
+	.md-editor-panel :deep(.md-editor) {
+		height: 100% !important;
+		border: 0 !important;
+		border-radius: 0 !important;
+	}
+
+	.friend-editor {
+		height: 360px;
+	}
+
 	.el-button + span {
 		margin-left: 10px;
 	}

@@ -21,10 +21,14 @@
 						<el-input v-model="form.firstPicture" placeholder="文章首图，用于随机文章展示" />
 					</el-form-item>
 					<el-form-item label="文章描述" prop="description">
-						<MdEditor v-model="form.description" class="description-editor" />
+						<div class="md-editor-panel description-editor">
+							<MdEditor v-model="form.description" />
+						</div>
 					</el-form-item>
 					<el-form-item label="文章正文" prop="content">
-						<MdEditor v-model="form.content" class="content-editor" />
+						<div class="md-editor-panel content-editor">
+							<MdEditor v-model="form.content" />
+						</div>
 					</el-form-item>
 				</el-card>
 			</div>
@@ -248,6 +252,20 @@
 		margin-bottom: 0;
 	}
 
+	.md-editor-panel {
+		width: 100%;
+		overflow: hidden;
+		border: 1px solid #e4e9f2;
+		border-radius: 8px;
+		background: #fff;
+	}
+
+	.md-editor-panel :deep(.md-editor) {
+		height: 100% !important;
+		border: 0 !important;
+		border-radius: 0 !important;
+	}
+
 	.side-card__title {
 		margin-bottom: 16px;
 		color: #172033;
@@ -277,11 +295,11 @@
 	}
 
 	.description-editor {
-		min-height: 240px;
+		height: 280px;
 	}
 
 	.content-editor {
-		min-height: 620px;
+		height: 640px;
 	}
 
 	@media screen and (max-width: 1180px) {

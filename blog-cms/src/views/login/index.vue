@@ -1,46 +1,60 @@
 <template>
 	<div class="login-container">
-		<el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" auto-complete="on" label-position="left">
-			<div class="title-container">
-				<h1 class="title">后台管理</h1>
+		<div class="login-card">
+			<div class="login-copy">
+				<div class="login-brand">ZeroBlog Console</div>
+				<div class="login-eyebrow">内容管理后台</div>
+				<h1>后台管理</h1>
+				<p>登录后管理文章、动态、友链、站点配置和统计数据。</p>
 			</div>
 
-			<el-form-item prop="username">
-        <span class="svg-container">
-          <svg-icon icon-class="user"/>
-        </span>
-				<el-input
+			<el-form ref="loginForm" :model="loginForm" :rules="loginRules" class="login-form" auto-complete="on">
+				<el-form-item prop="username">
+					<el-input
 						ref="username"
 						v-model="loginForm.username"
-						placeholder="Username"
+						placeholder="用户名"
 						name="username"
 						type="text"
 						tabindex="1"
-						auto-complete="on"
-				/>
-			</el-form-item>
+						auto-complete="username"
+						size="large"
+					>
+						<template #prefix>
+							<svg-icon icon-class="user" />
+						</template>
+					</el-input>
+				</el-form-item>
 
-			<el-form-item prop="password">
-        <span class="svg-container">
-          <svg-icon icon-class="password"/>
-        </span>
-				<el-input
+				<el-form-item prop="password">
+					<el-input
 						:key="passwordType"
 						ref="password"
 						v-model="loginForm.password"
 						:type="passwordType"
-						placeholder="Password"
+						placeholder="密码"
 						name="password"
 						tabindex="2"
-						auto-complete="on"
+						auto-complete="current-password"
+						size="large"
 						@keyup.enter="handleLogin"
-				/>
-				<span class="show-pwd" @click="showPwd">
-          <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'"/>
-        </span>
-			</el-form-item>
-			<el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.prevent="handleLogin">Login</el-button>
-		</el-form>
+					>
+						<template #prefix>
+							<svg-icon icon-class="password" />
+						</template>
+						<template #suffix>
+							<button type="button" class="pwd-toggle" @click="showPwd">
+								<svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
+							</button>
+						</template>
+					</el-input>
+				</el-form-item>
+
+				<el-button class="login-button" :loading="loading" type="primary" @click.prevent="handleLogin">
+					登录
+				</el-button>
+			</el-form>
+		</div>
 	</div>
 </template>
 
@@ -69,11 +83,7 @@
 		},
 		methods: {
 			showPwd() {
-				if (this.passwordType === 'password') {
-					this.passwordType = ''
-				} else {
-					this.passwordType = 'password'
-				}
+				this.passwordType = this.passwordType === 'password' ? 'text' : 'password'
 				this.$nextTick(() => {
 					this.$refs.password.focus()
 				})
@@ -83,10 +93,8 @@
 					if (valid) {
 						this.loading = true
 						login(this.loginForm).then(res => {
-							//res.data && res.data.token 判空，防止后端未返回 token 时报错
 							if (res.code === 200 && res.data && res.data.token) {
 								this.msgSuccess(res.msg)
-								//JWT 已通过 httpOnly Cookie 下发，这里只保存登录态标记与用户信息（非凭证）
 								window.localStorage.setItem('isLoggedIn', '1')
 								window.localStorage.setItem('user', JSON.stringify(res.data.user))
 								this.$router.push('/')
@@ -96,7 +104,6 @@
 						}).catch(() => {
 							this.msgError('登录失败，请重试')
 						}).finally(() => {
-							//无论成功失败都复位 loading，避免按钮一直处于加载态
 							this.loading = false
 						})
 					}
@@ -106,114 +113,128 @@
 	}
 </script>
 
-<style lang="scss">
-	/* 修复input 背景不协调 和光标变色 */
-	/* Detail see https://github.com/PanJiaChen/vue-element-admin/pull/927 */
-
-	$bg: #283443;
-	$light_gray: #fff;
-	$cursor: #fff;
-
-	@supports (-webkit-mask: none) and (not (cater-color: $cursor)) {
-		.login-container .el-input input {
-			color: $cursor;
-		}
+<style scoped lang="scss">
+	.login-container {
+		min-height: 100vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 24px;
+		background: linear-gradient(180deg, #f8fafc 0%, #eef3f9 100%);
 	}
 
-	/* reset element-plus css */
-	.login-container {
-		.el-input {
-			display: inline-block;
-			height: 47px;
-			width: 85%;
-
-			input {
-				background: transparent;
-				border: 0px;
-				-webkit-appearance: none;
-				border-radius: 0px;
-				padding: 12px 5px 12px 15px;
-				color: $light_gray;
-				height: 47px;
-				caret-color: $cursor;
-
-				&:-webkit-autofill {
-					box-shadow: 0 0 0px 1000px $bg inset !important;
-					-webkit-text-fill-color: $cursor !important;
-				}
-			}
-		}
-
-		.el-form-item {
-			border: 1px solid rgba(255, 255, 255, 0.1);
-			background: rgba(0, 0, 0, 0.1);
-			border-radius: 5px;
-			color: #454545;
-		}
-	}
-</style>
-
-<style lang="scss" scoped>
-	$bg: #2d3a4b;
-	$dark_gray: #889aa4;
-	$light_gray: #eee;
-
-	.login-container {
-		min-height: 100%;
-		width: 100%;
-		background-color: $bg;
+	.login-card {
+		width: min(980px, 100%);
+		display: grid;
+		grid-template-columns: minmax(0, 1.1fr) minmax(320px, 400px);
+		align-items: stretch;
 		overflow: hidden;
+		border: 1px solid #dbe5f3;
+		border-radius: 18px;
+		background: #fff;
+		box-shadow: 0 24px 60px rgba(30, 41, 59, 0.12);
+	}
+
+	.login-copy {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		padding: 56px 52px;
+		background: linear-gradient(160deg, #172033 0%, #24324a 100%);
+		color: #fff;
+	}
+
+	.login-brand {
+		display: inline-flex;
+		width: fit-content;
+		margin-bottom: 18px;
+		padding: 6px 10px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.12);
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 0;
+	}
+
+	.login-eyebrow {
+		margin-bottom: 10px;
+		color: rgba(255, 255, 255, 0.7);
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 0;
+	}
+
+	.login-copy h1 {
+		margin: 0;
+		font-size: 36px;
+		line-height: 1.2;
+	}
+
+	.login-copy p {
+		max-width: 26rem;
+		margin: 16px 0 0;
+		color: rgba(255, 255, 255, 0.78);
+		font-size: 15px;
+		line-height: 1.8;
+	}
+
+	.login-form {
+		padding: 56px 48px;
+	}
+
+	.login-form :deep(.el-form-item) {
+		margin-bottom: 18px;
+	}
+
+	.login-form :deep(.el-input__wrapper) {
+		box-shadow: 0 0 0 1px #d8e0ed inset !important;
+		border-radius: 10px;
+	}
+
+	.login-form :deep(.el-input__wrapper.is-focus) {
+		box-shadow: 0 0 0 1px #2563eb inset !important;
+	}
+
+	.login-form :deep(.el-input__prefix) {
+		color: #64748b;
+	}
+
+	.login-form :deep(.el-input__inner) {
+		height: 46px;
+	}
+
+	.pwd-toggle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: #94a3b8;
+		cursor: pointer;
+	}
+
+	.login-button {
+		width: 100%;
+		height: 46px;
+		margin-top: 8px;
+		border-radius: 10px;
+		font-weight: 700;
+	}
+
+	@media screen and (max-width: 860px) {
+		.login-card {
+			grid-template-columns: 1fr;
+		}
+
+		.login-copy {
+			padding: 32px 24px;
+		}
 
 		.login-form {
-			position: relative;
-			width: 520px;
-			max-width: 100%;
-			padding: 160px 35px 0;
-			margin: 0 auto;
-			overflow: hidden;
-		}
-
-		.tips {
-			font-size: 14px;
-			color: #fff;
-			margin-bottom: 10px;
-
-			span {
-				&:first-of-type {
-					margin-right: 16px;
-				}
-			}
-		}
-
-		.svg-container {
-			padding: 6px 5px 6px 15px;
-			color: $dark_gray;
-			vertical-align: middle;
-			width: 30px;
-			display: inline-block;
-		}
-
-		.title-container {
-			position: relative;
-
-			.title {
-				color: $light_gray;
-				margin: 0px auto 40px auto;
-				text-align: center;
-				font-weight: bold;
-			}
-		}
-
-		.show-pwd {
-			position: absolute;
-			right: 10px;
-			top: 7px;
-			font-size: 16px;
-			color: $dark_gray;
-			cursor: pointer;
-			user-select: none;
+			padding: 28px 24px 32px;
 		}
 	}
 </style>
-
-

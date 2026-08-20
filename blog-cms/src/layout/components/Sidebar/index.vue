@@ -3,12 +3,13 @@
 		<logo v-if="showLogo" :collapse="isCollapse"/>
 		<el-scrollbar wrap-class="scrollbar-wrapper">
 			<el-menu
+					:key="menuKey"
 					:default-openeds="defaultOpeneds"
 					:default-active="activeMenu"
 					:collapse="isCollapse"
 					:background-color="variables.menuBg"
 					:text-color="variables.menuText"
-					:unique-opened="false"
+					:unique-opened="true"
 					:active-text-color="variables.menuActiveText"
 					:collapse-transition="false"
 					mode="vertical"
@@ -33,16 +34,18 @@
 
 	export default {
 		components: {SidebarItem, Logo},
-		data() {
-			return {
-				//展开所有父级菜单
-				defaultOpeneds: this.$store.state.settings.defaultOpeneds
-			}
-		},
 		computed: {
 			...mapGetters([
 				'sidebar'
 			]),
+			defaultOpeneds() {
+				return this.$route.matched
+					.filter(item => item.path !== '/' && item.children && item.children.length > 0)
+					.map(item => item.path)
+			},
+			menuKey() {
+				return `${this.$route.path}|${this.defaultOpeneds.join(',')}`
+			},
 			routes() {
 				return routes
 			},

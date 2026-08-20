@@ -116,8 +116,13 @@
 	}
 
 	.metric-card--teal {
-		--metric-accent: #14b8a6;
-		--metric-soft: #ccfbf1;
+		--metric-accent: #475569;
+		--metric-soft: #e2e8f0;
+	}
+
+	.metric-card--indigo {
+		--metric-accent: #4f46e5;
+		--metric-soft: #e0e7ff;
 	}
 
 	.metric-card--amber {
