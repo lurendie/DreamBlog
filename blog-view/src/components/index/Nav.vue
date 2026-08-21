@@ -8,8 +8,8 @@
 		}"
 	>
 		<div class="ui container">
-			<router-link to="/">
-				<h3 class="ui header item m-blue">{{ blogName }}</h3>
+			<router-link to="/" class="brand-link">
+				<h3 class="ui header item m-blue brand-title">{{ blogName }}</h3>
 			</router-link>
 			<router-link to="/home" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='home','m-mobile-menu-item': !mobileHide}">
 				<i class="home icon"></i>首页
@@ -220,6 +220,24 @@
 		margin-right: auto !important;
 	}
 
+	.ui.fixed.menu .brand-link {
+		display: flex;
+		align-items: stretch;
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.ui.fixed.menu .brand-title {
+		min-width: 180px;
+		justify-content: center;
+	}
+
+	.ui.fixed.menu .brand-title:before,
+	.ui.fixed.menu .brand-title:after {
+		content: none !important;
+		display: none !important;
+	}
+
 	.ui.fixed.menu {
 		background: rgba(255, 255, 255, 0.9) !important;
 		border: 0 !important;
@@ -401,6 +419,8 @@
 		}
 
 		.ui.fixed.menu .ui.header.item {
+			min-width: 0;
+			justify-content: flex-start;
 			padding-left: 0.75rem !important;
 			padding-right: 0.75rem !important;
 			font-size: 22px !important;
