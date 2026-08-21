@@ -31,23 +31,27 @@ Dream Blog是一个基于 Rust (actix-web) + Vue 的前后端分离博客系统�
 
 ## 前端技术栈
 
-核心框架：Vue3.x、Vue Router、Vuex、Vite
+核心框架：Vue 3.x、Vue Router、Vuex、Vite
 
 前端项目基于 Vite 构建（blog-cms、blog-view 分别为 `vite.config.js` / `vite.config.mjs`）
 
-JS 依赖及参考的 css：[axios](https://github.com/axios/axios)、[moment](https://github.com/moment/moment)、[nprogress](https://github.com/rstacruz/nprogress)、[v-viewer](https://github.com/fengyuanchen/viewerjs)、[prismjs](https://github.com/PrismJS/prism)、[APlayer](https://github.com/DIYgod/APlayer)、[MetingJS](https://github.com/metowolf/MetingJS)、[lodash](https://github.com/lodash/lodash)、[mavonEditor](https://github.com/hinesboy/mavonEditor)、[echarts](https://github.com/apache/echarts)、[tocbot](https://github.com/tscanlin/tocbot)、[iCSS](https://github.com/chokcoco/iCSS)
+JS 依赖及参考的 css：[axios](https://github.com/axios/axios)、[dayjs](https://github.com/iamkun/dayjs)、[nprogress](https://github.com/rstacruz/nprogress)、[v-viewer](https://github.com/fengyuanchen/viewerjs)、[prismjs](https://github.com/PrismJS/prism)、[APlayer](https://github.com/DIYgod/APlayer)、[MetingJS](https://github.com/metowolf/MetingJS)、[lodash](https://github.com/lodash/lodash)、[md-editor-v3](https://github.com/imzbf/md-editor-v3)、[echarts](https://github.com/apache/echarts)、[tocbot](https://github.com/tscanlin/tocbot)、[iCSS](https://github.com/chokcoco/iCSS)
+
+### Markdown 编辑器
+
+后台写文章、写动态、关于页和友链页的 Markdown 编辑器使用 [md-editor-v3](https://github.com/imzbf/md-editor-v3)，对应依赖位于 `blog-cms/package.json`，并在 `blog-cms/src/main.js` 中引入编辑器样式。
 
 ### 后台 UI
 
 后台基于 [vue-admin-template](https://github.com/PanJiaChen/vue-admin-template) 二次修改后的 [my-vue-admin-template](https://github.com/Naccl/my-vue-admin-template) 模板进行开发
 
-UI 框架为 [Element UI](https://github.com/ElemeFE/element)
+UI 框架为 [Element Plus](https://github.com/element-plus/element-plus)
 
 ### 前台 UI
 
 [Semantic UI](https://semantic-ui.com/)：主要使用，页面布局样式，适合前台界面的开发，语义化的 CSS
 
-[Element UI](https://github.com/ElemeFE/element)：部分使用，一些小组件，弥补了 Semantic UI 的不足
+[Element Plus](https://github.com/element-plus/element-plus)：部分使用，一些小组件，弥补了 Semantic UI 的不足
 
 文章排版：基于 [typo.css](https://github.com/sofish/typo.css) 修改
 
