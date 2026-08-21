@@ -1,12 +1,12 @@
 use crate::entity::site_setting;
-use crate::error::AppError;
+use crate::error::{AppError, WebError};
 use crate::model::{GithubConfig, TxyunConfig, UpyunConfig};
 use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
 use rbs::value;
 use rbs::Value;
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE, HOST};
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
@@ -72,20 +72,12 @@ impl PictureHostingService {
     }
 
     pub async fn github_user(token: &str) -> Result<serde_json::Value, AppError> {
-        let client = http_client();
-        let response = client
-            .get("https://api.github.com/user")
-            .header(AUTHORIZATION, format!("token {}", token))
-            .header("User-Agent", "Dream Blog")
-            .send()
-            .await
-            .map_err(Self::external_error)?
-            .error_for_status()
-            .map_err(Self::external_error)?
-            .json::<serde_json::Value>()
-            .await
-            .map_err(Self::external_error)?;
-        Ok(response)
+        Self::github_json_request(
+            token,
+            http_client().get("https://api.github.com/user"),
+            "GitHub用户信息",
+        )
+        .await
     }
 
     pub async fn save_github_config(
@@ -131,14 +123,8 @@ impl PictureHostingService {
 
     pub async fn github_repos(db: &DatabaseConnection) -> Result<Value, AppError> {
         let config = Self::require_github(db).await?;
-        let login = config
-            .user_info
-            .as_ref()
-            .and_then(|user| user.get("login"))
-            .and_then(|login| login.as_str())
-            .ok_or_else(|| AppError::Custom("GitHub用户信息缺失".to_string()))?;
-        let url = format!("https://api.github.com/users/{}/repos", login);
-        Self::github_request(&config.token, http_client().get(url)).await
+        let url = "https://api.github.com/user/repos?visibility=all&affiliation=owner&per_page=100";
+        Self::github_request(&config.token, http_client().get(url), "GitHub仓库列表").await
     }
 
     pub async fn github_contents(
@@ -153,11 +139,9 @@ impl PictureHostingService {
             .and_then(|user| user.get("login"))
             .and_then(|login| login.as_str())
             .ok_or_else(|| AppError::Custom("GitHub用户信息缺失".to_string()))?;
-        let url = format!(
-            "https://api.github.com/repos/{}/{}/contents{}",
-            login, repos, path
-        );
-        Self::github_request(&config.token, http_client().get(url)).await
+        let url = Self::github_contents_url(login, repos, path);
+        let target = format!("GitHub仓库内容 {}/{}", repos, path.trim_start_matches('/'));
+        Self::github_request(&config.token, http_client().get(url), &target).await
     }
 
     pub async fn github_delete(
@@ -173,15 +157,18 @@ impl PictureHostingService {
             .and_then(|user| user.get("login"))
             .and_then(|login| login.as_str())
             .ok_or_else(|| AppError::Custom("GitHub用户信息缺失".to_string()))?;
-        let url = format!(
-            "https://api.github.com/repos/{}/{}/contents/{}",
-            login, repos, path
-        );
+        let url = Self::github_contents_url(login, repos, path);
         let body = json!({
             "message": "Delete file via PictureHosting",
             "sha": sha,
         });
-        Self::github_request(&config.token, http_client().delete(url).json(&body)).await
+        let target = format!("GitHub删除文件 {}/{}", repos, path.trim_start_matches('/'));
+        Self::github_request(
+            &config.token,
+            http_client().delete(url).json(&body),
+            &target,
+        )
+        .await
     }
 
     pub async fn github_upload(
@@ -199,15 +186,13 @@ impl PictureHostingService {
             .and_then(|login| login.as_str())
             .ok_or_else(|| AppError::Custom("GitHub用户信息缺失".to_string()))?;
         let path = Self::join_path(path, file_name);
-        let url = format!(
-            "https://api.github.com/repos/{}/{}/contents{}",
-            login, repos, path
-        );
+        let url = Self::github_contents_url(login, repos, &path);
         let body = json!({
             "message": "Add files via PictureHosting",
             "content": general_purpose::STANDARD.encode(bytes),
         });
-        Self::github_request(&config.token, http_client().put(url).json(&body)).await
+        let target = format!("GitHub上传文件 {}/{}", repos, path.trim_start_matches('/'));
+        Self::github_request(&config.token, http_client().put(url).json(&body), &target).await
     }
 
     pub async fn upyun_contents(db: &DatabaseConnection, path: &str) -> Result<Value, AppError> {
@@ -340,19 +325,35 @@ impl PictureHostingService {
     async fn github_request(
         token: &str,
         builder: reqwest::RequestBuilder,
+        target: &str,
     ) -> Result<Value, AppError> {
+        let response = Self::github_json_request(token, builder, target).await?;
+        Ok(value!(response))
+    }
+
+    async fn github_json_request(
+        token: &str,
+        builder: reqwest::RequestBuilder,
+        target: &str,
+    ) -> Result<serde_json::Value, AppError> {
         let response = builder
             .header(AUTHORIZATION, format!("token {}", token))
             .header("User-Agent", "Dream Blog")
             .send()
             .await
-            .map_err(Self::external_error)?
-            .error_for_status()
-            .map_err(Self::external_error)?
+            .map_err(Self::external_error)?;
+
+        let status = response.status();
+        if !status.is_success() {
+            let body = response.text().await.unwrap_or_default();
+            return Err(Self::github_status_error(status, target, &body));
+        }
+
+        let response = response
             .json::<serde_json::Value>()
             .await
             .map_err(Self::external_error)?;
-        Ok(value!(response))
+        Ok(response)
     }
 
     async fn upyun_request(
@@ -614,5 +615,119 @@ impl PictureHostingService {
 
     fn external_error(error: reqwest::Error) -> AppError {
         AppError::Custom(format!("图床服务请求失败: {}", error))
+    }
+
+    fn github_contents_url(login: &str, repos: &str, path: &str) -> String {
+        let path = Self::encode_github_path(path);
+        if path.is_empty() {
+            format!("https://api.github.com/repos/{}/{}/contents", login, repos)
+        } else {
+            format!(
+                "https://api.github.com/repos/{}/{}/contents/{}",
+                login, repos, path
+            )
+        }
+    }
+
+    fn encode_github_path(path: &str) -> String {
+        path.trim_matches('/')
+            .split('/')
+            .filter(|part| !part.is_empty())
+            .map(|part| urlencoding::encode(part).into_owned())
+            .collect::<Vec<_>>()
+            .join("/")
+    }
+
+    fn github_status_error(status: StatusCode, target: &str, body: &str) -> AppError {
+        let message = serde_json::from_str::<serde_json::Value>(body)
+            .ok()
+            .and_then(|value| {
+                value
+                    .get("message")
+                    .and_then(|message| message.as_str())
+                    .map(str::to_string)
+            })
+            .filter(|message| !message.trim().is_empty())
+            .unwrap_or_else(|| status.canonical_reason().unwrap_or("未知错误").to_string());
+
+        let text = match status {
+            StatusCode::UNAUTHORIZED => {
+                format!("GitHub Token 无效或已过期: {message}")
+            }
+            StatusCode::FORBIDDEN => {
+                format!("GitHub Token 权限不足或触发限流，无法访问 {target}: {message}")
+            }
+            StatusCode::NOT_FOUND => {
+                format!("GitHub 仓库或路径不存在，或当前 Token 无权限访问 {target}: {message}")
+            }
+            StatusCode::CONFLICT => {
+                format!("GitHub 文件版本冲突，请刷新后重试 {target}: {message}")
+            }
+            StatusCode::UNPROCESSABLE_ENTITY => {
+                format!("GitHub 请求参数不合法或文件已存在 {target}: {message}")
+            }
+            _ => {
+                format!(
+                    "GitHub 服务请求失败({} {}) {target}: {message}",
+                    status.as_u16(),
+                    status.canonical_reason().unwrap_or("")
+                )
+            }
+        };
+
+        let web_error = match status {
+            StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => WebError::Unauthorized(text),
+            StatusCode::NOT_FOUND => WebError::NotFound(text),
+            _ => WebError::Business(text),
+        };
+        AppError::WebError(web_error)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::WebErrorCode;
+
+    #[test]
+    fn github_contents_url_uses_contents_endpoint_for_root() {
+        let url = PictureHostingService::github_contents_url("lurendie", "DreamBlog", "");
+
+        assert_eq!(
+            url,
+            "https://api.github.com/repos/lurendie/DreamBlog/contents"
+        );
+    }
+
+    #[test]
+    fn github_contents_url_encodes_each_path_segment() {
+        let url = PictureHostingService::github_contents_url(
+            "lurendie",
+            "image-hosting",
+            "/中文 目录/a#b.png",
+        );
+
+        assert_eq!(
+            url,
+            "https://api.github.com/repos/lurendie/image-hosting/contents/%E4%B8%AD%E6%96%87%20%E7%9B%AE%E5%BD%95/a%23b.png"
+        );
+    }
+
+    #[test]
+    fn github_404_is_returned_as_visible_not_found_error() {
+        let error = PictureHostingService::github_status_error(
+            StatusCode::NOT_FOUND,
+            "GitHub仓库内容 image-hosting/",
+            r#"{"message":"Not Found"}"#,
+        );
+
+        match error {
+            AppError::WebError(web_error) => {
+                assert_eq!(web_error.error_code(), WebErrorCode::NOT_FOUND);
+                assert!(web_error.message().contains("image-hosting"));
+                assert!(web_error.message().contains("无权限访问"));
+            }
+            other => panic!("expected WebError, got {other:?}"),
+        }
     }
 }

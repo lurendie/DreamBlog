@@ -31,6 +31,7 @@
 				</div>
 			</div>
 		</el-row>
+		<el-empty v-if="hasSearched && !fileList.length" :description="emptyText"></el-empty>
 
 		<el-drawer title="上传文件" v-model="isDrawerShow" direction="rtl" size="40%" :wrapper-closable="false" :close-on-press-escape="false">
 			<el-row>
@@ -92,6 +93,7 @@ export default {
 				hintShow2: true,
 				hintShow3: true,
 				fileList: [],
+				hasSearched: false,
 				resourceShow: 0,
 				isDrawerShow: false,
 				nameType: '1',
@@ -107,6 +109,9 @@ export default {
 					return `/${this.userInfo.login}/${this.activeRepos}/${this.customPath}`
 				}
 				return `/${this.userInfo.login}/${this.activeRepos}${this.activePath.join('/')}/`
+			},
+			emptyText() {
+				return '当前目录没有可展示的图片文件'
 			}
 		},
 		created() {
@@ -139,6 +144,7 @@ export default {
 				this.resourceShow++ //改变级联选择器的key来重置其中选项内容
 				this.activePath = [''] //默认选中根目录
 				this.fileList = []
+				this.hasSearched = false
 			},
 			//遍历目录树 貌似目录级数太多 组件加载不出来？
 			/*
@@ -169,6 +175,7 @@ export default {
 			},
 			search() {
 				this.fileList = []
+				this.hasSearched = false
 				let path = this.activePath.join('/')
 				getReposContents(this.userInfo.login, this.activeRepos, path).then(res => {
 					res.forEach(item => {
@@ -176,6 +183,7 @@ export default {
 							this.fileList.push(item)
 						}
 					})
+					this.hasSearched = true
 				})
 			},
 			noDisplay(id) {
