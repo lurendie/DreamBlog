@@ -51,11 +51,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  @import "@/assets/styles/mixin.scss";
-  @import "@/assets/styles/variables.scss";
+  @use "@/assets/styles/mixin.scss" as mixins;
+  @use "@/assets/styles/variables.scss" as variables;
 
   .app-wrapper {
-    @include clearfix;
+    @include mixins.clearfix;
     position: relative;
     height: 100%;
     width: 100%;
@@ -79,7 +79,7 @@ export default {
     top: 0;
     right: 0;
     z-index: 1701;
-    width: calc(100% - #{$sideBarWidth});
+    width: calc(100% - #{variables.$sideBarWidth});
     transition: width 0.28s;
   }
 
