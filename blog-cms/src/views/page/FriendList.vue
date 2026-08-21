@@ -115,6 +115,7 @@
 
 <script>
 	import {MdEditor} from 'md-editor-v3'
+	import 'md-editor-v3/lib/style.css'
 	import Breadcrumb from "@/components/Breadcrumb";
 	import {
 		getFriendsByQuery, updatePublished, saveFriend, updateFriend,

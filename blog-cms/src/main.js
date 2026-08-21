@@ -6,8 +6,9 @@ import store from './store'
 //normalize.css
 import 'normalize.css/normalize.css' // A modern alternative to CSS resets
 //element-plus
-import ElementPlus, {ElMessage, ElMessageBox} from 'element-plus'
-import 'element-plus/dist/index.css'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import 'element-plus/es/components/message/style/css'
+import 'element-plus/es/components/message-box/style/css'
 //global css
 import '@/assets/styles/index.scss'
 //icon
@@ -15,11 +16,6 @@ import Icons from '@/icons'
 
 //moment
 import DateTimeFormatUtils from './util/dateTimeFormatUtils.js'
-//md-editor-v3
-import 'md-editor-v3/lib/style.css'
-//v-viewer
-import 'viewerjs/dist/viewer.css'
-import Viewer from 'v-viewer'
 // directive
 import Directives from './util/directive'
 
@@ -39,8 +35,6 @@ app.config.globalProperties.$confirm = ElMessageBox.confirm
 app
 	.use(store)
 	.use(router)
-	.use(ElementPlus)
-	.use(Viewer)
 	.use(Icons)
 	.use(Directives)
 	.use(DateTimeFormatUtils)

@@ -2,6 +2,9 @@ import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import {ElementPlusResolver} from 'unplugin-vue-components/resolvers'
 import {createSvgIconsPlugin} from 'vite-plugin-svg-icons'
 import settings from './src/settings.js'
 
@@ -15,6 +18,14 @@ function resolve(dir) {
 export default defineConfig({
 	plugins: [
 		vue(),
+		AutoImport({
+			dts: false,
+			resolvers: [ElementPlusResolver({importStyle: 'css'})],
+		}),
+		Components({
+			dts: false,
+			resolvers: [ElementPlusResolver({importStyle: 'css'})],
+		}),
 		createSvgIconsPlugin({
 			iconDirs: [resolve('src/icons/svg')],
 			symbolId: 'icon-[name]',
@@ -50,8 +61,6 @@ export default defineConfig({
 			output: {
 				manualChunks: {
 					vue: ['vue', 'vue-router', 'vuex'],
-					elementPlus: ['element-plus'],
-					editor: ['md-editor-v3'],
 				},
 			},
 		},

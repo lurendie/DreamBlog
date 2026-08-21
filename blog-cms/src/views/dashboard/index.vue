@@ -41,12 +41,29 @@
 </template>
 
 <script>
-	import * as echarts from 'echarts'
+	import * as echarts from 'echarts/core'
+	import {EffectScatterChart, LineChart, MapChart, PieChart, ScatterChart} from 'echarts/charts'
+	import {GeoComponent, GridComponent, LegendComponent, TitleComponent, TooltipComponent} from 'echarts/components'
+	import {CanvasRenderer} from 'echarts/renderers'
 	import {getDashboard} from "@/api/dashboard";
 	import ChartPanel from '@/components/ChartPanel'
 	import MetricCard from '@/components/MetricCard'
 	import PageHeader from '@/components/PageHeader'
 	import {getStoredUser} from '@/util/storage'
+
+	echarts.use([
+		CanvasRenderer,
+		EffectScatterChart,
+		GeoComponent,
+		GridComponent,
+		LegendComponent,
+		LineChart,
+		MapChart,
+		PieChart,
+		ScatterChart,
+		TitleComponent,
+		TooltipComponent,
+	])
 	//echarts 5 不再内置中国地图，用项目内自带数据注册（省级粒度）
 	import chinaJson from '@/util/china.json'
 	echarts.registerMap('china', chinaJson)

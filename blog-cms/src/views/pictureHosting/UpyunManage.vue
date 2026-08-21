@@ -52,6 +52,8 @@
 <script>
 import SvgIcon from "@/components/SvgIcon";
 import { Delete, Link, UploadFilled } from '@element-plus/icons-vue'
+import {directive as viewerDirective} from 'v-viewer'
+import 'viewerjs/dist/viewer.css'
 import {getBucketContents, delFile, upload} from "@/api/upyun";
 import {isImgExt} from "@/util/validate";
 import {randomUUID} from "@/util/uuid";
@@ -65,6 +67,9 @@ export default {
 		Link,
 		SvgIcon,
 		UploadFilled,
+	},
+	directives: {
+		viewer: viewerDirective(),
 	},
 	data() {
 		return {
