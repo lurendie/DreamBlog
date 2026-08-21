@@ -24,10 +24,10 @@ import 'semantic-ui-css/components/image.min.css'
 import 'semantic-ui-css/components/card.min.css'
 import 'semantic-ui-css/components/comment.min.css'
 import 'semantic-ui-css/components/message.min.css'
-import 'semantic-ui-css/components/button.min.css'
 import 'semantic-ui-css/components/icon.min.css'
 //element-plus
-import { ElMessage, ElNotification } from 'element-plus'
+import { ElMessage } from 'element-plus/es/components/message/index.mjs'
+import { ElNotification } from 'element-plus/es/components/notification/index.mjs'
 import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/notification/style/css'
 //moment

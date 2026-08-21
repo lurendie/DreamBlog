@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import path from 'node:path'
@@ -26,15 +25,6 @@ export default defineConfig({
 					isCustomElement: tag => tag === 'meting-js',
 				},
 			},
-		}),
-		AutoImport({
-			imports: [
-				{
-					'element-plus': ['ElMessage', 'ElNotification'],
-				},
-			],
-			dts: false,
-			resolvers: [ElementPlusResolver()],
 		}),
 		Components({
 			dts: false,
@@ -65,7 +55,7 @@ export default defineConfig({
 						return 'vue-vendor'
 					}
 					if (packageName === 'element-plus') {
-						return 'element-plus-core'
+						return
 					}
 					if (packageName === '@element-plus/icons-vue') {
 						return 'element-plus-icons'

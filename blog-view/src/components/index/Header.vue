@@ -1,10 +1,10 @@
 <template>
 	<header ref="header">
 		<div class="view">
-			<img ref="imgbg1" :src="defaultSettings.bg1" style="display: none;">
+			<img ref="imgbg1" :src="defaultSettings.bg1" class="hero-preload" alt="" aria-hidden="true" fetchpriority="high" decoding="async">
 			<div class="bg1" :style="{backgroundImage:'url('+defaultSettings.bg1+')'}"></div>
-			<div class="bg2" :style="{backgroundImage:'url('+defaultSettings.bg2+')'}"></div>
-			<div class="bg3" :style="{backgroundImage:'url('+defaultSettings.bg3+')'}" v-show="loaded"></div>
+			<div class="bg2" :style="{backgroundImage: layeredLoaded ? 'url('+defaultSettings.bg2+')' : 'none'}"></div>
+			<div class="bg3" :style="{backgroundImage: layeredLoaded ? 'url('+defaultSettings.bg3+')' : 'none'}" v-show="layeredLoaded"></div>
 		</div>
 		<div class="text-malfunction" :data-word="defaultSettings.malfunctionText">
 			{{ defaultSettings.malfunctionText }}
@@ -26,8 +26,12 @@
 		name: "Header",
 		data() {
 			return {
-				loaded: false,
-				defaultSettings
+				bg1Loaded: false,
+				layeredLoaded: false,
+				defaultSettings,
+				hoverHandlers: [],
+				cancelLayerLoad: null,
+				isUnmounted: false,
 			}
 		},
 		computed: {
@@ -44,30 +48,90 @@
 			 * HTML中使用img标签的原因：我个人想用div作为图片的载体，而只有img标签有图片加载完毕的onload回调，所以用一个display: none的img人柱力来加载图片
 			 * 当img中的src加载完毕后，会把图片缓存到浏览器，后续在div中用background url的形式将直接从浏览器中取出图片，不会下载两次图片
 			 */
-			this.$refs.imgbg1.onload = () => {
-				this.loaded = true
-			}
+			this.$refs.imgbg1.onload = this.handlePrimaryImageLoaded
 			//图片已缓存时 load 事件不会再次触发，直接置为已加载
 			if (this.$refs.imgbg1.complete) {
-				this.loaded = true
+				this.handlePrimaryImageLoaded()
 			}
 			this.setHeaderHeight()
 			let startingPoint
 			const header = this.$refs.header
-			header.addEventListener('mouseenter', (e) => {
+			const handleMouseEnter = (e) => {
 				startingPoint = e.clientX
-			})
-			header.addEventListener('mouseout', (e) => {
+			}
+			const handleMouseOut = () => {
 				header.classList.remove('moving')
 				header.style.setProperty('--percentage', 0.5)
-			})
-			header.addEventListener('mousemove', (e) => {
+			}
+			const handleMouseMove = (e) => {
 				let percentage = (e.clientX - startingPoint) / window.outerWidth + 0.5
 				header.style.setProperty('--percentage', percentage)
 				header.classList.add('moving')
-			})
+			}
+			header.addEventListener('mouseenter', handleMouseEnter)
+			header.addEventListener('mouseout', handleMouseOut)
+			header.addEventListener('mousemove', handleMouseMove)
+			this.hoverHandlers = [
+				['mouseenter', handleMouseEnter],
+				['mouseout', handleMouseOut],
+				['mousemove', handleMouseMove],
+			]
+		},
+		beforeUnmount() {
+			this.isUnmounted = true
+			const header = this.$refs.header
+			if (header) {
+				this.hoverHandlers.forEach(([eventName, handler]) => {
+					header.removeEventListener(eventName, handler)
+				})
+			}
+			if (this.cancelLayerLoad) {
+				this.cancelLayerLoad()
+				this.cancelLayerLoad = null
+			}
 		},
 		methods: {
+			handlePrimaryImageLoaded() {
+				if (this.bg1Loaded) {
+					return
+				}
+				this.bg1Loaded = true
+				this.scheduleLayeredImages()
+			},
+			scheduleLayeredImages() {
+				const load = () => {
+					Promise.all([
+						this.preloadImage(defaultSettings.bg2),
+						this.preloadImage(defaultSettings.bg3),
+					]).then(() => {
+						if (this.isUnmounted) {
+							return
+						}
+						this.layeredLoaded = true
+					}).catch(() => {
+						if (this.isUnmounted) {
+							return
+						}
+						this.layeredLoaded = false
+					})
+				}
+				if (window.requestIdleCallback) {
+					const idleHandle = window.requestIdleCallback(load, {timeout: 1800})
+					this.cancelLayerLoad = () => window.cancelIdleCallback(idleHandle)
+				} else {
+					const timeoutHandle = setTimeout(load, 800)
+					this.cancelLayerLoad = () => clearTimeout(timeoutHandle)
+				}
+			},
+			preloadImage(src) {
+				return new Promise((resolve, reject) => {
+					const image = new Image()
+					image.onload = resolve
+					image.onerror = reject
+					image.decoding = 'async'
+					image.src = src
+				})
+			},
 			//根据可视窗口高度，动态改变首图大小
 			setHeaderHeight() {
 				this.$refs.header.style.height = this.clientSize.clientHeight + 'px'
@@ -159,6 +223,10 @@
 		color: #fff;
 		text-align: center;
 		text-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+	}
+
+	.hero-preload {
+		display: none;
 	}
 
 	.line {

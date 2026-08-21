@@ -544,12 +544,18 @@
 		.m-right-top {
 			top: 6px;
 			right: 4px;
+			display: inline-flex !important;
 			width: 42px !important;
 			height: 42px !important;
+			align-items: center;
+			justify-content: center;
+			padding: 0 !important;
+			border: 0 !important;
 			border-radius: 12px !important;
 			background: rgba(20, 184, 166, 0.14) !important;
 			color: #1f2937 !important;
 			box-shadow: none !important;
+			cursor: pointer;
 		}
 
 		.m-right-top:hover,

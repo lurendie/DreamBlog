@@ -7,7 +7,8 @@ import {
 } from "./mutations-types";
 
 import {getCommentListByQuery, submitComment} from "@/api/comment";
-import {ElMessage, ElNotification} from "element-plus";
+import { ElMessage } from 'element-plus/es/components/message/index.mjs'
+import { ElNotification } from 'element-plus/es/components/notification/index.mjs'
 import router from "../router";
 import tvMapper from '@/plugins/tvMapper.json'
 import aruMapper from '@/plugins/aruMapper.json'

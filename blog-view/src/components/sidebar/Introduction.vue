@@ -236,6 +236,19 @@
 		display: inline-flex !important;
 		align-items: center;
 		justify-content: center;
+		padding: 0 !important;
+		border: 0 !important;
+		border-radius: 999px !important;
+		background: #f1f5f9;
+		color: #172033;
+		box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.16);
+		transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+	}
+
+	.intro-social__button:hover {
+		background: #eef7f6;
+		transform: translateY(-1px);
+		box-shadow: inset 0 0 0 1px rgba(20, 184, 166, 0.22), 0 10px 22px rgba(15, 23, 42, 0.10);
 	}
 
 	.intro-favorites {
