@@ -28,8 +28,8 @@
 
 	const variables = {
 		menuText: '#58677f',
-		menuActiveText: '#2563eb',
-		menuBg: '#ffffff',
+		menuActiveText: '#0f766e',
+		menuBg: 'rgba(255, 255, 255, 0.92)',
 	}
 
 	export default {

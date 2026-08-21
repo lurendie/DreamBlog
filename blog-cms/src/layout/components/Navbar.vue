@@ -87,9 +87,10 @@
 		justify-content: space-between;
 		overflow: visible;
 		position: relative;
-		background: #fff;
-		border-bottom: 1px solid #e4e9f2;
-		box-shadow: 0 10px 28px rgba(30, 41, 59, .04);
+		background: rgba(255, 255, 255, 0.88);
+		border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+		box-shadow: 0 10px 28px rgba(15, 23, 42, .04);
+		backdrop-filter: blur(12px);
 		user-select: none;
 
 		.navbar-left {
@@ -107,10 +108,10 @@
 			transition: background .3s;
 			-webkit-tap-highlight-color: transparent;
 
-			&:hover {
-				background: rgba(0, 0, 0, .025)
+				&:hover {
+					background: rgba(15, 118, 110, .06)
+				}
 			}
-		}
 
 		.breadcrumb-container {
 			float: left;
@@ -160,7 +161,7 @@
 						cursor: pointer;
 						width: 40px;
 						height: 40px;
-						border: 2px solid #e4e9f2;
+						border: 2px solid rgba(148, 163, 184, 0.18);
 						border-radius: 50%;
 						object-fit: cover;
 					}

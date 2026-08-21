@@ -120,7 +120,9 @@
 		align-items: center;
 		justify-content: center;
 		padding: 24px;
-		background: linear-gradient(180deg, #f8fafc 0%, #eef3f9 100%);
+		background:
+			radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 28rem),
+			linear-gradient(180deg, #f7fafc 0%, #eef3f8 100%);
 	}
 
 	.login-card {
@@ -129,10 +131,10 @@
 		grid-template-columns: minmax(0, 1.1fr) minmax(320px, 400px);
 		align-items: stretch;
 		overflow: hidden;
-		border: 1px solid #dbe5f3;
+		border: 1px solid rgba(148, 163, 184, 0.18);
 		border-radius: 18px;
-		background: #fff;
-		box-shadow: 0 24px 60px rgba(30, 41, 59, 0.12);
+		background: rgba(255, 255, 255, 0.92);
+		box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
 	}
 
 	.login-copy {
@@ -140,8 +142,10 @@
 		flex-direction: column;
 		justify-content: center;
 		padding: 56px 52px;
-		background: linear-gradient(160deg, #172033 0%, #24324a 100%);
-		color: #fff;
+		background:
+			linear-gradient(160deg, rgba(15, 118, 110, 0.08), rgba(15, 118, 110, 0.02)),
+			linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.98));
+		color: #172033;
 	}
 
 	.login-brand {
@@ -150,7 +154,8 @@
 		margin-bottom: 18px;
 		padding: 6px 10px;
 		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.12);
+		background: rgba(15, 118, 110, 0.1);
+		color: #0f766e;
 		font-size: 12px;
 		font-weight: 700;
 		letter-spacing: 0;
@@ -158,7 +163,7 @@
 
 	.login-eyebrow {
 		margin-bottom: 10px;
-		color: rgba(255, 255, 255, 0.7);
+		color: #58677f;
 		font-size: 12px;
 		font-weight: 700;
 		letter-spacing: 0;
@@ -173,7 +178,7 @@
 	.login-copy p {
 		max-width: 26rem;
 		margin: 16px 0 0;
-		color: rgba(255, 255, 255, 0.78);
+		color: #64748b;
 		font-size: 15px;
 		line-height: 1.8;
 	}
@@ -192,7 +197,7 @@
 	}
 
 	.login-form :deep(.el-input__wrapper.is-focus) {
-		box-shadow: 0 0 0 1px #2563eb inset !important;
+		box-shadow: 0 0 0 1px #0f766e inset !important;
 	}
 
 	.login-form :deep(.el-input__prefix) {

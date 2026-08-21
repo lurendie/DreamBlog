@@ -16,7 +16,6 @@ import Icons from '@/icons'
 //moment
 import DateTimeFormatUtils from './util/dateTimeFormatUtils.js'
 //md-editor-v3
-import {MdEditor} from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 //v-viewer
 import 'viewerjs/dist/viewer.css'
@@ -41,7 +40,6 @@ app
 	.use(store)
 	.use(router)
 	.use(ElementPlus)
-	.use(MdEditor)
 	.use(Viewer)
 	.use(Icons)
 	.use(Directives)

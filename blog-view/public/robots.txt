@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: http://localhost:8080/login
-Sitemap: http://localhost:8090/blog/sitemap.xml
+Disallow: https://lurendie.com/login
+Sitemap: https://api.lurendie.com/blog/sitemap.xml

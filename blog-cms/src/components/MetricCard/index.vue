@@ -51,11 +51,11 @@
 		justify-content: space-between;
 		gap: 18px;
 		overflow: hidden;
-		border: 1px solid #e4e9f2;
+		border: 1px solid rgba(148, 163, 184, 0.18);
 		border-radius: 8px;
 		background: #fff;
 		padding: 22px;
-		box-shadow: 0 14px 34px rgba(30, 41, 59, 0.06);
+		box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
 	}
 
 	.metric-card:before {
@@ -111,8 +111,8 @@
 	}
 
 	.metric-card--blue {
-		--metric-accent: #3b82f6;
-		--metric-soft: #dbeafe;
+		--metric-accent: #0f766e;
+		--metric-soft: #d8f3f0;
 	}
 
 	.metric-card--teal {
@@ -121,8 +121,8 @@
 	}
 
 	.metric-card--indigo {
-		--metric-accent: #4f46e5;
-		--metric-soft: #e0e7ff;
+		--metric-accent: #64748b;
+		--metric-soft: #e2e8f0;
 	}
 
 	.metric-card--amber {
@@ -131,7 +131,7 @@
 	}
 
 	.metric-card--violet {
-		--metric-accent: #8b5cf6;
-		--metric-soft: #ede9fe;
+		--metric-accent: #14b8a6;
+		--metric-soft: #ccfbf1;
 	}
 </style>

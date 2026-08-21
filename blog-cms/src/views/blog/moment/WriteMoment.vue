@@ -24,12 +24,13 @@
 </template>
 
 <script>
+	import {MdEditor} from 'md-editor-v3';
 	import Breadcrumb from "@/components/Breadcrumb";
 	import {getMomentById, saveMoment, updateMoment} from "@/api/moment";
 
 	export default {
 		name: "WriteMoment",
-		components: {Breadcrumb},
+		components: {Breadcrumb, MdEditor},
 		data() {
 			return {
 				form: {

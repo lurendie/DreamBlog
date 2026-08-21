@@ -101,12 +101,13 @@
 </template>
 
 <script>
+	import {MdEditor} from 'md-editor-v3'
 	import PageHeader from '@/components/PageHeader'
 	import { getCategoryAndTag, saveBlog, getBlogById, updateBlog } from '@/api/blog'
 
 	export default {
 		name: "WriteBlog",
-		components: { PageHeader },
+		components: { PageHeader, MdEditor },
 		data() {
 			return {
 				categoryList: [],

@@ -32,12 +32,13 @@
 </template>
 
 <script>
+	import {MdEditor} from 'md-editor-v3';
 	import Breadcrumb from "@/components/Breadcrumb";
 	import {getAbout, updateAbout} from "@/api/about";
 
 	export default {
 		name: "About",
-		components: {Breadcrumb},
+		components: {Breadcrumb, MdEditor},
 		data() {
 			return {
 				form: {

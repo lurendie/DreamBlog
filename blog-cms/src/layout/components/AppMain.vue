@@ -26,9 +26,7 @@
 		overflow-x: hidden;
 		overflow-y: auto;
 		padding: 26px;
-		background:
-			linear-gradient(180deg, rgba(37, 99, 235, 0.05), rgba(37, 99, 235, 0) 220px),
-			#f6f8fb;
+		background: transparent;
 	}
 
 	@media screen and (max-width: 768px) {

@@ -27,13 +27,13 @@
 			<ChartPanel title="访问趋势" description="最近一周 PV / UV" :height="420" class="dashboard-grid__wide">
 				<div ref="visitRecordEcharts" class="chart-box"></div>
 			</ChartPanel>
-			<ChartPanel title="访客地图" description="按城市聚合的访问分布" :height="420">
+			<ChartPanel title="访客地图" description="按城市聚合的访问分布" :height="380">
 				<div ref="mapEcharts" class="chart-box"></div>
 			</ChartPanel>
-			<ChartPanel title="分类构成" description="分类下文章数量" :height="360">
+			<ChartPanel title="分类构成" description="分类下文章数量" :height="380">
 				<div ref="categoryEcharts" class="chart-box"></div>
 			</ChartPanel>
-			<ChartPanel title="标签构成" description="标签下文章数量" :height="360">
+			<ChartPanel title="标签构成" description="标签下文章数量" :height="380">
 				<div ref="tagEcharts" class="chart-box"></div>
 			</ChartPanel>
 		</div>
@@ -70,6 +70,7 @@
 				_resizeHandler: null,
 				categoryOption: {
 					title: { show: false },
+					color: ['#0f766e', '#475569', '#f59e0b', '#ef4444', '#14b8a6', '#64748b'],
 					tooltip: {
 						trigger: 'item',
 						formatter: '{a} <br/>{b} : {c} ({d}%)'
@@ -91,6 +92,7 @@
 				},
 				tagOption: {
 					title: { show: false },
+					color: ['#0f766e', '#475569', '#f59e0b', '#ef4444', '#14b8a6', '#64748b'],
 					tooltip: {
 						trigger: 'item',
 						formatter: '{a} <br/>{b} : {c} ({d}%)'
@@ -133,15 +135,15 @@
 							}
 						},
 						itemStyle: {
-							areaColor: "#eef2ff",
-							borderColor: "#c7d2fe",
+							areaColor: "#f8fafc",
+							borderColor: "#d8e0ed",
 							borderWidth: 1,//设置外层边框
 							shadowBlur: 10,
 							shadowOffsetY: 8,
 							shadowOffsetX: 0,
 							shadowColor: "rgba(30, 41, 59, 0.08)",
 							emphasis: {
-								areaColor: "#e0e7ff",
+								areaColor: "#ecfdf5",
 								shadowOffsetX: 0,
 								shadowOffsetY: 0,
 								shadowBlur: 5,
@@ -165,11 +167,11 @@
 							}
 						},
 						itemStyle: {
-							areaColor: "#eef2ff",
-							borderColor: "#c7d2fe",
+							areaColor: "#f8fafc",
+							borderColor: "#d8e0ed",
 							borderWidth: 0.5,
 							emphasis: {
-								areaColor: "#e0e7ff",
+								areaColor: "#ecfdf5",
 								shadowOffsetX: 0,
 								shadowOffsetY: 0,
 								shadowBlur: 5,
@@ -201,7 +203,7 @@
 								show: false
 							},
 							itemStyle: {
-								color: "#4f46e5"
+								color: "#0f766e"
 							},
 							emphasis: {
 								label: {
@@ -228,7 +230,7 @@
 							showEffectOn: "render",
 							rippleEffect: {
 								brushType: "stroke",
-								color: "#4f46e5",
+								color: "#0f766e",
 								period: 9,
 								scale: 5
 							},
@@ -239,7 +241,7 @@
 								show: true
 							},
 							itemStyle: {
-								color: "#4f46e5",
+								color: "#0f766e",
 								shadowBlur: 2,
 								shadowColor: "#333"
 							},
@@ -284,9 +286,9 @@
 							type: 'line',
 							itemStyle: {
 								normal: {
-									color: '#2563eb',
+									color: '#0f766e',
 									lineStyle: {
-										color: '#2563eb',
+										color: '#0f766e',
 										width: 2
 									}
 								}
@@ -301,13 +303,13 @@
 							type: 'line',
 							itemStyle: {
 								normal: {
-								color: '#4f46e5',
+									color: '#64748b',
 									lineStyle: {
-										color: '#4f46e5',
+										color: '#64748b',
 										width: 2
 									},
 									areaStyle: {
-										color: 'rgba(79, 70, 229, 0.12)'
+										color: 'rgba(100, 116, 139, 0.12)'
 									}
 								}
 							},
@@ -439,12 +441,13 @@
 
 	.dashboard-grid {
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 18px;
+		align-items: stretch;
 	}
 
 	.dashboard-grid__wide {
-		grid-column: span 2;
+		grid-column: span 3;
 	}
 
 	.chart-box {
@@ -457,6 +460,14 @@
 		.metric-grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
+
+		.dashboard-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.dashboard-grid__wide {
+			grid-column: span 2;
+		}
 	}
 
 	@media screen and (max-width: 768px) {
@@ -468,6 +479,10 @@
 		.metric-grid :deep(.metric-card),
 		.dashboard-grid :deep(.chart-panel) {
 			margin-bottom: 14px;
+		}
+
+		.dashboard-grid__wide {
+			grid-column: auto;
 		}
 	}
 </style>

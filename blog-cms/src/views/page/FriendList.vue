@@ -114,6 +114,7 @@
 </template>
 
 <script>
+	import {MdEditor} from 'md-editor-v3'
 	import Breadcrumb from "@/components/Breadcrumb";
 	import {
 		getFriendsByQuery, updatePublished, saveFriend, updateFriend,
@@ -122,7 +123,7 @@
 
 	export default {
 		name: "FriendList",
-		components: {Breadcrumb},
+		components: {Breadcrumb, MdEditor},
 		data() {
 			return {
 				infoForm: {

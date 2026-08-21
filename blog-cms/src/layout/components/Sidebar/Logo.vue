@@ -46,8 +46,8 @@
 		width: 100%;
 		height: 58px;
 		line-height: 58px;
-		background: #fff;
-		border-bottom: 1px solid #e4e9f2;
+		background: rgba(255, 255, 255, 0.92);
+		border-bottom: 1px solid rgba(148, 163, 184, 0.18);
 		text-align: left;
 		overflow: hidden;
 

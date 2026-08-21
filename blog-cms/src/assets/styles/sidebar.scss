@@ -5,14 +5,15 @@
     transition: margin-left .28s;
     margin-left: $sideBarWidth;
     position: relative;
-    background: #f6f8fb;
+    background: transparent;
   }
 
   .sidebar-container {
     transition: width 0.28s;
     width: $sideBarWidth !important;
     background-color: $menuBg;
-    border-right: 1px solid #e4e9f2;
+    border-right: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: 8px 0 24px rgba(15, 23, 42, 0.04);
     height: 100%;
     position: fixed;
     font-size: 0px;
@@ -90,7 +91,7 @@
     .submenu-title-noDropdown.is-active,
     .el-sub-menu.is-active > .el-sub-menu__title,
     .el-submenu.is-active > .el-submenu__title {
-      background: #eaf2ff !important;
+      background: #ecfdf5 !important;
       color: $menuActiveText !important;
       font-weight: 700;
     }
@@ -107,7 +108,9 @@
       color: $subMenuActiveText !important;
     }
 
-    & .nest-menu .el-submenu>.el-submenu__title,
+    & .nest-menu .el-sub-menu > .el-sub-menu__title,
+    & .nest-menu .el-submenu > .el-submenu__title,
+    & .el-sub-menu .el-menu-item,
     & .el-submenu .el-menu-item {
       min-width: $sideBarWidth !important;
       background-color: $subMenuBg !important;
@@ -147,9 +150,11 @@
       }
     }
 
+    .el-sub-menu,
     .el-submenu {
       overflow: hidden;
 
+      &>.el-sub-menu__title,
       &>.el-submenu__title {
         padding: 0 !important;
         margin-left: 0;
@@ -163,7 +168,8 @@
           margin-left: 19px;
         }
 
-        .el-submenu__icon-arrow {
+        .el-submenu__icon-arrow,
+        .el-sub-menu__icon-arrow {
           display: none;
         }
       }
@@ -184,6 +190,7 @@
     }
   }
 
+  .el-menu--collapse .el-menu .el-sub-menu,
   .el-menu--collapse .el-menu .el-submenu {
     min-width: $sideBarWidth !important;
   }
@@ -229,7 +236,8 @@
     }
   }
 
-  .nest-menu .el-submenu>.el-submenu__title,
+  .nest-menu .el-sub-menu > .el-sub-menu__title,
+  .nest-menu .el-submenu > .el-submenu__title,
   .el-menu-item {
     &:hover {
       // you can use $subMenuHover

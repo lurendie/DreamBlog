@@ -58,10 +58,10 @@
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-		border: 1px solid #e4e9f2;
+		border: 1px solid rgba(148, 163, 184, 0.18);
 		border-radius: 8px;
 		background: #fff;
-		box-shadow: 0 14px 34px rgba(30, 41, 59, 0.06);
+		box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
 	}
 
 	.chart-panel__header {
@@ -69,7 +69,7 @@
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 16px;
-		border-bottom: 1px solid #eef2f7;
+		border-bottom: 1px solid rgba(148, 163, 184, 0.14);
 		padding: 18px 20px 14px;
 	}
 
@@ -99,7 +99,7 @@
 		gap: 6px;
 		padding: 4px;
 		border-radius: 999px;
-		background: #f1f5f9;
+		background: #f8fafc;
 	}
 
 	.chart-panel__tab {
@@ -120,7 +120,7 @@
 
 	.chart-panel__tab.is-active {
 		background: #fff;
-		color: #172033;
+		color: #0f766e;
 		box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 	}
 
