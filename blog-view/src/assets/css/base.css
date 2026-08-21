@@ -153,6 +153,7 @@ footer {
     html,
     body,
     #app {
+        background-attachment: scroll;
         overflow-x: hidden;
     }
 

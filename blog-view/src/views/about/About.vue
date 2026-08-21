@@ -16,12 +16,17 @@
 <script>
 	import {getAbout} from "@/api/about";
 	import CommentList from "@/components/comment/CommentList.vue";
+	import { directive as viewerDirective } from 'v-viewer'
+	import 'viewerjs/dist/viewer.css'
 	import { updateSeo } from '@/util/seo'
 	import { loadMetingPlayer } from '@/util/loadExternalAsset'
 
 	export default {
 		name: "About",
 		components: {CommentList},
+		directives: {
+			viewer: viewerDirective()
+		},
 		data() {
 			return {
 				about: {

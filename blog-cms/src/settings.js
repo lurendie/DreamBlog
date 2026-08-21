@@ -3,7 +3,7 @@ export default {
 	 * @type {string}
 	 * @description page title
 	 */
-	title: 'Dream\'s Blog Admin',
+	title: 'Dream\'s Blog',
 
 	/**
 	 * @type {string}

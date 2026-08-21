@@ -24,9 +24,12 @@
 				</div>
 			</div>
 
-			<el-pagination @current-change="handleCurrentChange" :current-page="pageNum" :page-count="totalPage"
-			               layout="prev, pager, next" background hide-on-single-page class="pagination">
-			</el-pagination>
+			<LightPagination
+				class="pagination"
+				:current-page="pageNum"
+				:page-count="totalPage"
+				@current-change="handleCurrentChange"
+			/>
 		</div>
 	</div>
 </template>
@@ -34,14 +37,21 @@
 <script>
 	import {getMomentListByPageNum, likeMoment} from "@/api/moment";
 	import { updateSeo } from '@/util/seo'
-	import {safeParse} from '@/util/storage'
+	import {safeParseArray} from '@/util/storage'
+	import { directive as viewerDirective } from 'v-viewer'
+	import 'viewerjs/dist/viewer.css'
+	import LightPagination from "@/components/common/LightPagination.vue";
 
 	export default {
 		name: "Moments",
+		components: {LightPagination},
+		directives: {
+			viewer: viewerDirective()
+		},
 		data() {
 			return {
-				//用localStorage本地存储已点赞的动态id数组（safeParse 防御损坏/非JSON内容导致页面崩溃）
-				likeMomentIds: safeParse(window.localStorage.getItem('likeMomentIds'), null) || [],
+				//用localStorage本地存储已点赞的动态id数组（safeParseArray 防御损坏/非数组内容导致页面崩溃）
+				likeMomentIds: safeParseArray(window.localStorage.getItem('likeMomentIds')),
 				momentList: [],
 				pageNum: 1,
 				totalPage: 0
@@ -50,26 +60,28 @@
 		created() {
 			this.getMomentList()
 		},
-		computed: {
-			isLike() {
-				return function (id) {
-					return this.likeMomentIds.indexOf(id) > -1
-				}
-			}
-		},
 		watch: {
 			likeMomentIds(newValue) {
 				//将likeMomentIds最新值的json数据保存到localStorage
-				window.localStorage.setItem('likeMomentIds', JSON.stringify(newValue))
+				const likedIds = Array.isArray(newValue) ? newValue : []
+				if (likedIds !== newValue) {
+					this.likeMomentIds = likedIds
+					return
+				}
+				window.localStorage.setItem('likeMomentIds', JSON.stringify(likedIds))
 			}
 		},
 		methods: {
+			isLike(id) {
+				return Array.isArray(this.likeMomentIds) && this.likeMomentIds.indexOf(id) > -1
+			},
 			getMomentList() {
 				//博主身份由 httpOnly Cookie 自动携带
 				getMomentListByPageNum('', this.pageNum).then(res => {
 					if (res.code === 200) {
-						this.momentList = res.data.list
-						this.totalPage = res.data.totalPage
+						const data = res.data || {}
+						this.momentList = Array.isArray(data.list) ? data.list : []
+						this.totalPage = Number(data.totalPage || data.pages || 0)
 						updateSeo({
 							title: '动态',
 							description: this.$store.state.siteInfo?.siteDescription || '',
@@ -89,7 +101,7 @@
 				this.getMomentList()
 			},
 			like(id) {
-				if (this.likeMomentIds.indexOf(id) > -1) {
+				if (this.isLike(id)) {
 					this.$notify({
 						title: '不可以重复点赞哦',
 						type: 'warning'
@@ -102,6 +114,9 @@
 							title: res.msg,
 							type: 'success'
 						})
+						if (!Array.isArray(this.likeMomentIds)) {
+							this.likeMomentIds = []
+						}
 						this.likeMomentIds.push(id)
 						this.momentList.forEach(item => {
 							if (item.id === id) {

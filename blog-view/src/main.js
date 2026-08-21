@@ -25,21 +25,11 @@ import 'semantic-ui-css/components/card.min.css'
 import 'semantic-ui-css/components/comment.min.css'
 import 'semantic-ui-css/components/message.min.css'
 import 'semantic-ui-css/components/icon.min.css'
-//element-plus
-import { ElMessage } from 'element-plus/es/components/message/index.mjs'
-import { ElNotification } from 'element-plus/es/components/notification/index.mjs'
-import 'element-plus/es/components/message/style/css'
-import 'element-plus/es/components/notification/style/css'
 //moment
 import dateTimeFormatUtils from './util/dateTimeFormatUtils.js'
-//v-viewer
-import 'viewerjs/dist/viewer.css'
-import VueViewer from 'v-viewer'
 //directive
 import directives from './util/directive'
-//懒加载
-import lazyPlugin from 'vue3-lazyload'
-import loadingImage from './assets/img/loading.gif'
+import { lazyMessage, lazyNotify, showMessage } from './util/feedback'
 
 const app = createApp(App)
 
@@ -58,29 +48,24 @@ const app = createApp(App)
 	canonical.setAttribute('href', siteUrl)
 })()
 
-app.use(VueViewer)
-app.use(lazyPlugin, {
-	preLoad: 1.2,
-	loading: loadingImage,
-})
 app.use(dateTimeFormatUtils)
 app.use(directives)
 app.use(router)
 app.use(store)
 
 app.config.globalProperties.msgSuccess = function (msg) {
-	ElMessage.success(msg)
+	showMessage('success', msg)
 }
 
 app.config.globalProperties.msgError = function (msg) {
-	ElMessage.error(msg)
+	showMessage('error', msg)
 }
 
 app.config.globalProperties.msgInfo = function (msg) {
-	ElMessage.info(msg);
+	showMessage('info', msg);
 }
-app.config.globalProperties.$message = ElMessage
-app.config.globalProperties.$notify = ElNotification
+app.config.globalProperties.$message = lazyMessage
+app.config.globalProperties.$notify = lazyNotify
 
 const cubic = value => Math.pow(value, 3);
 const easeInOutCubic = value => value < 0.5 ? cubic(value * 2) / 2 : 1 - cubic((1 - value) * 2) / 2;

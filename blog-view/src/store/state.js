@@ -1,3 +1,16 @@
+function getInitialClientSize() {
+	if (typeof window === 'undefined') {
+		return {
+			clientHeight: 0,
+			clientWidth: 0
+		}
+	}
+	return {
+		clientHeight: window.innerHeight,
+		clientWidth: window.innerWidth
+	}
+}
+
 export default {
 	siteInfo: '',
 	introduction: {
@@ -38,8 +51,5 @@ export default {
 	//文章页面路由到首页的标记
 	isBlogToHome: false,
 	//可视窗口大小
-	clientSize: {
-		clientHeight: 0,
-		clientWidth: 1080
-	}
+	clientSize: getInitialClientSize()
 }

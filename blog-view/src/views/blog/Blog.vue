@@ -76,6 +76,8 @@
 	import {getBlogById} from "@/api/blog";
 	import CommentList from "@/components/comment/CommentList.vue";
 	import {mapState} from "vuex";
+	import { directive as viewerDirective } from 'v-viewer'
+	import 'viewerjs/dist/viewer.css'
 	import {SET_FOCUS_MODE, SET_IS_BLOG_RENDER_COMPLETE} from '@/store/mutations-types';
 	import { createDescription, updateSeo } from '@/util/seo'
 	import {getBlogToken} from '@/util/storage'
@@ -85,6 +87,9 @@
 	export default {
 		name: "Blog",
 		components: {CommentList},
+		directives: {
+			viewer: viewerDirective()
+		},
 		data() {
 			return {
 				blog: {},

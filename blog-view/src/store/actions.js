@@ -7,17 +7,29 @@ import {
 } from "./mutations-types";
 
 import {getCommentListByQuery, submitComment} from "@/api/comment";
-import { ElMessage } from 'element-plus/es/components/message/index.mjs'
-import { ElNotification } from 'element-plus/es/components/notification/index.mjs'
 import router from "../router";
-import tvMapper from '@/plugins/tvMapper.json'
-import aruMapper from '@/plugins/aruMapper.json'
-import paopaoMapper from '@/plugins/paopaoMapper.json'
 import { escapeHtml } from '@/util/sanitizeHtml'
 import {getBlogToken, isBlogVerified} from '@/util/storage'
+import { showMessage, showNotification } from '@/util/feedback'
 
 //评论列表请求序号：路由快速切换时丢弃过期响应，避免旧页面评论覆盖新页面
 let commentRequestSeq = 0
+let emojiMappersPromise
+
+function loadEmojiMappers() {
+	if (!emojiMappersPromise) {
+		emojiMappersPromise = Promise.all([
+			import('@/plugins/tvMapper.json'),
+			import('@/plugins/aruMapper.json'),
+			import('@/plugins/paopaoMapper.json')
+		]).then(([tvMapper, aruMapper, paopaoMapper]) => [
+			...tvMapper.default,
+			...aruMapper.default,
+			...paopaoMapper.default
+		])
+	}
+	return emojiMappersPromise
+}
 
 export default {
 	getCommentList({commit, rootState}) {
@@ -30,37 +42,44 @@ export default {
 			comment.content = comment.content.replace(new RegExp(emoji.reg, 'g'), `<img src="${emoji.src}">`)
 		}
 
-		function convertEmoji(comment) {
-			tvMapper.forEach(emoji => {
-				replaceEmoji(comment, emoji)
-			})
-			aruMapper.forEach(emoji => {
-				replaceEmoji(comment, emoji)
-			})
-			paopaoMapper.forEach(emoji => {
+		function convertEmoji(comment, emojiMappers) {
+			emojiMappers.forEach(emoji => {
 				replaceEmoji(comment, emoji)
 			})
 		}
 
-		getCommentListByQuery(blogToken, rootState.commentQuery).then(res => {
+		getCommentListByQuery(blogToken, rootState.commentQuery).then(async res => {
 			//过期响应（已切换到其它页面）直接丢弃
 			if (seq !== commentRequestSeq) {
 				return
 			}
 			if (res.code === 200) {
-				res.data.comments.list.forEach(comment => {
+				const commentList = res.data.comments.list
+				const hasEmoji = commentList.some(comment => {
+					if (comment.content && comment.content.indexOf('@[') !== -1) {
+						return true
+					}
+					const replyComments = Array.isArray(comment.replyComments) ? comment.replyComments : []
+					return replyComments.some(reply => reply.content && reply.content.indexOf('@[') !== -1)
+				})
+				const emojiMappers = hasEmoji ? await loadEmojiMappers() : []
+				if (seq !== commentRequestSeq) {
+					return
+				}
+				commentList.forEach(comment => {
 					//转义评论中的html
 					comment.content = escapeHtml(comment.content)
 					//查找评论中是否有表情
 					if (comment.content.indexOf('@[') != -1) {
-						convertEmoji(comment)
+						convertEmoji(comment, emojiMappers)
 					}
-					comment.replyComments.forEach(comment => {
+					const replyComments = Array.isArray(comment.replyComments) ? comment.replyComments : []
+					replyComments.forEach(comment => {
 						//转义评论中的html
 						comment.content = escapeHtml(comment.content)
 						//查找评论中是否有表情
 						if (comment.content.indexOf('@[') != -1) {
-							convertEmoji(comment)
+							convertEmoji(comment, emojiMappers)
 						}
 					})
 				})
@@ -68,7 +87,7 @@ export default {
 			}
 		}).catch(() => {
 			if (seq === commentRequestSeq) {
-				ElMessage.error("请求失败")
+				showMessage('error', "请求失败")
 			}
 		})
 	},
@@ -79,7 +98,7 @@ export default {
 		form.parentCommentId = rootState.parentCommentId
 		submitComment(token, form).then(res => {
 			if (res.code === 200) {
-				ElNotification({
+				showNotification({
 					title: res.msg,
 					type: 'success'
 				})
@@ -87,14 +106,14 @@ export default {
 				commit(RESET_COMMENT_FORM)
 				dispatch('getCommentList')
 			} else {
-				ElNotification({
+				showNotification({
 					title: '评论失败',
 					message: res.msg,
 					type: 'error'
 				})
 			}
 		}).catch(() => {
-			ElNotification({
+			showNotification({
 				title: '评论失败',
 				message: '异常错误',
 				type: 'error'

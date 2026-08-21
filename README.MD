@@ -144,6 +144,8 @@ UI 框架为 [Element Plus](https://github.com/element-plus/element-plus)
 
 感谢 [Nblog](https://github.com/Naccl/NBlog) 项目中的前端页面
 
+感谢 [grtblog](https://grtblog.js.org/) 项目的UI参考
+
 感谢 [JetBrains](https://www.jetbrains.com/?from=DreamBlog) 提供的 Open Source License
 
 感谢上面提到的每个开源项目

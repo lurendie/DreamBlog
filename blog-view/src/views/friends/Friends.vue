@@ -32,11 +32,16 @@
 <script>
 	import {getData, addViewsByNickname} from "@/api/friend";
 	import CommentList from "@/components/comment/CommentList.vue";
+	import { directive as viewerDirective } from 'v-viewer'
+	import 'viewerjs/dist/viewer.css'
 	import { updateSeo } from '@/util/seo'
 
 	export default {
 		name: "Friends",
 		components: {CommentList},
+		directives: {
+			viewer: viewerDirective()
+		},
 		data() {
 			return {
 				friendList: [],

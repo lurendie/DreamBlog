@@ -1,7 +1,14 @@
 <template>
 	<div class="article-list">
-		<article class="article-card m-box" :class="{'article-card--no-cover': !item.firstPicture}" v-for="item in blogList" :key="item.id">
-			<div class="article-card__cover" v-if="item.firstPicture" :style="{ backgroundImage: 'url(' + item.firstPicture + ')' }">
+		<article class="article-card m-box" :class="{'article-card--no-cover': !item.firstPicture}" v-for="(item,index) in blogList" :key="item.id">
+			<div class="article-card__cover" v-if="item.firstPicture">
+				<img
+					:src="item.firstPicture"
+					:alt="item.title || ''"
+					:loading="index === 0 ? 'eager' : 'lazy'"
+					:fetchpriority="index === 0 ? 'high' : 'auto'"
+					decoding="async"
+				>
 				<span v-if="item.top" class="article-card__pin">置顶</span>
 			</div>
 			<div class="article-card__body">
@@ -78,8 +85,16 @@
 	.article-card__cover {
 		position: relative;
 		min-height: 270px;
-		background-size: cover;
-		background-position: center;
+		overflow: hidden;
+		background: #e2e8f0;
+	}
+
+	.article-card__cover img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		min-height: 270px;
+		object-fit: cover;
 	}
 
 	.article-card--no-cover {
@@ -191,6 +206,10 @@
 	}
 
 	.article-card__cover {
+		min-height: 190px;
+	}
+
+	.article-card__cover img {
 		min-height: 190px;
 	}
 

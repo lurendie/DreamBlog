@@ -27,6 +27,7 @@ export default defineConfig({
 			},
 		}),
 		Components({
+			dirs: [],
 			dts: false,
 			resolvers: [ElementPlusResolver({ importStyle: 'css' })],
 		}),
@@ -75,7 +76,6 @@ export default defineConfig({
 						[
 							'@ctrl/tinycolor',
 							'async-validator',
-							'dayjs',
 							'lodash',
 							'lodash-es',
 							'lodash-unified',
@@ -86,6 +86,9 @@ export default defineConfig({
 						].includes(packageName)
 					) {
 						return 'element-plus-utils'
+					}
+					if (packageName === 'dayjs') {
+						return 'date-vendor'
 					}
 					if (['viewerjs', 'v-viewer', 'vue3-lazyload'].includes(packageName)) {
 						return 'media-vendor'

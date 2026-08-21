@@ -19,7 +19,6 @@
     "v-viewer": "^3.0.23",
     "vue": "^3.5.38",
     "vue-router": "^4.6.3",
-    "vue3-lazyload": "^0.4.2",
     "vuex": "^4.1.0"
   },
   "devDependencies": {

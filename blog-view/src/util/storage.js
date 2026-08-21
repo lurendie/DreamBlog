@@ -18,6 +18,11 @@ export function safeParse(value, fallback = null) {
 	}
 }
 
+export function safeParseArray(value, fallback = []) {
+	const parsed = safeParse(value, fallback)
+	return Array.isArray(parsed) ? parsed : fallback
+}
+
 //私密文章密码验证通过的"布尔标记"（与真实 token 共用一个键 blog{id}，用于区分两种情况）
 export const BLOG_PASSWORD_VERIFIED_MARKER = 'verified'
 

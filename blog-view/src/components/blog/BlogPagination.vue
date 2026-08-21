@@ -1,16 +1,16 @@
 <template>
 	<div class="ui bottom" style="text-align:center">
-		<el-pagination @current-change="handleCurrentChange" :current-page="pageNum" :page-count="totalPage"
-		               layout="prev, pager, next" background hide-on-single-page>
-		</el-pagination>
+		<LightPagination :current-page="pageNum" :page-count="totalPage" @current-change="handleCurrentChange"/>
 	</div>
 </template>
 
 <script>
 	import {mapState} from 'vuex'
+	import LightPagination from "@/components/common/LightPagination.vue";
 
 	export default {
 		name: "BlogPagination",
+		components: {LightPagination},
 		props: {
 			getBlogList: {
 				type: Function,
@@ -56,15 +56,4 @@
 </script>
 
 <style>
-	.el-pagination.is-background .btn-next, .el-pagination.is-background .btn-prev, .el-pagination.is-background .el-pager li {
-		background-color: #ffffff !important;
-		border: 1px solid rgba(148, 163, 184, 0.18);
-		border-radius: 8px !important;
-		color: #475569 !important;
-	}
-
-	.el-pagination.is-background .el-pager li:not(.disabled).active {
-		background-color: #0f766e !important;
-		color: #fff !important;
-	}
 </style>

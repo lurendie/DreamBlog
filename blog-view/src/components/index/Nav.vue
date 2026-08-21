@@ -35,16 +35,26 @@
 					<div v-if="!categoryList.length" class="mobile-category-empty">暂无分类</div>
 				</div>
 			</template>
-			<el-dropdown v-else class="category-wrapper-mobile" trigger="click" @command="categoryRoute">
-				<span class="el-dropdown-link item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='category'}">
+			<div v-else class="desktop-category-wrapper category-wrapper-mobile">
+				<button
+					type="button"
+					class="el-dropdown-link item"
+					:class="{'m-mobile-hide': mobileHide,'active':$route.name==='category'}"
+					@click.stop="toggleDesktopCategories"
+				>
 					<i class="idea icon"></i>分类<i class="caret down icon"></i>
-				</span>
-				<template #dropdown>
-					<el-dropdown-menu>
-						<el-dropdown-item :command="category.name" v-for="(category,index) in categoryList" :key="index">{{ category.name }}</el-dropdown-item>
-					</el-dropdown-menu>
-				</template>
-			</el-dropdown>
+				</button>
+				<div v-if="showDesktopCategories" class="desktop-category-menu" @click.stop>
+					<button
+						v-for="(category,index) in categoryList"
+						:key="index"
+						type="button"
+						class="desktop-category-item"
+						@click="categoryRoute(category.name)"
+					>{{ category.name }}</button>
+					<div v-if="!categoryList.length" class="desktop-category-empty">暂无分类</div>
+				</div>
+			</div>
 			<router-link to="/archives" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='archives','m-mobile-menu-item': !mobileHide}">
 				<i class="clone icon"></i>归档
 			</router-link>
@@ -57,17 +67,29 @@
 			<router-link to="/about" class="item" :class="{'m-mobile-hide': mobileHide,'active':$route.name==='about','m-mobile-menu-item': !mobileHide}">
 				<i class="info icon"></i>关于我
 			</router-link>
-			<el-autocomplete v-model="queryString" :fetch-suggestions="debounceQuery" placeholder="Search..."
-			                 class="right item m-search" :class="{'m-mobile-hide': mobileHide}"
-			                 popper-class="m-search-item" @select="handleSelect">
-				<template #suffix>
-					<i class="search icon el-input__icon"></i>
-				</template>
-				<template #default="{ item }">
-					<div class="title">{{ item.title }}</div>
-					<span class="content">{{ item.content }}</span>
-				</template>
-			</el-autocomplete>
+			<div class="right item m-search" :class="{'m-mobile-hide': mobileHide}" @click.stop>
+				<input
+					v-model="queryString"
+					type="search"
+					placeholder="Search..."
+					@input="handleSearchInput"
+					@focus="openSearchSuggestions"
+					@keydown.enter.prevent="handleEnterSearch"
+				>
+				<i class="search icon"></i>
+				<div v-if="showSearchSuggestions && canShowSearch && queryResult.length" class="m-search-item native-search-menu">
+					<button
+						v-for="(item,index) in queryResult"
+						:key="index"
+						type="button"
+						class="native-search-item"
+						@click="handleSelect(item)"
+					>
+						<span class="title">{{ item.title }}</span>
+						<span class="content">{{ item.content }}</span>
+					</button>
+				</div>
+			</div>
 			<button class="ui menu black icon button m-right-top m-mobile-show" @click="toggle">
 				<i class="sidebar icon"></i>
 			</button>
@@ -95,6 +117,8 @@
 			return {
 				mobileHide: true,
 				showMobileCategories: false,
+				showDesktopCategories: false,
+				showSearchSuggestions: false,
 				queryString: '',
 				queryResult: [],
 				timer: null,
@@ -106,6 +130,9 @@
 			...mapState(['clientSize']),
 			isMobile() {
 				return this.clientSize.clientWidth <= 767
+			},
+			canShowSearch() {
+				return !this.isMobile || !this.mobileHide
 			}
 		},
 		watch: {
@@ -113,6 +140,8 @@
 			'$route.path'() {
 				this.mobileHide = true
 				this.showMobileCategories = false
+				this.showDesktopCategories = false
+				this.showSearchSuggestions = false
 			}
 		},
 		mounted() {
@@ -144,6 +173,10 @@
 					this.mobileHide = true
 					this.showMobileCategories = false
 				}
+				if (!flag) {
+					this.showDesktopCategories = false
+					this.showSearchSuggestions = false
+				}
 			}
 			document.addEventListener('click', this.handleDocumentClick)
 		},
@@ -164,7 +197,12 @@
 				this.mobileHide = !this.mobileHide
 				if (this.mobileHide) {
 					this.showMobileCategories = false
+					this.showSearchSuggestions = false
 				}
+			},
+			toggleDesktopCategories() {
+				this.showDesktopCategories = !this.showDesktopCategories
+				this.showSearchSuggestions = false
 			},
 			toggleMobileCategories() {
 				if (this.isMobile) {
@@ -173,8 +211,26 @@
 			},
 			categoryRoute(name) {
 				this.showMobileCategories = false
+				this.showDesktopCategories = false
 				this.mobileHide = true
 				this.$router.push(`/category/${name}`)
+			},
+			handleSearchInput() {
+				this.debounceQuery(this.queryString, results => {
+					this.queryResult = results
+					this.showSearchSuggestions = true
+				})
+			},
+			openSearchSuggestions() {
+				if (this.queryResult.length) {
+					this.showSearchSuggestions = true
+				}
+			},
+			handleEnterSearch() {
+				const first = this.queryResult.find(item => item.id)
+				if (first) {
+					this.handleSelect(first)
+				}
 			},
 			debounceQuery(queryString, callback) {
 				this.timer && clearTimeout(this.timer)
@@ -189,11 +245,13 @@
 						|| queryString.indexOf('#') !== -1
 						|| queryString.indexOf('*') !== -1
 						|| queryString.trim().length > 20) {
+					this.queryResult = []
+					this.showSearchSuggestions = false
 					return
 				}
 				getSearchBlogList(queryString).then(res => {
 					if (res.code === 200) {
-						this.queryResult = res.data
+						this.queryResult = Array.isArray(res.data) ? res.data : []
 						if (this.queryResult.length === 0) {
 							this.queryResult.push({title: '无相关搜索结果'})
 						}
@@ -205,6 +263,8 @@
 			},
 			handleSelect(item) {
 				if (item.id) {
+					this.showSearchSuggestions = false
+					this.queryString = ''
 					//复用统一的隐私判断：密码保护文章未验证时弹密码框，而不是直接跳转
 					this.$store.dispatch('goBlogPage', item)
 				}
@@ -288,10 +348,58 @@
 	}
 
 	.el-dropdown-link {
+		border: 0;
+		background: transparent;
+		font-family: inherit;
 		outline-style: none !important;
 		outline-color: unset !important;
 		height: 100%;
 		cursor: pointer;
+	}
+
+	.desktop-category-wrapper {
+		position: relative;
+		display: flex;
+		align-items: stretch;
+	}
+
+	.desktop-category-menu {
+		position: absolute;
+		top: calc(100% + 8px);
+		left: 0;
+		z-index: 1002;
+		min-width: 150px;
+		overflow: hidden;
+		border-radius: 12px;
+		background: #ffffff;
+		box-shadow: 0 16px 40px rgba(63, 122, 186, 0.18);
+	}
+
+	.desktop-category-item,
+	.desktop-category-empty {
+		display: block;
+		width: 100%;
+		border: 0;
+		background: transparent;
+		color: #337ecc;
+		font-family: inherit;
+		font-size: 16px;
+		line-height: 42px;
+		padding: 0 15px;
+		text-align: left;
+		white-space: nowrap;
+	}
+
+	.desktop-category-item {
+		cursor: pointer;
+	}
+
+	.desktop-category-item:hover {
+		background: rgba(64, 158, 255, .10);
+	}
+
+	.desktop-category-empty {
+		color: #6b7280;
 	}
 
 	.el-dropdown-menu {
@@ -325,6 +433,7 @@
 	.m-search {
 		display: flex !important;
 		align-items: center;
+		position: relative;
 		min-width: 220px;
 		max-width: 260px;
 		margin-left: auto !important;
@@ -332,6 +441,56 @@
 		background: transparent !important;
 		box-shadow: none !important;
 		border: 0 !important;
+	}
+
+	.m-search input {
+		width: 100%;
+		height: 38px;
+		border: 0;
+		outline: none;
+		background: transparent;
+		color: #4b5563;
+		font-family: inherit;
+		font-size: 14px;
+	}
+
+	.m-search input::placeholder {
+		color: #9ca3af;
+	}
+
+	.native-search-menu {
+		position: absolute;
+		top: calc(100% + 8px);
+		right: 0;
+		z-index: 1002;
+		display: flex;
+		min-width: 350px;
+		max-width: min(420px, calc(100vw - 32px));
+		flex-direction: column;
+		overflow: hidden;
+		border-radius: 12px;
+		background: #ffffff;
+		box-shadow: 0 16px 40px rgba(63, 122, 186, 0.18);
+	}
+
+	.native-search-item {
+		border: 0;
+		background: transparent;
+		padding: 8px 10px;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.native-search-item:hover {
+		background: rgba(20, 184, 166, 0.08);
+	}
+
+	.native-search-item .title,
+	.native-search-item .content {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.m-search .el-input {
@@ -522,6 +681,22 @@
 			padding: 0.35rem 0 0.75rem !important;
 			order: 20;
 			animation: mobileMenuFadeIn .22s ease-out;
+		}
+
+		.m-search input {
+			height: 40px;
+			padding: 0 10px;
+			border-radius: 10px;
+			background: rgba(255, 255, 255, 0.9);
+			box-shadow: inset 0 0 0 1px rgba(20, 184, 166, 0.18);
+		}
+
+		.native-search-menu {
+			top: calc(100% + 6px);
+			left: 0;
+			right: auto;
+			width: calc(100vw - 32px);
+			min-width: 0;
 		}
 
 		.m-search .el-input__wrapper {

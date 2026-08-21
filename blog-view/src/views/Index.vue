@@ -4,7 +4,7 @@
 		<Nav :blogName="siteInfo.blogName" :categoryList="categoryList"/>
 		<!--首页大图 只在首页且pc端时显示-->
 		<div class="m-mobile-hide">
-			<Header v-if="$route.name==='home'"/>
+			<Header v-if="$route.name==='home' && !isMobile"/>
 		</div>
 
 		<div class="main">
@@ -12,7 +12,7 @@
 				<div class="ui container">
 					<div class="ui stackable grid">
 						<!--左侧-->
-						<div class="three wide column m-mobile-hide">
+						<div v-if="!isMobile" class="three wide column m-mobile-hide">
 							<Introduction :class="{'m-display-none':focusMode}"/>
 						</div>
 						<!--中间-->
@@ -24,7 +24,7 @@
 							</router-view>
 						</div>
 						<!--右侧-->
-						<div class="three wide column m-mobile-hide">
+						<div v-if="!isMobile" class="three wide column m-mobile-hide">
 							<RandomBlog :randomBlogList="randomBlogList" :class="{'m-display-none':focusMode}"/>
 							<Tags :tagList="tagList" :class="{'m-display-none':focusMode}"/>
 							<!--只在文章页面显示目录-->
@@ -36,10 +36,10 @@
 		</div>
 
 		<!--私密文章密码对话框-->
-		<BlogPasswordDialog/>
+		<BlogPasswordDialog v-if="blogPasswordDialogVisible"/>
 
 		<!--APlayer-->
-		<div class="m-mobile-hide">
+		<div v-if="!isMobile" class="m-mobile-hide">
 			<button
 				v-if="canUsePlaylist && !showPlaylist"
 				type="button"
@@ -61,9 +61,9 @@
 			></meting-js>
 		</div>
 		<!--回到顶部-->
-		<el-backtop style="box-shadow: none;background: none;z-index: 9999;">
-			<img src="/img/paper-plane.png" style="width: 40px;height: 40px;">
-		</el-backtop>
+		<button type="button" class="backtop-button" title="回到顶部" aria-label="回到顶部" @click="scrollToTop">
+			<i class="angle up icon"></i>
+		</button>
 		<!--底部footer-->
 		<Footer :siteInfo="siteInfo" :badges="badges" :newBlogList="newBlogList" :hitokoto="hitokoto"/>
 	</div>
@@ -71,18 +71,20 @@
 
 <script>
 	import {getHitokoto, getSite} from '@/api/index'
+	import { defineAsyncComponent } from 'vue'
 	import Nav from "@/components/index/Nav.vue";
-	import Header from "@/components/index/Header.vue";
 	import Footer from "@/components/index/Footer.vue";
-	import Introduction from "@/components/sidebar/Introduction.vue";
-	import Tags from "@/components/sidebar/Tags.vue";
-	import RandomBlog from "@/components/sidebar/RandomBlog.vue";
-	import Tocbot from "@/components/sidebar/Tocbot.vue";
-	import BlogPasswordDialog from "@/components/index/BlogPasswordDialog.vue";
 	import {mapState} from 'vuex'
 	import {SAVE_CLIENT_SIZE, SAVE_INTRODUCTION, SAVE_SITE_INFO, RESTORE_COMMENT_FORM} from "@/store/mutations-types";
 	import { updateSeo } from '@/util/seo'
 	import { loadMetingPlayer } from '@/util/loadExternalAsset'
+
+	const Header = defineAsyncComponent(() => import("@/components/index/Header.vue"))
+	const Introduction = defineAsyncComponent(() => import("@/components/sidebar/Introduction.vue"))
+	const Tags = defineAsyncComponent(() => import("@/components/sidebar/Tags.vue"))
+	const RandomBlog = defineAsyncComponent(() => import("@/components/sidebar/RandomBlog.vue"))
+	const Tocbot = defineAsyncComponent(() => import("@/components/sidebar/Tocbot.vue"))
+	const BlogPasswordDialog = defineAsyncComponent(() => import("@/components/index/BlogPasswordDialog.vue"))
 
 	export default {
 		name: "Index",
@@ -102,12 +104,16 @@
 				newBlogList: [],
 				hitokoto: {},
 				resizeHandler: null,
+				resizeFrame: null,
 				musicLoading: false,
 				showPlaylist: false,
 			}
 		},
 		computed: {
-			...mapState(['focusMode']),
+			...mapState(['focusMode', 'clientSize', 'blogPasswordDialogVisible']),
+			isMobile() {
+				return this.clientSize.clientWidth <= 767
+			},
 			canUsePlaylist() {
 				return Boolean(this.siteInfo.playlistServer && this.siteInfo.playlistId)
 			}
@@ -119,20 +125,23 @@
 			}
 		},
 		created() {
+			this.saveClientSize()
 			this.getSite()
 			this.getHitokoto()
 			//从localStorage恢复之前的评论信息
 			this.$store.commit(RESTORE_COMMENT_FORM)
 		},
 		mounted() {
-			//保存可视窗口大小
-			this.saveClientSize()
-			this.resizeHandler = this.saveClientSize
+			this.resizeHandler = this.scheduleSaveClientSize
 			window.addEventListener('resize', this.resizeHandler)
 		},
 		beforeUnmount() {
 			if (this.resizeHandler) {
 				window.removeEventListener('resize', this.resizeHandler)
+			}
+			if (this.resizeFrame) {
+				window.cancelAnimationFrame(this.resizeFrame)
+				this.resizeFrame = null
 			}
 		},
 		methods: {
@@ -140,7 +149,16 @@
 				return Array.isArray(list) ? list.filter(item => item && typeof item === 'object') : []
 			},
 			saveClientSize() {
-				this.$store.commit(SAVE_CLIENT_SIZE, {clientHeight: document.body.clientHeight, clientWidth: document.body.clientWidth})
+				this.$store.commit(SAVE_CLIENT_SIZE, {clientHeight: window.innerHeight, clientWidth: window.innerWidth})
+			},
+			scheduleSaveClientSize() {
+				if (this.resizeFrame) {
+					return
+				}
+				this.resizeFrame = window.requestAnimationFrame(() => {
+					this.resizeFrame = null
+					this.saveClientSize()
+				})
 			},
 			getSite() {
 				getSite().then(res => {
@@ -250,6 +268,31 @@
 		font-size: 24px;
 	}
 
+	.backtop-button {
+		position: fixed;
+		right: 28px;
+		bottom: 30px;
+		z-index: 9999;
+		display: inline-flex;
+		width: 44px;
+		height: 44px;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.92);
+		color: #0f766e;
+		box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+		cursor: pointer;
+	}
+
+	.backtop-button i.icon {
+		width: auto;
+		height: auto;
+		margin: 0;
+		font-size: 20px;
+	}
+
 	@media screen and (max-width: 767px) {
 		.main {
 			margin-top: 56px;
@@ -262,6 +305,11 @@
 
 		.main .ui.container {
 			width: calc(100vw - 16px) !important;
+		}
+
+		.backtop-button {
+			right: 16px;
+			bottom: 18px;
 		}
 	}
 </style>
