@@ -31,7 +31,13 @@
 				</div>
 			</div>
 		</el-row>
-		<el-empty v-if="hasSearched && !fileList.length" :description="emptyText"></el-empty>
+		<el-row v-if="hasSearched && !fileList.length && directoryList.length" class="hosting-directory-grid">
+			<div class="directory-container" v-for="dir in directoryList" :key="dir.path" @click="openDirectory(dir)">
+				<el-icon class="directory-icon"><FolderOpened /></el-icon>
+				<span>{{ dir.name }}</span>
+			</div>
+		</el-row>
+		<el-empty v-if="hasSearched && !fileList.length && !directoryList.length" :description="emptyText"></el-empty>
 
 		<el-drawer title="上传文件" v-model="isDrawerShow" direction="rtl" size="40%" :wrapper-closable="false" :close-on-press-escape="false">
 			<el-row>
@@ -56,7 +62,7 @@
 
 <script>
 	import SvgIcon from "@/components/SvgIcon";
-	import { Delete, Link, UploadFilled } from '@element-plus/icons-vue'
+	import { Delete, FolderOpened, Link, UploadFilled } from '@element-plus/icons-vue'
 	import {getUserRepos, getReposContents, delFile, upload} from "@/api/github";
 	import {isImgExt} from "@/util/validate";
 	import {randomUUID} from "@/util/uuid";
@@ -68,6 +74,7 @@ export default {
 	name: "GithubManage",
 	components: {
 		Delete,
+		FolderOpened,
 		Link,
 		SvgIcon,
 		UploadFilled,
@@ -93,6 +100,7 @@ export default {
 				hintShow2: true,
 				hintShow3: true,
 				fileList: [],
+				directoryList: [],
 				hasSearched: false,
 				resourceShow: 0,
 				isDrawerShow: false,
@@ -108,10 +116,11 @@ export default {
 				if (this.isCustomPath) {
 					return `/${this.userInfo.login}/${this.activeRepos}/${this.customPath}`
 				}
-				return `/${this.userInfo.login}/${this.activeRepos}${this.activePath.join('/')}/`
+				const path = this.activePath.filter(Boolean).join('/')
+				return path ? `/${this.userInfo.login}/${this.activeRepos}/${path}/` : `/${this.userInfo.login}/${this.activeRepos}/`
 			},
 			emptyText() {
-				return '当前目录没有可展示的图片文件'
+				return '当前目录没有可展示的图片或子目录'
 			}
 		},
 		created() {
@@ -144,6 +153,7 @@ export default {
 				this.resourceShow++ //改变级联选择器的key来重置其中选项内容
 				this.activePath = [''] //默认选中根目录
 				this.fileList = []
+				this.directoryList = []
 				this.hasSearched = false
 			},
 			//遍历目录树 貌似目录级数太多 组件加载不出来？
@@ -174,17 +184,29 @@ export default {
 				})
 			},
 			search() {
+				const imageList = []
+				const directoryList = []
 				this.fileList = []
+				this.directoryList = []
 				this.hasSearched = false
 				let path = this.activePath.join('/')
 				getReposContents(this.userInfo.login, this.activeRepos, path).then(res => {
 					res.forEach(item => {
 						if (item.type === 'file' && isImgExt(item.name)) {
-							this.fileList.push(item)
+							imageList.push(item)
+						}
+						if (item.type === 'dir') {
+							directoryList.push(item)
 						}
 					})
+					this.fileList = imageList
+					this.directoryList = directoryList
 					this.hasSearched = true
 				})
+			},
+			openDirectory(dir) {
+				this.activePath = dir.path.split('/').filter(Boolean)
+				this.search()
 			},
 			noDisplay(id) {
 				localStorage.setItem(`hintShow${id}`, '1')
@@ -305,6 +327,41 @@ export default {
 		overflow: hidden;
 		display: inline-block;
 		margin: 0 2px;
+	}
+
+	.hosting-directory-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		gap: 10px;
+	}
+
+	.directory-container {
+		height: 72px;
+		padding: 12px;
+		border: 1px solid #dcdfe6;
+		border-radius: 6px;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		cursor: pointer;
+		transition: border-color 0.2s, color 0.2s;
+	}
+
+	.directory-container:hover {
+		border-color: #409EFF;
+		color: #409EFF;
+	}
+
+	.directory-icon {
+		font-size: 26px;
+		flex: 0 0 auto;
+	}
+
+	.directory-container span {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.el-image {
@@ -434,6 +491,10 @@ export default {
 			aspect-ratio: 1;
 			height: auto;
 			margin: 0;
+		}
+
+		.hosting-directory-grid {
+			grid-template-columns: 1fr;
 		}
 
 		.icon {
