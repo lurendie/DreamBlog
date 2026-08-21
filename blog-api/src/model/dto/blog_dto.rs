@@ -3,6 +3,7 @@ use sea_orm::{DatabaseConnection, ModelTrait};
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    common::MarkdownParser,
     entity::{category, tag},
     model::dto::category::Category,
 };
@@ -50,12 +51,14 @@ pub struct BlogDTO {
 
 impl From<blog::Model> for BlogDTO {
     fn from(model: blog::Model) -> Self {
+        let description =
+            MarkdownParser::description_or_excerpt(&model.description, &model.content);
         BlogDTO {
             id: Some(model.id),
             title: model.title,
             first_picture: model.first_picture,
             content: model.content,
-            description: model.description,
+            description,
             published: model.is_published,
             recommend: model.is_recommend,
             appreciation: model.is_appreciation,

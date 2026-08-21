@@ -22,8 +22,8 @@ use sea_orm::prelude::Expr;
 use sea_orm::IntoActiveModel;
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, Condition, DatabaseConnection, DbBackend,
-    EntityTrait, FromQueryResult, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder,
-    QuerySelect, QueryTrait, Statement, TransactionTrait,
+    EntityTrait, FromQueryResult, ModelTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
+    QueryTrait, Statement, TransactionTrait,
 };
 use std::collections::HashMap;
 use std::ops::Index;
@@ -564,11 +564,7 @@ impl BlogService {
     }
 
     /// 批量加载分类与标签并回填 BlogInfo（3 次批量查询替代逐条 N+1）
-    async fn load_related_batch(
-        list: &mut [BlogInfo],
-        ids: &[i64],
-        db: &DatabaseConnection,
-    ) {
+    async fn load_related_batch(list: &mut [BlogInfo], ids: &[i64], db: &DatabaseConnection) {
         // 1) 批量加载博客模型（取 category_id）
         let blog_models: HashMap<i64, blog::Model> = blog::Entity::find()
             .filter(blog::Column::Id.is_in(ids.iter().copied()))
@@ -793,6 +789,11 @@ impl BlogService {
         let ok = db
             .transaction(|conn| {
                 Box::pin(async move {
+                    let mut blog_vo = blog_vo;
+                    blog_vo.description = MarkdownParser::description_or_excerpt(
+                        &blog_vo.description,
+                        &blog_vo.content,
+                    );
                     let tag_list = blog_vo.get_tag_list().unwrap_or_default();
                     let mut new_tag_ids = vec![];
                     for tag_type in tag_list {
@@ -843,9 +844,8 @@ impl BlogService {
                         }
                         false => {
                             // 查询数据库中已有记录，用于保护 create_time/views 不被客户端覆盖
-                            let existing = blog::Entity::find_by_id(blog_vo.get_id())
-                                .one(conn)
-                                .await?;
+                            let existing =
+                                blog::Entity::find_by_id(blog_vo.get_id()).one(conn).await?;
                             let mut active = blog_model.clone().into_active_model();
                             active.is_appreciation = ActiveValue::Set(blog_vo.appreciation);
                             active.category_id = ActiveValue::Set(blog_vo.category_id);
@@ -873,9 +873,8 @@ impl BlogService {
                                 .map(|t| t.year() >= 2000)
                                 .unwrap_or(false);
                             if create_time_usable {
-                                active.create_time = ActiveValue::Set(
-                                    blog_vo.create_time.unwrap_or_default(),
-                                );
+                                active.create_time =
+                                    ActiveValue::Set(blog_vo.create_time.unwrap_or_default());
                             } else if let Some(existing) = &existing {
                                 active.create_time = ActiveValue::Set(existing.create_time);
                             }

@@ -7,6 +7,8 @@ use comrak::{
 use regex::Regex;
 use std::io::{self, Write};
 pub struct MarkdownParser;
+pub const DEFAULT_EXCERPT_MAX_CHARS: usize = 160;
+
 impl MarkdownParser {
     pub fn parser_html(markdown: String) -> String {
         let adapter = CustomHeadingAdapter::new();
@@ -19,6 +21,18 @@ impl MarkdownParser {
         // 服务端白名单消毒：在允许 raw HTML（unsafe_）的前提下只放行受控标签/属性，
         // 作为前端 v-safe-html 之外的第二道防线（script/事件属性/javascript: 等在此被剥除）
         sanitize_html(&html)
+    }
+
+    pub fn description_or_excerpt(description: &str, markdown: &str) -> String {
+        let description = description.trim();
+        if !description.is_empty() {
+            return description.to_string();
+        }
+        Self::plain_text_excerpt(markdown, DEFAULT_EXCERPT_MAX_CHARS)
+    }
+
+    pub fn plain_text_excerpt(markdown: &str, max_chars: usize) -> String {
+        truncate_text(&markdown_to_plain_text(markdown), max_chars)
     }
 }
 
@@ -41,8 +55,20 @@ fn sanitize_html(html: &str) -> String {
         .add_tag_attributes(
             "meting-js",
             &[
-                "server", "type", "id", "theme", "autoplay", "volume", "mutex",
-                "listmaxheight", "preload", "loop", "mini", "fixed", "order", "storage",
+                "server",
+                "type",
+                "id",
+                "theme",
+                "autoplay",
+                "volume",
+                "mutex",
+                "listmaxheight",
+                "preload",
+                "loop",
+                "mini",
+                "fixed",
+                "order",
+                "storage",
             ],
         );
     builder.clean(html).to_string()
@@ -53,7 +79,7 @@ mod tests {
 
     use comrak::{markdown_to_html_with_plugins, Options, Plugins};
 
-    use super::{CustomHeadingAdapter, MarkdownParser};
+    use super::{CustomHeadingAdapter, MarkdownParser, DEFAULT_EXCERPT_MAX_CHARS};
 
     #[test]
     fn test_markdown() {
@@ -110,7 +136,8 @@ mod tests {
 
     #[test]
     fn keeps_heimu_spans_and_code_language_classes() {
-        let html = MarkdownParser::parser_html("@@隐藏@@\n\n```rust\nfn main() {}\n```".to_string());
+        let html =
+            MarkdownParser::parser_html("@@隐藏@@\n\n```rust\nfn main() {}\n```".to_string());
         assert!(html.contains("m-text-heimu"), "黑幕 span 应保留: {}", html);
         assert!(
             html.contains("language-rust"),
@@ -136,7 +163,58 @@ mod tests {
             "<meting-js server=\"netease\" type=\"song\" id=\"123\"></meting-js>".to_string(),
         );
         assert!(html.contains("meting-js"), "meting-js 应保留: {}", html);
-        assert!(html.contains("server=\"netease\""), "meting-js 属性应保留: {}", html);
+        assert!(
+            html.contains("server=\"netease\""),
+            "meting-js 属性应保留: {}",
+            html
+        );
+    }
+
+    #[test]
+    fn creates_plain_text_excerpt_from_markdown() {
+        let excerpt = MarkdownParser::plain_text_excerpt(
+            r#"
+# 标题
+
+![封面](https://example.com/a.png)
+
+这是第一段，包含 **加粗**、[链接文字](https://example.com) 和 `inline_code`。
+
+```rust
+fn main() {
+    println!("code should not leak");
+}
+```
+
+<script>alert(1)</script><p>第二段 HTML 文本。</p>
+"#,
+            DEFAULT_EXCERPT_MAX_CHARS,
+        );
+
+        assert!(excerpt.contains("标题"));
+        assert!(excerpt.contains("链接文字"));
+        assert!(excerpt.contains("inline_code"));
+        assert!(excerpt.contains("第二段 HTML 文本"));
+        assert!(!excerpt.contains("封面"));
+        assert!(!excerpt.contains("println"));
+        assert!(!excerpt.contains("<p>"));
+    }
+
+    #[test]
+    fn truncates_excerpt_to_configured_length() {
+        let markdown = "一".repeat(DEFAULT_EXCERPT_MAX_CHARS + 10);
+        let excerpt = MarkdownParser::plain_text_excerpt(&markdown, DEFAULT_EXCERPT_MAX_CHARS);
+
+        assert_eq!(excerpt.chars().count(), DEFAULT_EXCERPT_MAX_CHARS);
+        assert!(excerpt.ends_with('…'));
+    }
+
+    #[test]
+    fn keeps_manual_description_when_present() {
+        let description =
+            MarkdownParser::description_or_excerpt("  手写摘要  ", "正文内容正文内容正文内容");
+
+        assert_eq!(description, "手写摘要");
     }
 }
 
@@ -201,4 +279,63 @@ fn preprocess_markdown(markdown: String) -> String {
     }
     // 使用 \n 连接，保持与原输入行结构一致（末尾不额外加分号）
     result.join("\n")
+}
+
+fn markdown_to_plain_text(markdown: &str) -> String {
+    let mut text = markdown.to_string();
+    let replacements = [
+        (r"(?s)\A\s*---\s*\n.*?\n---\s*", " "),
+        (r"(?s)```.*?```", " "),
+        (r"(?s)~~~.*?~~~", " "),
+        (r"(?s)<!--.*?-->", " "),
+        (r"(?is)<script[^>]*>.*?</script>", " "),
+        (r"(?is)<style[^>]*>.*?</style>", " "),
+        (r"!\[[^\]]*\]\([^)]+\)", " "),
+        (r"\[([^\]]+)\]\([^)]+\)", "$1"),
+        (r"\[([^\]]+)\]\[[^\]]*\]", "$1"),
+        (r"(?s)<[^>]+>", " "),
+        (r"`([^`]*)`", "$1"),
+        (r"(?m)^\s*\|?[\s:-]+\|[\s|:-]*$", " "),
+        (r"(?m)^\s{0,3}#{1,6}\s*", ""),
+        (r"(?m)^\s*>\s?", ""),
+        (r"(?m)^\s*([-+*]|\d+[.)])\s+", ""),
+        (r"[*~#]", ""),
+        (r"\|", " "),
+    ];
+    for (pattern, replacement) in replacements {
+        text = Regex::new(pattern)
+            .unwrap()
+            .replace_all(&text, replacement)
+            .into_owned();
+    }
+    text = text
+        .replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'");
+    Regex::new(r"\s+")
+        .unwrap()
+        .replace_all(&text, " ")
+        .trim()
+        .to_string()
+}
+
+fn truncate_text(text: &str, max_chars: usize) -> String {
+    if max_chars == 0 {
+        return String::new();
+    }
+    if text.chars().count() <= max_chars {
+        return text.to_string();
+    }
+    let mut excerpt = text
+        .chars()
+        .take(max_chars.saturating_sub(1))
+        .collect::<String>()
+        .trim_end()
+        .trim_end_matches(['.', ',', ';', ':', '，', '。', '；', '：'])
+        .to_string();
+    excerpt.push('…');
+    excerpt
 }

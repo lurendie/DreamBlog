@@ -1,4 +1,8 @@
-use crate::{entity::blog, model::{Category, TagDTO}};
+use crate::{
+    common::MarkdownParser,
+    entity::blog,
+    model::{Category, TagDTO},
+};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 //博客详情信息
@@ -38,11 +42,13 @@ impl BlogDetail {
 
 impl From<blog::Model> for BlogDetail {
     fn from(model: blog::Model) -> Self {
+        let description =
+            MarkdownParser::description_or_excerpt(&model.description, &model.content);
         BlogDetail {
             id: Some(model.id),
             title: model.title,
             content: model.content,
-            description: model.description,
+            description,
             is_appreciation: model.is_appreciation,
             is_comment_enabled: model.is_comment_enabled,
             create_time: model.create_time,
