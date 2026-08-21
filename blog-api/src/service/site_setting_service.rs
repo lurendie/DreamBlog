@@ -226,6 +226,6 @@ impl SiteSettingService {
         Ok(model
             .and_then(|m| m.value)
             .filter(|s| !s.trim().is_empty())
-            .unwrap_or_else(|| " - ZeroBlog".to_string()))
+            .unwrap_or_else(|| " - Dream Blog".to_string()))
     }
 }

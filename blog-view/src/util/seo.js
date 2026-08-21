@@ -60,7 +60,7 @@ function getSiteName() {
 		return blogName
 	}
 	const suffix = getSiteTitleSuffix()
-	return suffix ? suffix.replace(/^[\s\-|_]+/, '') : 'DreamBlog'
+	return suffix ? suffix.replace(/^[\s\-|_]+/, '') : 'Dream Blog'
 }
 
 export function createDescription(value, fallback = '') {

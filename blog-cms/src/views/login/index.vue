@@ -2,7 +2,7 @@
 	<div class="login-container">
 		<div class="login-card">
 			<div class="login-copy">
-				<div class="login-brand">ZeroBlog Console</div>
+				<div class="login-brand">Dream Blog Console</div>
 				<div class="login-eyebrow">内容管理后台</div>
 				<h1>后台管理</h1>
 				<p>登录后管理文章、动态、友链、站点配置和统计数据。</p>

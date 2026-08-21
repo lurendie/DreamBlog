@@ -1,6 +1,6 @@
 <p align="center">
 	<a href="https://lurendie.com/" target="_blank">
-		<img src="./blog-view/public/img/qr.png" alt="ZeroBlog logo" style="width: 200px; height: 200px">
+		<img src="./blog-view/public/img/qr.png" alt="Dream Blog logo" style="width: 200px; height: 200px">
 	</a>
 </p>
 <p align="center">
@@ -11,7 +11,7 @@
 
 ## 简介
 
-dream_blog 是一个基于 Rust (actix-web) + Vue 的前后端分离博客系统，自用博客，长期维护中。
+Dream Blog是一个基于 Rust (actix-web) + Vue 的前后端分离博客系统，自用博客，长期维护中。
 
 本项目是从原 Java 版本的 NBlog 移植而来的 Rust 实现版本，旨在学习和实践 Rust 开发 Web 应用。
 
@@ -103,6 +103,6 @@ UI 框架为 [Element UI](https://github.com/ElemeFE/element)
 
 感谢 [Nblog](https://github.com/Naccl/NBlog) 项目中的前端页面
 
-感谢 [JetBrains](https://www.jetbrains.com/?from=ZeroBlog) 提供的 Open Source License
+感谢 [JetBrains](https://www.jetbrains.com/?from=DreamBlog) 提供的 Open Source License
 
 感谢上面提到的每个开源项目

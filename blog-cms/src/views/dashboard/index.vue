@@ -1,7 +1,7 @@
 <template>
 	<div class="dashboard-page">
 		<PageHeader
-			eyebrow="ZeroBlog Console"
+			eyebrow="Dream Blog Console"
 			title="Dashboard"
 			:description="`${greeting}，${userName}。先看今天的访问和内容状态。`"
 		>

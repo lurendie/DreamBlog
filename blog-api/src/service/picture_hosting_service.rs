@@ -76,7 +76,7 @@ impl PictureHostingService {
         let response = client
             .get("https://api.github.com/user")
             .header(AUTHORIZATION, format!("token {}", token))
-            .header("User-Agent", "ZeroBlog")
+            .header("User-Agent", "Dream Blog")
             .send()
             .await
             .map_err(Self::external_error)?
@@ -343,7 +343,7 @@ impl PictureHostingService {
     ) -> Result<Value, AppError> {
         let response = builder
             .header(AUTHORIZATION, format!("token {}", token))
-            .header("User-Agent", "ZeroBlog")
+            .header("User-Agent", "Dream Blog")
             .send()
             .await
             .map_err(Self::external_error)?
