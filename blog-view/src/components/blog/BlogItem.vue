@@ -19,7 +19,13 @@
 						{{ item.category.name }}
 					</router-link>
 					<div class="article-card__tags">
-						<router-link :to="`/tag/${tag.name}`" v-for="(tag,index) in item.tags" :key="index">{{ tag.name }}</router-link>
+						<router-link
+							:to="`/tag/${tag.name}`"
+							class="tag-color"
+							:class="tagColorClass(tag)"
+							v-for="(tag,index) in item.tags"
+							:key="index"
+						>{{ tag.name }}</router-link>
 					</div>
 					<a href="javascript:;" @click.prevent="toBlog(item)" class="color-btn">阅读全文</a>
 				</div>
@@ -30,6 +36,7 @@
 
 <script>
 	import { createDescription } from '@/util/seo'
+	import { tagColorClass } from '@/util/tagColor'
 
 	export default {
 		name: "BlogItem",
@@ -40,6 +47,7 @@
 			}
 		},
 		methods: {
+			tagColorClass,
 			getBlogPreview(blog) {
 				if (!blog || typeof blog !== 'object') {
 					return ''
@@ -157,6 +165,17 @@
 		font-size: 12px;
 		font-weight: 700;
 		padding: 7px 10px;
+	}
+
+	.article-card__tags a.tag-color {
+		border: 1px solid var(--tag-border);
+		background: var(--tag-bg);
+		color: var(--tag-foreground) !important;
+	}
+
+	.article-card__tags a.tag-color:hover {
+		background: var(--tag-hover-bg);
+		color: var(--tag-foreground) !important;
 	}
 
 	.article-card__tags {

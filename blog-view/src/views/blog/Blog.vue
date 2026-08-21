@@ -43,7 +43,13 @@
 			</div>
 
 			<div class="reader-tags" v-if="blog.tags && blog.tags.length">
-				<router-link :to="`/tag/${tag.name}`" v-for="(tag,index) in blog.tags" :key="index">{{ tag.name }}</router-link>
+				<router-link
+					:to="`/tag/${tag.name}`"
+					class="tag-color"
+					:class="tagColorClass(tag)"
+					v-for="(tag,index) in blog.tags"
+					:key="index"
+				>{{ tag.name }}</router-link>
 			</div>
 		</article>
 
@@ -74,6 +80,7 @@
 	import { createDescription, updateSeo } from '@/util/seo'
 	import {getBlogToken} from '@/util/storage'
 	import { highlightCodeBlocks } from '@/util/loadExternalAsset'
+	import { tagColorClass } from '@/util/tagColor'
 
 	export default {
 		name: "Blog",
@@ -129,6 +136,7 @@
 			this.getBlog()
 		},
 		methods: {
+			tagColorClass,
 			getBlog(id = this.blogId) {
 				//密码保护的文章，需要发送密码验证通过后保存在localStorage的Token
 				//getBlogToken 仅在存储值是真实 token 字符串时才返回；若只存了"已验证"标记则返回 ''
@@ -293,6 +301,17 @@
 		font-size: 12px;
 		font-weight: 700;
 		padding: 7px 10px;
+	}
+
+	.reader-tags a.tag-color {
+		border: 1px solid var(--tag-border);
+		background: var(--tag-bg);
+		color: var(--tag-foreground) !important;
+	}
+
+	.reader-tags a.tag-color:hover {
+		background: var(--tag-hover-bg);
+		color: var(--tag-foreground) !important;
 	}
 
 	.reader-info,
