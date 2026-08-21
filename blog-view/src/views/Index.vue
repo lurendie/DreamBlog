@@ -40,7 +40,25 @@
 
 		<!--APlayer-->
 		<div class="m-mobile-hide">
-			<meting-js :server="siteInfo.playlistServer" :id="siteInfo.playlistId" type="playlist" fixed="true" theme="#25CCF7" v-if="siteInfo.playlistServer && siteInfo.playlistId"></meting-js>
+			<button
+				v-if="canUsePlaylist && !showPlaylist"
+				type="button"
+				class="music-loader"
+				:title="musicLoading ? '播放器加载中' : '加载音乐播放器'"
+				:aria-label="musicLoading ? '播放器加载中' : '加载音乐播放器'"
+				:disabled="musicLoading"
+				@click="enablePlaylist"
+			>
+				<i :class="musicLoading ? 'spinner loading icon' : 'music icon'"></i>
+			</button>
+			<meting-js
+				v-if="canUsePlaylist && showPlaylist"
+				:server="siteInfo.playlistServer"
+				:id="siteInfo.playlistId"
+				type="playlist"
+				fixed="true"
+				theme="#25CCF7"
+			></meting-js>
 		</div>
 		<!--回到顶部-->
 		<el-backtop style="box-shadow: none;background: none;z-index: 9999;">
@@ -64,6 +82,7 @@
 	import {mapState} from 'vuex'
 	import {SAVE_CLIENT_SIZE, SAVE_INTRODUCTION, SAVE_SITE_INFO, RESTORE_COMMENT_FORM} from "@/store/mutations-types";
 	import { updateSeo } from '@/util/seo'
+	import { loadMetingPlayer } from '@/util/loadExternalAsset'
 
 	export default {
 		name: "Index",
@@ -83,10 +102,15 @@
 				newBlogList: [],
 				hitokoto: {},
 				resizeHandler: null,
+				musicLoading: false,
+				showPlaylist: false,
 			}
 		},
 		computed: {
-			...mapState(['focusMode'])
+			...mapState(['focusMode']),
+			canUsePlaylist() {
+				return Boolean(this.siteInfo.playlistServer && this.siteInfo.playlistId)
+			}
 		},
 		watch: {
 			//路由改变时，页面滚动至顶部
@@ -145,6 +169,19 @@
 				getHitokoto().then(res => {
 					this.hitokoto = res
 				})
+			},
+			enablePlaylist() {
+				if (this.musicLoading || this.showPlaylist) {
+					return
+				}
+				this.musicLoading = true
+				loadMetingPlayer().then(() => {
+					this.showPlaylist = true
+				}).catch(() => {
+					this.msgError('音乐播放器加载失败')
+				}).finally(() => {
+					this.musicLoading = false
+				})
 			}
 		}
 	}
@@ -182,6 +219,35 @@
 
 	.m-display-none {
 		display: none !important;
+	}
+
+	.music-loader {
+		position: fixed;
+		left: 0;
+		bottom: 0;
+		z-index: 9999;
+		display: inline-flex;
+		width: 66px;
+		height: 66px;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 0 8px 0 0;
+		background: rgba(255, 255, 255, 0.92);
+		color: #25CCF7;
+		box-shadow: 0 8px 26px rgba(15, 23, 42, 0.14);
+		cursor: pointer;
+	}
+
+	.music-loader:disabled {
+		cursor: default;
+	}
+
+	.music-loader i.icon {
+		width: auto;
+		height: auto;
+		margin: 0;
+		font-size: 24px;
 	}
 
 	@media screen and (max-width: 767px) {

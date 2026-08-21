@@ -2,7 +2,7 @@
 	<div>
 		<div class="ui top attached segment m-padded-lr-big">
 			<h2 class="m-text-500" style="text-align: center">{{ about.title }}</h2>
-			<meting-js server="netease" type="song" :id="about.musicId" theme="#25CCF7" v-if="about.musicId!==''"></meting-js>
+			<meting-js server="netease" type="song" :id="about.musicId" theme="#25CCF7" v-if="about.musicId!=='' && playerReady"></meting-js>
 		<div class="typo content m-margin-top-large" v-lazy-container="{selector: 'img'}" v-viewer v-safe-html="about.content"></div>
 		</div>
 		<!--评论-->
@@ -17,6 +17,7 @@
 	import {getAbout} from "@/api/about";
 	import CommentList from "@/components/comment/CommentList.vue";
 	import { updateSeo } from '@/util/seo'
+	import { loadMetingPlayer } from '@/util/loadExternalAsset'
 
 	export default {
 		name: "About",
@@ -28,7 +29,8 @@
 					musicId: '',
 					content: '',
 					commentEnabled: 'false'
-				}
+				},
+				playerReady: false
 			}
 		},
 		created() {
@@ -45,11 +47,21 @@
 							keywords: this.$store.state.siteInfo?.siteKeywords || '',
 							path: this.$route.fullPath,
 						})
+						if (this.about.musicId) {
+							this.loadPlayer()
+						}
 					} else {
 						this.msgError(res.msg)
 					}
 				}).catch(() => {
 					this.msgError("请求失败")
+				})
+			},
+			loadPlayer() {
+				loadMetingPlayer().then(() => {
+					this.playerReady = true
+				}).catch(() => {
+					this.msgError('音乐播放器加载失败')
 				})
 			}
 		}

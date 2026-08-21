@@ -12,6 +12,7 @@
 
 <script>
 	import {mapState} from 'vuex'
+	import { loadTocbot } from '@/util/loadExternalAsset'
 
 	export default {
 		name: "Tocbot",
@@ -34,12 +35,23 @@
 			}
 		},
 		methods: {
-			initTocbot() {
+			async initTocbot() {
+				try {
+					await loadTocbot()
+				} catch (error) {
+					return
+				}
+				if (!this.$el || !this.$el.isConnected || !window.document.querySelector('.js-toc-content')) {
+					return
+				}
 				//先销毁旧实例，避免文章内跳转文章时目录叠加、监听器泄漏
 				if (window.tocbot && typeof window.tocbot.destroy === 'function') {
 					window.tocbot.destroy()
 				}
-				tocbot.init({
+				if (!window.tocbot || typeof window.tocbot.init !== 'function') {
+					return
+				}
+				window.tocbot.init({
 					// Where to render the table of contents.
 					tocSelector: '.js-toc',
 					// Where to grab the headings to build the table of contents.

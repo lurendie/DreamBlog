@@ -73,6 +73,7 @@
 	import {SET_FOCUS_MODE, SET_IS_BLOG_RENDER_COMPLETE} from '@/store/mutations-types';
 	import { createDescription, updateSeo } from '@/util/seo'
 	import {getBlogToken} from '@/util/storage'
+	import { highlightCodeBlocks } from '@/util/loadExternalAsset'
 
 	export default {
 		name: "Blog",
@@ -149,9 +150,12 @@
 						})
 							//富文本渲染完毕后，渲染代码块样式
 						this.$nextTick(() => {
-							Prism.highlightAll()
-							//将文章渲染完成状态置为 true
-							this.$store.commit(SET_IS_BLOG_RENDER_COMPLETE, true)
+							highlightCodeBlocks(this.$el)
+								.catch(() => {})
+								.finally(() => {
+									//将文章渲染完成状态置为 true
+									this.$store.commit(SET_IS_BLOG_RENDER_COMPLETE, true)
+								})
 						})
 					} else {
 						this.msgError(res.msg)

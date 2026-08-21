@@ -49,9 +49,6 @@
 							keywords: this.$store.state.siteInfo?.siteKeywords || '',
 							path: this.$route.fullPath,
 						})
-						this.$nextTick(() => {
-							Prism.highlightAll()
-						})
 					} else {
 						this.msgError(res.msg)
 					}
