@@ -43,7 +43,7 @@ impl AppState {
     // }
 }
 
-pub async fn get_connection() -> DatabaseConnection {
+pub async fn get_connection() -> Result<DatabaseConnection, crate::error::DataBaseError> {
     let mysql_config = CONFIG.get_mysql_config();
     let opt = ConnectOptions::new(format!(
         "mysql://{}:{}@{}:{}/{}",
@@ -59,5 +59,5 @@ pub async fn get_connection() -> DatabaseConnection {
     .to_owned();
     Database::connect(opt)
         .await
-        .expect("Failed to connect to database")
+        .map_err(crate::error::DataBaseError::MySQLError)
 }

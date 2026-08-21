@@ -14,7 +14,6 @@ use std::{
 
 use actix_http::{BoxedPayloadStream, Payload};
 use actix_jwt_session::Authenticated;
-use parking_lot::Mutex;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     http::Method,
@@ -24,6 +23,7 @@ use actix_web::{
 use bytes::{Bytes, BytesMut};
 use chrono::Local;
 use futures_util::StreamExt;
+use parking_lot::Mutex;
 
 use crate::{
     app::AppState,
@@ -85,7 +85,10 @@ where
             .and_then(|h| h.to_str().ok())
             .unwrap_or("")
             .to_string();
-        let ip = IpRegion::get_real_client_ip(&req.request(), crate::app::CONFIG.get_server_config().trust_proxy);
+        let ip = IpRegion::get_real_client_ip(
+            &req.request(),
+            crate::app::CONFIG.get_server_config().trust_proxy,
+        );
         let app_state = req.app_data::<Data<AppState>>().cloned();
         let auth_username = req
             .extensions()
@@ -238,7 +241,9 @@ fn sanitize_plain(text: &str) -> String {
 
 /// 递归地把 key 命中敏感关键字的值替换为 "***"
 fn redact_json(v: &serde_json::Value) -> serde_json::Value {
-    let sensitive = regex::Regex::new(r"(?i)^(.*password.*|.*token.*|.*secret.*|.*authorization.*|.*auth.*)$").unwrap();
+    let sensitive =
+        regex::Regex::new(r"(?i)^(.*password.*|.*token.*|.*secret.*|.*authorization.*|.*auth.*)$")
+            .unwrap();
     match v {
         serde_json::Value::Object(map) => {
             let mut out = serde_json::Map::new();
@@ -263,7 +268,11 @@ fn truncate_param(value: String, max_len: usize) -> String {
         return value;
     }
     let mut trimmed = value;
-    trimmed.truncate(max_len);
+    let mut truncate_at = max_len;
+    while !trimmed.is_char_boundary(truncate_at) {
+        truncate_at -= 1;
+    }
+    trimmed.truncate(truncate_at);
     trimmed.push_str("...");
     trimmed
 }
@@ -321,4 +330,17 @@ fn resolve_description(method: &Method, uri: &str) -> Option<String> {
     };
 
     Some(description.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::truncate_param;
+
+    #[test]
+    fn truncate_param_handles_multibyte_boundary() {
+        let value = format!("{}你", "a".repeat(1899));
+        let truncated = truncate_param(value, 1900);
+
+        assert_eq!(truncated, format!("{}...", "a".repeat(1899)));
+    }
 }

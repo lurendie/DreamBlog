@@ -52,14 +52,14 @@ pub struct MysqlConfig {
  */
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct ServerConfig {
-    pub(crate) port: u16,          //端口
-    pub(crate) host: String,       //IP地址
+    pub(crate) port: u16,    //端口
+    pub(crate) host: String, //IP地址
     #[serde(default)]
     pub(crate) cors_enabled: bool, //是否开启 CORS
     #[serde(default)]
     pub(crate) trust_proxy: bool, //是否信任反向代理的转发头（X-Forwarded-For 等），仅部署在可信反代后时开启
-    pub(crate) view_url: String,  //前端页面地址
-    pub(crate) cms_url: String,   //前端页面地址
+    pub(crate) view_url: String,   //前端页面地址
+    pub(crate) cms_url: String,    //前端页面地址
     pub(crate) token_expires: i64, //token 过期时间
     #[serde(default)]
     pub(crate) cookie_secure: bool, //登录 Cookie 是否仅 HTTPS 传输（生产建议 true）
@@ -103,7 +103,10 @@ pub static CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {
             config
         }
         Err(e) => {
-            panic!("{e}")
+            panic!(
+                "failed to load config from {}: {e}",
+                app_config_path.to_string_lossy()
+            )
         }
     }
 });

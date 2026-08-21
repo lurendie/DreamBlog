@@ -16,9 +16,9 @@ use crate::middleware::build_session_storage;
 use crate::middleware::{ExceptionLog, OperationLog, VisiLog};
 use actix_cors::Cors;
 use actix_jwt_session::{Duration, JwtTtl, RefreshTtl};
-use actix_web::web::Data;
 use actix_web::http::header::{self, HeaderName};
 use actix_web::middleware::Condition;
+use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
 
 pub struct AppServer;
@@ -40,7 +40,10 @@ impl AppServer {
         let refresh_ttl = RefreshTtl(Duration::days(server_config.token_expires));
 
         //Appstate
-        let mut app_state = AppState::new(app_state::get_connection().await);
+        let mysql_connection = app_state::get_connection()
+            .await
+            .map_err(|e| std::io::Error::other(e.to_string()))?;
+        let mut app_state = AppState::new(mysql_connection);
         //访问日志异步写入器：请求路径只入队，后台批量落库
         app_state.visit_log_writer = Some(crate::service::VisitLogWriter::start(
             app_state.get_mysql_pool().clone(),
