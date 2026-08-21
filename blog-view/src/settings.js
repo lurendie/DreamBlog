@@ -11,5 +11,5 @@ export default {
 	 * @type {string}
 	 * @description 首页故障风文字
 	 */
-	malfunctionText: 'Dream Blog\'s Blog'
+	malfunctionText: 'Dream \'s Blog'
 }

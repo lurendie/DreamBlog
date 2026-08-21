@@ -24,9 +24,6 @@
 		</div>
 
 		<div class="dashboard-grid">
-			<ChartPanel title="访问趋势" description="最近一周 PV / UV" :height="420" class="dashboard-grid__wide">
-				<div ref="visitRecordEcharts" class="chart-box"></div>
-			</ChartPanel>
 			<ChartPanel title="访客地图" description="按城市聚合的访问分布" :height="380">
 				<div ref="mapEcharts" class="chart-box"></div>
 			</ChartPanel>
@@ -35,6 +32,9 @@
 			</ChartPanel>
 			<ChartPanel title="标签构成" description="标签下文章数量" :height="380">
 				<div ref="tagEcharts" class="chart-box"></div>
+			</ChartPanel>
+			<ChartPanel title="访问趋势" description="最近一周 PV / UV" :height="420" class="dashboard-grid__wide">
+				<div ref="visitRecordEcharts" class="chart-box"></div>
 			</ChartPanel>
 		</div>
 	</div>
@@ -486,4 +486,3 @@
 		}
 	}
 </style>
-
