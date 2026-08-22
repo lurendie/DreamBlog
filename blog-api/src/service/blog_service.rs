@@ -636,35 +636,33 @@ impl BlogService {
     }
 
     async fn increment_blog_views(id: i64, db: &DatabaseConnection) -> Option<i32> {
-        let update_result = blog::Entity::update_many()
-            .col_expr(
-                blog::Column::Views,
-                Expr::col(blog::Column::Views).add(1).into(),
-            )
-            .filter(blog::Column::Id.eq(id))
-            .exec(db)
-            .await;
-        match update_result {
-            Ok(result) if result.rows_affected > 0 => {}
-            Ok(_) => return None,
-            Err(e) => {
+        // 浏览量自增改为异步落库：不阻塞详情接口响应（关键路径不再等待 UPDATE+SELECT 两次 DB 往返）
+        let db_for_update = db.clone();
+        tokio::spawn(async move {
+            let result = blog::Entity::update_many()
+                .col_expr(
+                    blog::Column::Views,
+                    Expr::col(blog::Column::Views).add(1).into(),
+                )
+                .filter(blog::Column::Id.eq(id))
+                .exec(&db_for_update)
+                .await;
+            if let Err(e) = result {
                 tracing::error!("更新文章浏览量失败 id:{} 错误:{}", id, e);
-                return None;
             }
-        }
-        let new_views = blog::Entity::find_by_id(id)
-            .one(db)
+        });
+
+        // 展示值：从 Redis 缓存取当前值 +1 后回写（缓存缺失时返回 None，由调用方沿用模型值）
+        let redis_key = RedisKeyConstant::BLOG_VIEWS_MAP.to_string();
+        let cache_field = id.to_string();
+        let current = RedisService::get_hash_key::<i32>(redis_key.clone(), cache_field.clone())
             .await
-            .ok()
-            .flatten()
-            .map(|blog| blog.views)?;
-        RedisService::try_set_hash_key(
-            RedisKeyConstant::BLOG_VIEWS_MAP.to_string(),
-            id.to_string(),
-            &new_views,
-        )
-        .await;
-        Some(new_views)
+            .ok();
+        let new_views = current.map(|views| views + 1);
+        if let Some(new_views) = new_views {
+            RedisService::try_set_hash_key::<i32>(redis_key, cache_field, &new_views).await;
+        }
+        new_views
     }
 
     /**

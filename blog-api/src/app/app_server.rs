@@ -58,6 +58,8 @@ impl AppServer {
             //创建App
             App::new()
                 .wrap(ExceptionLog::default())
+                // gzip/brotli 响应压缩，显著降低文章/站点 JSON 传输体积
+                .wrap(actix_web::middleware::Compress::default())
                 .wrap(Condition::new(server_config.cors_enabled, cors))
                 .app_data(Data::new(jwt_ttl))
                 .app_data(Data::new(refresh_ttl))
@@ -67,6 +69,11 @@ impl AppServer {
                     web::scope("/blog")
                         .wrap(VisiLog::default())
                         .wrap(factory.clone())
+                        // 前台公开 GET 接口允许浏览器/CDN 短缓存（POST 等写接口不受影响）
+                        .wrap(actix_web::middleware::DefaultHeaders::new().add((
+                            "Cache-Control",
+                            "public, max-age=60",
+                        )))
                         .configure(Self::view_router),
                 )
                 .service(

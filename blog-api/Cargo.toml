@@ -25,7 +25,7 @@ codegen-units = 16
 rpath = false
 
 [dependencies]
-actix-web = "4.5.0"
+actix-web = { version = "4.5.0", features = ["compress-gzip", "compress-brotli"] }
 actix-cors = "0.7.0"
 actix-multipart = "0.6.2"
 actix-http = "3.11.1"
