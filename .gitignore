@@ -14,3 +14,5 @@ npm-cache/
 blog-api/config/app_config.local.yaml
 blog-api/config/jwt-encoding.bin
 blog-api/config/jwt-decoding.bin
+blog-view/.env.production
+blog-cms/.env.production
