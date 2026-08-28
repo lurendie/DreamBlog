@@ -282,6 +282,8 @@ fn resolve_description(method: &Method, uri: &str) -> Option<String> {
         "/admin/blog" if method == Method::POST => "发布博客",
         "/admin/blog" if method == Method::PUT => "更新博客",
         "/admin/blog" if method == Method::DELETE => "删除博客",
+        "/admin/blog/import" if method == Method::POST => "批量导入博客",
+        "/admin/blog/export" if method == Method::GET => "批量导出博客",
         "/admin/blog/recommend" if method == Method::PUT => "更新博客推荐状态",
         "/admin/blog/top" if method == Method::PUT => "更新博客置顶状态",
         "/admin/moment" if method == Method::POST || method == Method::PUT => "更新动态",

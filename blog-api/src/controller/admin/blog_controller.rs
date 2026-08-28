@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::app::AppState;
 use crate::common::ParamUtils;
 use crate::error::AppError;
-use crate::model::{ApiResponse, BlogVO};
+use crate::model::{ApiResponse, BlogImportPayload, BlogImportResult, BlogVO};
 use crate::service::{BlogService, CategoryService, TagService};
 use crate::{
     middleware::AppClaims,
@@ -12,6 +12,10 @@ use crate::{
 use actix_jwt_session::Authenticated;
 use actix_web::web::Json;
 use actix_web::{
+    get,
+    http::header,
+    HttpResponse,
+    post,
     routes,
     web::{self, Query},
 };
@@ -150,4 +154,59 @@ pub async fn delete_blog(
     let id = ParamUtils::get_i64_param(&query.0, "id")?;
     BlogService::delete_by_id(id, app.get_mysql_pool()).await?;
     Ok(ApiResponse::<Value>::success_with_msg("删除成功", None))
+}
+
+#[derive(serde::Deserialize)]
+pub struct BlogExportQuery {
+    ids: Option<String>,
+}
+
+#[get("/blog/export")]
+pub async fn export_blogs(
+    _: Authenticated<AppClaims>,
+    query: Query<BlogExportQuery>,
+    app: web::Data<AppState>,
+) -> Result<HttpResponse, AppError> {
+    let ids = query
+        .ids
+        .as_deref()
+        .map(|value| {
+            value
+                .split(',')
+                .filter(|id| !id.trim().is_empty())
+                .map(|id| {
+                    id.trim().parse::<i64>().map_err(|_| {
+                        AppError::Custom(format!("文章 ID 格式错误: {}", id.trim()))
+                    })
+                })
+                .collect::<Result<Vec<_>, _>>()
+        })
+        .transpose()?;
+    let export = BlogService::export_blogs(ids, app.get_mysql_pool()).await?;
+    let body = serde_json::to_vec_pretty(&export)?;
+    Ok(HttpResponse::Ok()
+        .insert_header((header::CONTENT_TYPE, "application/json; charset=utf-8"))
+        .insert_header((
+            header::CONTENT_DISPOSITION,
+            "attachment; filename=blog-export.json",
+        ))
+        .body(body))
+}
+
+#[post("/blog/import")]
+pub async fn import_blogs(
+    _: Authenticated<AppClaims>,
+    payload: Json<BlogImportPayload>,
+    app: web::Data<AppState>,
+) -> Result<ApiResponse<BlogImportResult>, AppError> {
+    let imported_blogs = payload.into_inner().into_blogs();
+    if imported_blogs.is_empty() {
+        return Err(AppError::Custom("导入文件中没有文章".to_string()));
+    }
+    let result = BlogService::import_blogs(imported_blogs, app.get_mysql_pool()).await?;
+    let message = format!(
+        "导入完成：新增 {} 篇，更新 {} 篇，失败 {} 篇",
+        result.created, result.updated, result.failed
+    );
+    Ok(ApiResponse::success_with_msg(&message, Some(result)))
 }

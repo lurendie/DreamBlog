@@ -4,6 +4,7 @@ mod blog_detail;
 mod blog_info;
 mod blog_visibility;
 mod blog_vo;
+mod blog_transfer;
 mod categorie;
 mod comment_vo;
 mod copyright;
@@ -20,6 +21,9 @@ pub use blog_detail::BlogDetail;
 pub use blog_info::BlogInfo;
 pub use blog_visibility::BlogVisibility;
 pub use blog_vo::BlogVO;
+pub use blog_transfer::{
+    BlogExportFile, BlogImportError, BlogImportPayload, BlogImportResult, BlogTransfer,
+};
 pub use categorie::Categorie;
 pub use comment_vo::CommentVO;
 pub use copyright::Copyright;

@@ -9,11 +9,12 @@ use crate::common::MarkdownParser;
 use crate::common::TypeValue;
 use crate::error::DataBaseError;
 use crate::model::{
-    BlogArchive, BlogDetail, BlogInfo, BlogVO, BlogVisibility, SearchBlog, SearchRequest,
+    BlogArchive, BlogDetail, BlogExportFile, BlogImportError, BlogImportResult, BlogInfo,
+    BlogTransfer, BlogVO, BlogVisibility, SearchBlog, SearchRequest,
 };
 use crate::model::{BlogDTO, BlogIdAndTitle, Category, TagDTO};
 use crate::service::RedisService;
-use chrono::{Datelike, Local, NaiveDate};
+use chrono::{Datelike, Local, NaiveDate, Utc};
 use rand::Rng;
 use rbs::value;
 use rbs::value::map::ValueMap;
@@ -712,6 +713,129 @@ impl BlogService {
         );
         map.insert(value!("list"), value!(blog_list));
         map
+    }
+
+    pub async fn export_blogs(
+        ids: Option<Vec<i64>>,
+        db: &DatabaseConnection,
+    ) -> Result<BlogExportFile, DataBaseError> {
+        let models = blog::Entity::find()
+            .apply_if(ids.filter(|value| !value.is_empty()), |query, value| {
+                query.filter(blog::Column::Id.is_in(value))
+            })
+            .order_by_asc(blog::Column::Id)
+            .all(db)
+            .await?;
+
+        let mut blogs = Vec::with_capacity(models.len());
+        for model in models {
+            let category_name = category::Entity::find_by_id(model.category_id)
+                .one(db)
+                .await?
+                .map(|category| category.category_name);
+            let tags = model
+                .find_related(tag::Entity)
+                .all(db)
+                .await?
+                .into_iter()
+                .map(|tag| tag.tag_name)
+                .collect();
+            let mut transfer = BlogTransfer::from_model(model, tags);
+            transfer.category_name = category_name;
+            blogs.push(transfer);
+        }
+
+        Ok(BlogExportFile {
+            version: 1,
+            exported_at: Utc::now().to_rfc3339(),
+            blogs,
+        })
+    }
+
+    pub async fn import_blogs(
+        blogs: Vec<BlogTransfer>,
+        db: &DatabaseConnection,
+    ) -> Result<BlogImportResult, DataBaseError> {
+        let mut result = BlogImportResult {
+            total: blogs.len(),
+            ..Default::default()
+        };
+
+        for (index, mut transfer) in blogs.into_iter().enumerate() {
+            let title = transfer.title.clone();
+            let id = transfer.id;
+            let existing_id = match id {
+                Some(id) if id > 0 => blog::Entity::find_by_id(id).one(db).await?.map(|_| id),
+                _ => None,
+            };
+            let is_update = existing_id.is_some();
+            transfer.id = existing_id;
+            let category_exists = transfer.category_id > 0
+                && category::Entity::find_by_id(transfer.category_id)
+                    .one(db)
+                    .await?
+                    .is_some();
+            if !category_exists {
+                if let Some(category_name) = transfer
+                    .category_name
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|name| !name.is_empty())
+                {
+                    transfer.category_id = category::Entity::find()
+                        .filter(category::Column::CategoryName.eq(category_name))
+                        .one(db)
+                        .await?
+                        .map(|category| category.id)
+                        .unwrap_or_default();
+                }
+            }
+            let validation_error = if title.trim().is_empty() {
+                Some("文章标题不能为空".to_string())
+            } else if transfer.content.trim().is_empty() {
+                Some("文章正文不能为空".to_string())
+            } else if transfer.category_id <= 0 {
+                Some("文章分类不能为空".to_string())
+            } else if category::Entity::find_by_id(transfer.category_id)
+                .one(db)
+                .await?
+                .is_none()
+            {
+                Some(format!("分类不存在: {}", transfer.category_id))
+            } else {
+                None
+            };
+
+            if let Some(message) = validation_error {
+                result.failed += 1;
+                result.errors.push(BlogImportError {
+                    index,
+                    id,
+                    title,
+                    message,
+                });
+                continue;
+            }
+
+            if let Err(error) = Self::update_blog(transfer.into_blog_vo(), db).await {
+                result.failed += 1;
+                result.errors.push(BlogImportError {
+                    index,
+                    id,
+                    title,
+                    message: error.to_string(),
+                });
+                continue;
+            }
+
+            if is_update {
+                result.updated += 1;
+            } else {
+                result.created += 1;
+            }
+        }
+
+        Ok(result)
     }
 
     //根据ID查找博文 - 后台

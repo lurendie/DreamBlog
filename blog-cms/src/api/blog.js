@@ -88,3 +88,20 @@ export function updateBlog(blog) {
 		}
 	})
 }
+
+export function exportBlogs(ids = []) {
+	return axios({
+		url: 'blog/export',
+		method: 'GET',
+		params: ids.length ? {ids: ids.join(',')} : undefined,
+		responseType: 'blob'
+	})
+}
+
+export function importBlogs(payload) {
+	return axios({
+		url: 'blog/import',
+		method: 'POST',
+		data: payload
+	})
+}

@@ -7,7 +7,10 @@
 		>
 			<template #actions>
 				<el-button @click="search">刷新</el-button>
+				<el-button @click="exportSelected">导出文章<span v-if="selectedBlogs.length">（{{ selectedBlogs.length }}）</span></el-button>
+				<el-button @click="triggerImport">导入文章</el-button>
 				<el-button type="primary" @click="$router.push('/blog/write')">写文章</el-button>
+				<input ref="importInput" class="import-input" type="file" accept="application/json,.json" @change="handleImportFile" />
 			</template>
 		</PageHeader>
 
@@ -28,7 +31,8 @@
 		</el-card>
 
 		<el-card>
-			<el-table :data="blogList" :empty-text="'暂无文章'">
+			<el-table :data="blogList" :empty-text="'暂无文章'" @selection-change="handleSelectionChange">
+				<el-table-column type="selection" width="52" />
 				<el-table-column label="序号" type="index" width="70" />
 				<el-table-column label="标题" prop="title" min-width="260" show-overflow-tooltip />
 				<el-table-column label="分类" prop="category.name" width="140" />
@@ -126,7 +130,7 @@
 
 <script>
 	import PageHeader from '@/components/PageHeader'
-	import {getDataByQuery, deleteBlogById, updateTop, updateRecommend, updateVisibility} from '@/api/blog'
+	import {getDataByQuery, deleteBlogById, updateTop, updateRecommend, updateVisibility, exportBlogs, importBlogs} from '@/api/blog'
 
 	export default {
 		name: "BlogList",
@@ -140,6 +144,7 @@
 					pageSize: 10
 				},
 				blogList: [],
+				selectedBlogs: [],
 				categoryList: [],
 				total: 0,
 				dialogVisible: false,
@@ -251,6 +256,59 @@
 					}
 				})
 			},
+			handleSelectionChange(selection) {
+				this.selectedBlogs = selection
+			},
+			triggerImport() {
+				this.$refs.importInput.value = ''
+				this.$refs.importInput.click()
+			},
+			handleImportFile(event) {
+				const file = event.target.files && event.target.files[0]
+				if (!file) return
+				const reader = new FileReader()
+				reader.onload = async () => {
+					try {
+						const payload = JSON.parse(reader.result)
+						const blogs = Array.isArray(payload) ? payload : payload.blogs
+						if (!Array.isArray(blogs) || !blogs.length) {
+							return this.msgError('导入文件中没有文章')
+						}
+						const confirmed = await this.$confirm(`将导入 ${blogs.length} 篇文章，已有 ID 更新，不存在的 ID 新增，是否继续？`, '确认导入', {
+							confirmButtonText: '继续',
+							cancelButtonText: '取消',
+							type: 'warning'
+						}).catch(() => false)
+						if (!confirmed) return
+						const res = await importBlogs(payload)
+						this.msgSuccess(res.msg)
+						if (res.data && res.data.errors && res.data.errors.length) {
+							this.$alert(res.data.errors.map(item => `第 ${item.index + 1} 篇《${item.title || '未命名'}》：${item.message}`).join('\n'), '导入失败明细', {
+								confirmButtonText: '知道了',
+								customClass: 'import-error-dialog'
+							})
+						}
+						this.getData()
+					} catch (error) {
+						this.msgError('导入文件格式无效，请选择 JSON 文件')
+					}
+				}
+				reader.onerror = () => this.msgError('读取导入文件失败')
+				reader.readAsText(file, 'UTF-8')
+			},
+			exportSelected() {
+				const ids = this.selectedBlogs.map(item => item.id)
+				exportBlogs(ids).then(blob => {
+					const url = URL.createObjectURL(blob)
+					const link = document.createElement('a')
+					link.href = url
+					link.download = ids.length ? `blog-export-selected-${Date.now()}.json` : `blog-export-${Date.now()}.json`
+					document.body.appendChild(link)
+					link.click()
+					link.remove()
+					URL.revokeObjectURL(url)
+				}).catch(() => this.msgError('导出文章失败'))
+			},
 			visibilityText(row) {
 				return row.published ? (row.password !== '' ? '密码保护' : '公开') : '私密'
 			},
@@ -266,6 +324,10 @@
 	.blog-list-page {
 		max-width: 1480px;
 		margin: 0 auto;
+	}
+
+	.import-input {
+		display: none;
 	}
 
 	.search-card {
