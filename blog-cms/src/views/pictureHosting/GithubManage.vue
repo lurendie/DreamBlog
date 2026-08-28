@@ -52,7 +52,7 @@
 				<el-switch v-model="isCustomPath" active-text="自定义目录"></el-switch>
 				<el-input placeholder="例：oldFolder/newFolder/" v-model="customPath" :disabled="!isCustomPath" size="medium" style="margin-top: 10px"></el-input>
 			</el-row>
-			<el-upload ref="uploadRef" action="" :http-request="upload" drag multiple :file-list="uploadList" list-type="picture" :auto-upload="false">
+			<el-upload ref="uploadRef" action="" :http-request="upload" drag multiple v-model:file-list="uploadList" list-type="picture" :auto-upload="false">
 				<el-icon><UploadFilled /></el-icon>
 				<div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
 			</el-upload>
@@ -70,6 +70,7 @@
 	import {randomUUID} from "@/util/uuid";
 	import {copy} from "@/util/copy";
 	import {taskQueue, clearTaskQueue} from "@/util/task-queue";
+	import {githubCdnUrl} from "@/util/github";
 	import {getConfigs} from "@/api/pictureHosting";
 
 export default {
@@ -217,11 +218,11 @@ export default {
 				localStorage.setItem(`hintShow${id}`, '1')
 			},
 			imgUrl(file) {
-				return this.isCDN ? `https://fastly.jsdelivr.net/gh/${this.userInfo.login}/${this.activeRepos}/${file.path}` : file.download_url
+				return this.isCDN ? githubCdnUrl(this.userInfo.login, this.activeRepos, file.path) : file.download_url
 			},
 			copy(type, file) {
 				// type 1 cdn link  2 Markdown
-				let imgUrl = `https://fastly.jsdelivr.net/gh/${this.userInfo.login}/${this.activeRepos}/${file.path}`
+				let imgUrl = githubCdnUrl(this.userInfo.login, this.activeRepos, file.path)
 				let copyCont = imgUrl
 				if (type == 2) {
 					copyCont = `![${file.name}](${imgUrl})`
@@ -251,8 +252,6 @@ export default {
 				})
 			},
 			submitUpload() {
-				//https://github.com/ElemeFE/element/issues/12080
-				this.uploadList = this.$refs.uploadRef.uploadFiles
 				if (this.uploadList.length) {
 					//触发 el-upload 中 http-request 绑定的函数
 					this.$refs.uploadRef.submit()
@@ -265,10 +264,17 @@ export default {
 				if (this.nameType === '2') {
 					fileName = randomUUID() + fileName.substr(fileName.lastIndexOf("."))
 				}
-				//批量上传需要间隔时间，否则可能commit版本号冲突，返回409错误码，Status: 409 Conflict
-				taskQueue(() => this.push2Github(data, fileName), 1000)
+				const task = {
+					data,
+					fileName,
+					login: this.userInfo.login,
+					repos: this.activeRepos,
+					path: this.getUploadPath(),
+				}
+				// 等待上一个请求完成后再发送下一个，降低 GitHub 分支版本冲突。
+				taskQueue(() => this.push2Github(task), 1000)
 			},
-			push2Github(data, fileName) {
+			getUploadPath() {
 				let path = this.activePath.join('/')
 				if (this.isCustomPath) {
 					if (this.customPath === '/') {
@@ -284,10 +290,17 @@ export default {
 					}
 				}
 
-				upload(this.userInfo.login, this.activeRepos, path, fileName, data).then(() => {
-					this.msgSuccess('上传成功')
-					data.onSuccess()
-				})
+				return path
+			},
+			push2Github(task) {
+				return upload(task.login, task.repos, task.path, task.fileName, task.data.file)
+					.then(() => {
+						this.msgSuccess('上传成功')
+						task.data.onSuccess()
+					})
+					.catch(error => {
+						task.data.onError(error instanceof Error ? error : new Error('上传失败'))
+					})
 			},
 		},
 	}

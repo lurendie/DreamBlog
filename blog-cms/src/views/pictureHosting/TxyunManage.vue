@@ -41,7 +41,7 @@
 				<el-switch v-model="isCustomPath" active-text="自定义目录"></el-switch>
 				<el-input placeholder="例：oldFolder/newFolder/" v-model="customPath" :disabled="!isCustomPath" size="medium" style="margin-top: 10px"></el-input>
 			</el-row>
-			<el-upload ref="uploadRef" action="" :http-request="upload" drag multiple :file-list="uploadList" list-type="picture" :auto-upload="false">
+			<el-upload ref="uploadRef" action="" :http-request="upload" drag multiple v-model:file-list="uploadList" list-type="picture" :auto-upload="false">
 				<el-icon><UploadFilled /></el-icon>
 				<div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
 			</el-upload>
@@ -198,8 +198,6 @@ export default {
 			})
 		},
 		submitUpload() {
-			//https://github.com/ElemeFE/element/issues/12080
-			this.uploadList = this.$refs.uploadRef.uploadFiles
 			if (this.uploadList.length) {
 				//触发 el-upload 中 http-request 绑定的函数
 				this.$refs.uploadRef.submit()
@@ -215,10 +213,14 @@ export default {
 			let path = this.realPath;
 			path = path.startsWith('/') ? path.slice(1) : path
 			path = path.endsWith('/') ? path : `${path}/`
-			uploadTxyunFile(path, fileName, data.file).then(() => {
-				this.msgSuccess('上传成功')
-				data.onSuccess()
-			})
+			uploadTxyunFile(path, fileName, data.file)
+				.then(() => {
+					this.msgSuccess('上传成功')
+					data.onSuccess()
+				})
+				.catch(error => {
+					data.onError(error instanceof Error ? error : new Error('上传失败'))
+				})
 		},
 	},
 }
