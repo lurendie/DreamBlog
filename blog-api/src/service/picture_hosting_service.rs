@@ -21,6 +21,11 @@ const SETTING_TYPE: i32 = 9;
 const GITHUB_KEY: &str = "pictureHosting.github";
 const UPYUN_KEY: &str = "pictureHosting.upyun";
 const TXYUN_KEY: &str = "pictureHosting.txyun";
+const MAX_UPLOAD_BYTES: usize = 20 * 1024 * 1024;
+const IMAGE_EXTENSIONS: &[&str] = &[
+    "apng", "avif", "bmp", "gif", "ico", "cur", "jpg", "jpeg", "jfif", "pjpeg", "pjp", "png",
+    "svg", "tif", "tiff", "webp",
+];
 
 type HmacSha1 = Hmac<Sha1>;
 
@@ -72,6 +77,10 @@ impl PictureHostingService {
     }
 
     pub async fn github_user(token: &str) -> Result<serde_json::Value, AppError> {
+        let token = token.trim();
+        if token.is_empty() {
+            return Err(Self::validation_error("GitHub Token 不能为空"));
+        }
         Self::github_json_request(
             token,
             http_client().get("https://api.github.com/user"),
@@ -84,6 +93,7 @@ impl PictureHostingService {
         db: &DatabaseConnection,
         token: String,
     ) -> Result<serde_json::Value, AppError> {
+        let token = token.trim().to_string();
         let user_info = Self::github_user(&token).await?;
         let config = GithubConfig {
             token,
@@ -123,8 +133,25 @@ impl PictureHostingService {
 
     pub async fn github_repos(db: &DatabaseConnection) -> Result<Value, AppError> {
         let config = Self::require_github(db).await?;
-        let url = "https://api.github.com/user/repos?visibility=all&affiliation=owner&per_page=100";
-        Self::github_request(&config.token, http_client().get(url), "GitHub仓库列表").await
+        // 图床只展示当前 Token 所有的仓库，分页取完，避免超过 100 个仓库时静默截断。
+        let mut repos = Vec::new();
+        for page in 1.. {
+            let url = format!(
+                "https://api.github.com/user/repos?visibility=all&affiliation=owner&per_page=100&page={page}"
+            );
+            let page_data =
+                Self::github_json_request(&config.token, http_client().get(url), "GitHub仓库列表")
+                    .await?;
+            let page_repos = page_data
+                .as_array()
+                .ok_or_else(|| AppError::Custom("GitHub仓库列表格式异常".to_string()))?;
+            let page_len = page_repos.len();
+            repos.extend(page_repos.iter().cloned());
+            if page_len < 100 {
+                break;
+            }
+        }
+        Ok(value!(serde_json::Value::Array(repos)))
     }
 
     pub async fn github_contents(
@@ -133,6 +160,10 @@ impl PictureHostingService {
         path: &str,
     ) -> Result<Value, AppError> {
         let config = Self::require_github(db).await?;
+        let repos = repos.trim();
+        let path = path.trim();
+        Self::validate_github_repo(repos)?;
+        Self::validate_github_path(path)?;
         let login = config
             .user_info
             .as_ref()
@@ -151,6 +182,14 @@ impl PictureHostingService {
         sha: &str,
     ) -> Result<Value, AppError> {
         let config = Self::require_github(db).await?;
+        let repos = repos.trim();
+        let path = path.trim();
+        let sha = sha.trim();
+        Self::validate_github_repo(repos)?;
+        Self::validate_github_path(path)?;
+        if sha.is_empty() {
+            return Err(Self::validation_error("GitHub 文件 SHA 不能为空"));
+        }
         let login = config
             .user_info
             .as_ref()
@@ -179,6 +218,12 @@ impl PictureHostingService {
         bytes: Vec<u8>,
     ) -> Result<Value, AppError> {
         let config = Self::require_github(db).await?;
+        let repos = repos.trim();
+        let path = path.trim();
+        let file_name = file_name.trim();
+        Self::validate_github_repo(repos)?;
+        Self::validate_github_path(path)?;
+        Self::validate_upload(file_name, &bytes)?;
         let login = config
             .user_info
             .as_ref()
@@ -216,6 +261,8 @@ impl PictureHostingService {
         bytes: Vec<u8>,
     ) -> Result<Value, AppError> {
         let config = Self::require_upyun(db).await?;
+        let file_name = file_name.trim();
+        Self::validate_upload(file_name, &bytes)?;
         let path = Self::join_path(path, file_name);
         let url = format!("https://v0.api.upyun.com/{}{}", config.bucket_name, path);
         Self::upyun_request(&config, http_client().put(url).body(bytes)).await
@@ -246,6 +293,8 @@ impl PictureHostingService {
         bytes: Vec<u8>,
     ) -> Result<Value, AppError> {
         let config = Self::require_txyun(db).await?;
+        let file_name = file_name.trim();
+        Self::validate_upload(file_name, &bytes)?;
         let key = Self::join_cos_path(path, file_name);
         Self::cos_request(&config, "PUT", &key, None, Some(bytes)).await?;
         Ok(value!({}))
@@ -613,6 +662,73 @@ impl PictureHostingService {
         }
     }
 
+    fn validation_error(message: impl Into<String>) -> AppError {
+        AppError::WebError(WebError::Validation(message.into()))
+    }
+
+    fn validate_github_repo(repos: &str) -> Result<(), AppError> {
+        let repos = repos.trim();
+        if repos.is_empty() {
+            return Err(Self::validation_error("GitHub 仓库不能为空"));
+        }
+        if repos == "." || repos == ".." || repos.contains('/') || repos.contains('\\') {
+            return Err(Self::validation_error("GitHub 仓库名称不合法"));
+        }
+        if repos
+            .chars()
+            .any(|ch| ch.is_control() || ch.is_whitespace())
+        {
+            return Err(Self::validation_error("GitHub 仓库名称不能包含空白字符"));
+        }
+        Ok(())
+    }
+
+    fn validate_github_path(path: &str) -> Result<(), AppError> {
+        if path.contains('\\') || path.chars().any(char::is_control) {
+            return Err(Self::validation_error("GitHub 目录路径不合法"));
+        }
+        for segment in path.trim_matches('/').split('/') {
+            if segment == "." || segment == ".." {
+                return Err(Self::validation_error("GitHub 目录路径不能包含 . 或 .."));
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_upload(file_name: &str, bytes: &[u8]) -> Result<(), AppError> {
+        let file_name = file_name.trim();
+        if file_name.is_empty() {
+            return Err(Self::validation_error("文件名不能为空"));
+        }
+        if file_name == "."
+            || file_name == ".."
+            || file_name.contains('/')
+            || file_name.contains('\\')
+        {
+            return Err(Self::validation_error("文件名只能是单个文件名"));
+        }
+        if file_name.chars().any(char::is_control) {
+            return Err(Self::validation_error("文件名包含不支持的控制字符"));
+        }
+        if bytes.is_empty() {
+            return Err(Self::validation_error("不能上传空文件"));
+        }
+        if bytes.len() > MAX_UPLOAD_BYTES {
+            return Err(Self::validation_error("上传文件不能超过 20MB"));
+        }
+
+        let extension = file_name
+            .rsplit_once('.')
+            .map(|(_, extension)| extension.to_ascii_lowercase())
+            .unwrap_or_default();
+        if !IMAGE_EXTENSIONS.contains(&extension.as_str()) {
+            return Err(Self::validation_error(
+                "仅支持 apng、avif、bmp、gif、ico、cur、jpg、jpeg、jfif、pjpeg、pjp、png、svg、tif、tiff、webp 图片",
+            ));
+        }
+        Ok(())
+    }
+
     fn external_error(error: reqwest::Error) -> AppError {
         AppError::Custom(format!("图床服务请求失败: {}", error))
     }
@@ -729,5 +845,23 @@ mod tests {
             }
             other => panic!("expected WebError, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn upload_validation_accepts_supported_uppercase_extension() {
+        assert!(PictureHostingService::validate_upload("photo.PNG", b"image").is_ok());
+    }
+
+    #[test]
+    fn upload_validation_rejects_non_image_and_path_like_names() {
+        assert!(PictureHostingService::validate_upload("photo.txt", b"data").is_err());
+        assert!(PictureHostingService::validate_upload("../photo.png", b"data").is_err());
+        assert!(PictureHostingService::validate_upload("photo.png", b"").is_err());
+    }
+
+    #[test]
+    fn github_path_validation_rejects_traversal() {
+        assert!(PictureHostingService::validate_github_path("images/../private").is_err());
+        assert!(PictureHostingService::validate_github_path("images/2026").is_ok());
     }
 }
