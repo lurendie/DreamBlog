@@ -1,0 +1,4 @@
+[build]
+build-std = false
+zig = false
+default-target = "x86_64-unknown-linux-gnu"
