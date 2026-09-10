@@ -99,7 +99,8 @@
 
 <script>
 	import {getSearchBlogList} from "@/api/blog";
-	import {mapState} from 'vuex'
+	import {mapState} from 'pinia'
+	import {useStore} from '@/store'
 
 	export default {
 		name: "Nav",
@@ -127,7 +128,7 @@
 			}
 		},
 		computed: {
-			...mapState(['clientSize']),
+			...mapState(useStore, ['clientSize']),
 			isMobile() {
 				return this.clientSize.clientWidth <= 767
 			},

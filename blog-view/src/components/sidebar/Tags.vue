@@ -16,21 +16,10 @@
 	</div>
 </template>
 
-<script>
-	import { tagColorClass } from '@/util/tagColor'
-
-	export default {
-		name: "Tags",
-		props: {
-			tagList: {
-				type: Array,
-				required: true
-			},
-		},
-		methods: {
-			tagColorClass,
-		},
-	}
+<script setup>
+	import {tagColorClass} from '@/util/tagColor'
+	defineOptions({name: 'Tags'})
+	defineProps({tagList: {type: Array, required: true}})
 </script>
 
 <style scoped>

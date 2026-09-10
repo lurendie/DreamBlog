@@ -16,29 +16,14 @@
 	</div>
 </template>
 
-<script>
-	export default {
-		name: "RandomBlog",
-		props: {
-			randomBlogList: {
-				type: Array,
-				required: true
-			},
-		},
-		computed: {
-			safeRandomBlogList() {
-				if (!Array.isArray(this.randomBlogList)) {
-					return []
-				}
-				return this.randomBlogList.filter(blog => blog && typeof blog === 'object' && blog.title)
-			}
-		},
-		methods: {
-			toBlog(blog) {
-				this.$store.dispatch('goBlogPage', blog)
-			}
-		}
-	}
+<script setup>
+	import {computed} from 'vue'
+	import {useStore} from '@/store'
+	defineOptions({name: 'RandomBlog'})
+	const props = defineProps({randomBlogList: {type: Array, required: true}})
+	const safeRandomBlogList = computed(() => Array.isArray(props.randomBlogList) ? props.randomBlogList.filter(blog => blog && typeof blog === 'object' && blog.title) : [])
+	const store = useStore()
+	const toBlog = blog => store.goBlogPage(blog)
 </script>
 
 <style scoped>

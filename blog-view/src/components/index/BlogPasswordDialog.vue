@@ -17,7 +17,8 @@
 </template>
 
 <script>
-	import {mapState} from "vuex";
+	import {mapState} from 'pinia'
+	import {useStore} from '@/store';
 	import {SET_BLOG_PASSWORD_DIALOG_VISIBLE} from "../../store/mutations-types";
 	import {checkBlogPassword} from "@/api/blog";
 	import {setBlogVerified} from "@/util/storage";
@@ -25,7 +26,7 @@
 	export default {
 		name: "BlogPasswordDialog",
 		computed: {
-			...mapState(['blogPasswordForm']),
+			...mapState(useStore, ['blogPasswordForm']),
 			dialogWidth() {
 				return document.body.clientWidth <= 767 ? '92%' : '30%'
 			},

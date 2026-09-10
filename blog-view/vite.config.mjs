@@ -52,7 +52,7 @@ export default defineConfig({
 					}
 					const packageName = getPackageName(id)
 
-					if (['vue', 'vue-router', 'vuex'].includes(packageName)) {
+					if (['vue', 'vue-router', 'pinia'].includes(packageName)) {
 						return 'vue-vendor'
 					}
 					if (packageName === 'element-plus') {

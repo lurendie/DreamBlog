@@ -19,7 +19,8 @@
 </template>
 
 <script>
-	import {mapState} from 'vuex'
+	import {mapState} from 'pinia'
+	import {useStore} from '@/store'
 	import defaultSettings from '@/settings'
 
 	export default {
@@ -35,7 +36,7 @@
 			}
 		},
 		computed: {
-			...mapState(['clientSize'])
+			...mapState(useStore, ['clientSize'])
 		},
 		watch: {
 			'clientSize.clientHeight'() {

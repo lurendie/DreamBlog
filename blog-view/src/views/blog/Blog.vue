@@ -75,7 +75,8 @@
 <script>
 	import {getBlogById} from "@/api/blog";
 	import CommentList from "@/components/comment/CommentList.vue";
-	import {mapState} from "vuex";
+	import {mapState} from 'pinia'
+	import {useStore} from '@/store';
 	import { directive as viewerDirective } from 'v-viewer'
 	import 'viewerjs/dist/viewer.css'
 	import {SET_FOCUS_MODE, SET_IS_BLOG_RENDER_COMPLETE} from '@/store/mutations-types';
@@ -100,7 +101,7 @@
 			blogId() {
 				return parseInt(this.$route.params.id)
 			},
-			...mapState(['siteInfo', 'focusMode'])
+			...mapState(useStore, ['siteInfo', 'focusMode'])
 		},
 		beforeRouteEnter(to, from, next) {
 			//路由到博客文章页面之前，应将文章的渲染完成状态置为 false

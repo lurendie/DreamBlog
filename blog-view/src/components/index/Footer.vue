@@ -45,50 +45,13 @@
 	</footer>
 </template>
 
-<script>
-	export default {
-		name: "Footer",
-		props: {
-			siteInfo: {
-				type: Object,
-				required: true
-			},
-			badges: {
-				type: Array,
-				required: true
-			},
-			newBlogList: {
-				type: Array,
-				required: true
-			},
-			hitokoto: {
-				type: Object,
-				required: true
-			}
-		},
-		computed: {
-			safeNewBlogList() {
-				if (!Array.isArray(this.newBlogList)) {
-					return []
-				}
-				return this.newBlogList.filter(item => item && typeof item === 'object' && item.title)
-			},
-			safeBadges() {
-				if (!Array.isArray(this.badges)) {
-					return []
-				}
-				return this.badges.filter(item => item && typeof item === 'object')
-			},
-			safeCopyright() {
-				return this.siteInfo && typeof this.siteInfo.copyright === 'object' ? this.siteInfo.copyright : null
-			}
-		},
-		methods: {
-			toBlog(blog) {
-				this.$store.dispatch('goBlogPage', blog)
-			}
-		}
-	}
+<script setup>
+	import {computed} from 'vue'; import {useStore} from '@/store'
+	defineOptions({name: 'Footer'}); const props = defineProps({siteInfo: {type: Object, required: true}, badges: {type: Array, required: true}, newBlogList: {type: Array, required: true}, hitokoto: {type: Object, required: true}})
+	const safeNewBlogList = computed(() => Array.isArray(props.newBlogList) ? props.newBlogList.filter(item => item && typeof item === 'object' && item.title) : [])
+	const safeBadges = computed(() => Array.isArray(props.badges) ? props.badges.filter(item => item && typeof item === 'object') : [])
+	const safeCopyright = computed(() => props.siteInfo && typeof props.siteInfo.copyright === 'object' ? props.siteInfo.copyright : null)
+	const toBlog = blog => useStore().goBlogPage(blog)
 </script>
 
 <style scoped>

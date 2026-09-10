@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
-import store from './store'
+import store, { pinia } from './store'
 //自定义css
 import './assets/css/base.css'
 //阿里icon
@@ -51,7 +51,9 @@ const app = createApp(App)
 app.use(dateTimeFormatUtils)
 app.use(directives)
 app.use(router)
-app.use(store)
+app.use(pinia)
+// Keep the existing Options API `$store` calls working while using Pinia underneath.
+app.config.globalProperties.$store = store
 
 app.config.globalProperties.msgSuccess = function (msg) {
 	showMessage('success', msg)

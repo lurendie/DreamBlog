@@ -8,22 +8,12 @@
 	</div>
 </template>
 
-<script>
-	export default {
-		name: 'SidebarLogo',
-		props: {
-			collapse: {
-				type: Boolean,
-				required: true
-			}
-		},
-		data() {
-			return {
-				title: this.$store.state.settings.title,
-				logo: this.$store.state.settings.logo
-			}
-		}
-	}
+<script setup>
+	import {storeToRefs} from 'pinia'
+	import {useSettingsStore} from '@/store'
+
+	defineProps({collapse: {type: Boolean, required: true}})
+	const {title, logo} = storeToRefs(useSettingsStore())
 </script>
 
 <style lang="scss" scoped>

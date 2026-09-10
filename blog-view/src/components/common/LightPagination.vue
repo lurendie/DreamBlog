@@ -19,29 +19,15 @@
 	</nav>
 </template>
 
-<script>
-	export default {
-		name: "LightPagination",
-		props: {
-			currentPage: {
-				type: Number,
-				required: true
-			},
-			pageCount: {
-				type: Number,
-				required: true
-			},
-			siblingCount: {
-				type: Number,
-				default: 1
-			}
-		},
-		emits: ['current-change'],
-		computed: {
-			visiblePages() {
-				const pageCount = Math.max(0, Number(this.pageCount) || 0)
-				const currentPage = Math.min(Math.max(1, Number(this.currentPage) || 1), pageCount || 1)
-				const siblingCount = Math.max(1, Number(this.siblingCount) || 1)
+<script setup>
+	import {computed} from 'vue'
+	defineOptions({name: 'LightPagination'})
+	const props = defineProps({currentPage: {type: Number, required: true}, pageCount: {type: Number, required: true}, siblingCount: {type: Number, default: 1}})
+	const emit = defineEmits(['current-change'])
+	const visiblePages = computed(() => {
+				const pageCount = Math.max(0, Number(props.pageCount) || 0)
+				const currentPage = Math.min(Math.max(1, Number(props.currentPage) || 1), pageCount || 1)
+				const siblingCount = Math.max(1, Number(props.siblingCount) || 1)
 				const pages = []
 
 				const addPage = page => {
@@ -73,17 +59,8 @@
 				}
 				addPage(pageCount)
 				return pages
-			}
-		},
-		methods: {
-			changePage(page) {
-				const nextPage = Math.min(Math.max(1, page), this.pageCount)
-				if (nextPage !== this.currentPage) {
-					this.$emit('current-change', nextPage)
-				}
-			}
-		}
-	}
+	})
+	function changePage(page) { const nextPage = Math.min(Math.max(1, page), props.pageCount); if (nextPage !== props.currentPage) emit('current-change', nextPage) }
 </script>
 
 <style scoped>

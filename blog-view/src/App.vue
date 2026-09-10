@@ -4,10 +4,8 @@
 	</div>
 </template>
 
-<script>
-	export default {
-		name: 'app'
-	}
+<script setup>
+defineOptions({name: 'App'})
 </script>
 
 <style>

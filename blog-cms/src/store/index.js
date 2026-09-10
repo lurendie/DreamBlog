@@ -1,12 +1,19 @@
-import {createStore} from 'vuex'
-import getters from './getters'
-import app from './modules/app'
-import settings from './modules/settings'
+import {createPinia} from 'pinia'
+import {useAppStore} from './modules/app'
+import {useSettingsStore} from './modules/settings'
 
-export default createStore({
-	modules: {
-		app,
-		settings,
+export const pinia = createPinia()
+export {useAppStore, useSettingsStore}
+
+const app = useAppStore(pinia)
+const settings = useSettingsStore(pinia)
+const store = {
+	state: {app: app.$state, settings: settings.$state},
+	dispatch(type, payload) {
+		const [module, action] = type.split('/')
+		const target = module === 'app' ? app : settings
+		if (typeof target[action] !== 'function') throw new Error(`Unknown store action: ${type}`)
+		return target[action](payload)
 	},
-	getters
-})
+}
+export default store

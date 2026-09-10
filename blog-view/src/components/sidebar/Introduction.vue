@@ -64,7 +64,8 @@
 </template>
 
 <script>
-	import {mapState} from 'vuex'
+	import {mapState} from 'pinia'
+	import {useStore} from '@/store'
 
 	export default {
 		name: "Introduction",
@@ -74,7 +75,7 @@
 			}
 		},
 		computed: {
-			...mapState(['introduction']),
+			...mapState(useStore, ['introduction']),
 			safeIntroduction() {
 				const introduction = this.introduction && typeof this.introduction === 'object' ? this.introduction : {}
 				return {

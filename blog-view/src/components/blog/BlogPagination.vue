@@ -4,54 +4,25 @@
 	</div>
 </template>
 
-<script>
-	import {mapState} from 'vuex'
-	import LightPagination from "@/components/common/LightPagination.vue";
+<script setup>
+	import {ref, onActivated, getCurrentInstance} from 'vue'
+	import {storeToRefs} from 'pinia'
+	import {useRoute} from 'vue-router'
+	import {useStore} from '@/store'
+	import LightPagination from "@/components/common/LightPagination.vue"
 
-	export default {
-		name: "BlogPagination",
-		components: {LightPagination},
-		props: {
-			getBlogList: {
-				type: Function,
-				required: true
-			},
-			totalPage: {
-				type: Number,
-				required: true
-			}
-		},
-		//目前只有首页被缓存，所以这个钩子只会被首页调用
-		activated() {
-			this.$nextTick(() => {
-				if (!this.isBlogToHome) {
-					//从其它页面路由到首页时，让首页的分页组件页码重置到第一页
-					this.pageNum = 1
-				}
-			})
-		},
-		computed: {
-			...mapState(['isBlogToHome', 'clientSize'])
-		},
-		data() {
-			return {
-				pageNum: 1
-			}
-		},
-		methods: {
-			//监听页码改变的事件
-			handleCurrentChange(newPage) {
-				//如果是首页，则滚动至Header下方
-				if (this.$route.name === 'home') {
-					window.scrollTo({top: this.clientSize.clientHeight, behavior: 'smooth'})
-				} else {
-					//其它页面（分类和标签页）滚动至顶部
-					this.scrollToTop()
-				}
-				this.pageNum = newPage
-				this.getBlogList(newPage)
-			},
-		}
+	defineOptions({name: 'BlogPagination'})
+	const props = defineProps({getBlogList: {type: Function, required: true}, totalPage: {type: Number, required: true}})
+	const pageNum = ref(1)
+	const route = useRoute()
+	const {isBlogToHome, clientSize} = storeToRefs(useStore())
+	const {proxy} = getCurrentInstance()
+	onActivated(() => { if (!isBlogToHome.value) pageNum.value = 1 })
+	function handleCurrentChange(newPage) {
+		if (route.name === 'home') window.scrollTo({top: clientSize.value.clientHeight, behavior: 'smooth'})
+		else proxy.scrollToTop()
+		pageNum.value = newPage
+		props.getBlogList(newPage)
 	}
 </script>
 

@@ -1,5 +1,8 @@
-const getters = {
-  sidebar: state => state.app.sidebar,
-  device: state => state.app.device,
+import {storeToRefs} from 'pinia'
+import {useAppStore} from './modules/app'
+
+export function useStoreGetters() {
+  const app = useAppStore()
+  const {sidebar, device} = storeToRefs(app)
+  return {sidebar, device}
 }
-export default getters

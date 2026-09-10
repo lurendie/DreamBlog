@@ -7,57 +7,16 @@
 	</div>
 </template>
 
-<script>
-	import BlogList from "@/components/blog/BlogList.vue";
-	import {getBlogListByTagName} from "@/api/tag";
-	import { updateSeo } from '@/util/seo'
-
-	export default {
-		name: "Tag",
-		components: {BlogList},
-		data() {
-			return {
-				blogList: [],
-				totalPage: 0
-			}
-		},
-		watch: {
-			//在当前组件被重用时，要重新获取博客列表
-			'$route.fullPath'() {
-				if (this.$route.name === 'tag') {
-					this.getBlogList()
-				}
-			}
-		},
-		created() {
-			this.getBlogList()
-		},
-		computed: {
-			tagName() {
-				return this.$route.params.name
-			}
-		},
-		methods: {
-			getBlogList(pageNum) {
-				getBlogListByTagName(this.tagName, pageNum).then(res => {
-					if (res.code === 200) {
-						this.blogList = res.data.list
-						this.totalPage = res.data.totalPage
-						updateSeo({
-							title: `标签：${this.tagName}`,
-							description: this.$store.state.siteInfo?.siteDescription || '',
-							keywords: this.$store.state.siteInfo?.siteKeywords || '',
-							path: this.$route.fullPath,
-						})
-					} else {
-						this.msgError(res.msg)
-					}
-				}).catch(() => {
-					this.msgError("请求失败")
-				})
-			}
-		}
-	}
+<script setup>
+	import {ref, computed, watch, onMounted} from 'vue'
+	import {useRoute} from 'vue-router'
+	import {storeToRefs} from 'pinia'
+	import {ElMessage} from 'element-plus'
+	import BlogList from '@/components/blog/BlogList.vue'; import {getBlogListByTagName} from '@/api/tag'; import {updateSeo} from '@/util/seo'; import {useStore} from '@/store'
+	defineOptions({name: 'Tag'})
+	const route = useRoute(); const {siteInfo} = storeToRefs(useStore()); const blogList = ref([]); const totalPage = ref(0); const tagName = computed(() => route.params.name)
+	async function getBlogList(pageNum) { try { const res = await getBlogListByTagName(tagName.value, pageNum); if (res.code === 200) { blogList.value = res.data.list; totalPage.value = res.data.totalPage; updateSeo({title: `标签：${tagName.value}`, description: siteInfo.value?.siteDescription || '', keywords: siteInfo.value?.siteKeywords || '', path: route.fullPath}) } else ElMessage.error(res.msg) } catch (_) { ElMessage.error('请求失败') } }
+	onMounted(getBlogList); watch(() => route.fullPath, () => { if (route.name === 'tag') getBlogList() })
 </script>
 
 <style scoped>

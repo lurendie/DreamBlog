@@ -8,25 +8,19 @@
 	/>
 </template>
 
-<script>
-	import {mapState} from 'vuex'
-	import {SET_COMMENT_QUERY_PAGE_NUM, SET_PARENT_COMMENT_ID} from "@/store/mutations-types";
-	import LightPagination from "@/components/common/LightPagination.vue";
+<script setup>
+	import {storeToRefs} from 'pinia'
+	import {useStore} from '@/store'
+	import {SET_COMMENT_QUERY_PAGE_NUM, SET_PARENT_COMMENT_ID} from "@/store/mutations-types"
+	import LightPagination from "@/components/common/LightPagination.vue"
 
-	export default {
-		name: "CommentPagination",
-		components: {LightPagination},
-		computed: {
-			...mapState(['commentQuery', 'commentTotalPage'])
-		},
-		methods: {
-			//监听页码改变的事件
-			handleCurrentChange(newPage) {
-				this.$store.commit(SET_COMMENT_QUERY_PAGE_NUM, newPage)
-				this.$store.commit(SET_PARENT_COMMENT_ID, -1)
-				this.$store.dispatch('getCommentList')
-			},
-		}
+	defineOptions({name: 'CommentPagination'})
+	const store = useStore()
+	const {commentQuery, commentTotalPage} = storeToRefs(store)
+	function handleCurrentChange(newPage) {
+		store[SET_COMMENT_QUERY_PAGE_NUM](newPage)
+		store[SET_PARENT_COMMENT_ID](-1)
+		store.getCommentList()
 	}
 </script>
 

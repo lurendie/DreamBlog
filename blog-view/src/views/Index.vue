@@ -74,7 +74,8 @@
 	import { defineAsyncComponent } from 'vue'
 	import Nav from "@/components/index/Nav.vue";
 	import Footer from "@/components/index/Footer.vue";
-	import {mapState} from 'vuex'
+	import {mapState} from 'pinia'
+	import {useStore} from '@/store'
 	import {SAVE_CLIENT_SIZE, SAVE_INTRODUCTION, SAVE_SITE_INFO, RESTORE_COMMENT_FORM} from "@/store/mutations-types";
 	import { updateSeo } from '@/util/seo'
 	import { loadMetingPlayer } from '@/util/loadExternalAsset'
@@ -110,7 +111,7 @@
 			}
 		},
 		computed: {
-			...mapState(['focusMode', 'clientSize', 'blogPasswordDialogVisible']),
+			...mapState(useStore, ['focusMode', 'clientSize', 'blogPasswordDialogVisible']),
 			isMobile() {
 				return this.clientSize.clientWidth <= 767
 			},

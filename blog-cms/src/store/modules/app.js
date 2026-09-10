@@ -1,40 +1,11 @@
-const state = {
-  sidebar: {
-    opened: true,
-    withoutAnimation: false
-  },
-  device: 'desktop'
-}
+import {ref} from 'vue'
+import {defineStore} from 'pinia'
 
-const mutations = {
-  TOGGLE_SIDEBAR: state => {
-    state.sidebar.opened = !state.sidebar.opened
-    state.sidebar.withoutAnimation = false
-  },
-  CLOSE_SIDEBAR: (state, withoutAnimation) => {
-    state.sidebar.opened = false
-    state.sidebar.withoutAnimation = withoutAnimation
-  },
-  TOGGLE_DEVICE: (state, device) => {
-    state.device = device
-  }
-}
-
-const actions = {
-  toggleSideBar({ commit }) {
-    commit('TOGGLE_SIDEBAR')
-  },
-  closeSideBar({ commit }, { withoutAnimation }) {
-    commit('CLOSE_SIDEBAR', withoutAnimation)
-  },
-  toggleDevice({ commit }, device) {
-    commit('TOGGLE_DEVICE', device)
-  }
-}
-
-export default {
-  namespaced: true,
-  state,
-  mutations,
-  actions
-}
+export const useAppStore = defineStore('app', () => {
+  const sidebar = ref({opened: true, withoutAnimation: false})
+  const device = ref('desktop')
+  function toggleSideBar() { sidebar.value.opened = !sidebar.value.opened; sidebar.value.withoutAnimation = false }
+  function closeSideBar({withoutAnimation} = {}) { sidebar.value.opened = false; sidebar.value.withoutAnimation = withoutAnimation }
+  function toggleDevice(value) { device.value = value }
+  return {sidebar, device, toggleSideBar, closeSideBar, toggleDevice}
+})

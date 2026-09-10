@@ -1,7 +1,7 @@
 import {createApp} from 'vue'
 import App from './App.vue'
 import router from './router'
-import store from './store'
+import {pinia} from './store'
 
 //normalize.css
 import 'normalize.css/normalize.css' // A modern alternative to CSS resets
@@ -33,7 +33,7 @@ app.config.globalProperties.$message = ElMessage
 app.config.globalProperties.$confirm = ElMessageBox.confirm
 
 app
-	.use(store)
+	.use(pinia)
 	.use(router)
 	.use(Icons)
 	.use(Directives)

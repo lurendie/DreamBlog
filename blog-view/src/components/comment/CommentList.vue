@@ -5,44 +5,15 @@
 	</div>
 </template>
 
-<script>
-	import Comment from "./Comment.vue";
-	import CommentPagination from "./CommentPagination.vue";
-	import {SET_COMMENT_QUERY_PAGE, SET_COMMENT_QUERY_BLOG_ID, SET_COMMENT_QUERY_PAGE_NUM, SET_PARENT_COMMENT_ID} from "@/store/mutations-types";
-
-	export default {
-		name: "CommentList",
-		components: {Comment, CommentPagination},
-		props: {
-			page: {
-				type: Number,
-				required: true
-			},
-			blogId: {
-				type: Number,
-				required: false
-			}
-		},
-		created() {
-			this.init()
-		},
-		watch: {
-			//在博客文章路由到其它含有评论的页面时，要重新获取评论
-			'$route.path'() {
-				this.init()
-			}
-		},
-		methods: {
-			init() {
-				//重置评论表单位置
-				this.$store.commit(SET_PARENT_COMMENT_ID, -1)
-				this.$store.commit(SET_COMMENT_QUERY_PAGE, this.page)
-				this.$store.commit(SET_COMMENT_QUERY_BLOG_ID, this.blogId)
-				this.$store.commit(SET_COMMENT_QUERY_PAGE_NUM, 1)
-				this.$store.dispatch('getCommentList')
-			}
-		}
-	}
+<script setup>
+	import {watch, onMounted} from 'vue'
+	import {useRoute} from 'vue-router'
+	import Comment from './Comment.vue'; import CommentPagination from './CommentPagination.vue'; import {useStore} from '@/store'
+	import {SET_COMMENT_QUERY_PAGE, SET_COMMENT_QUERY_BLOG_ID, SET_COMMENT_QUERY_PAGE_NUM, SET_PARENT_COMMENT_ID} from '@/store/mutations-types'
+	defineOptions({name: 'CommentList'})
+	const props = defineProps({page: {type: Number, required: true}, blogId: Number}); const store = useStore(); const route = useRoute()
+	function init() { store[SET_PARENT_COMMENT_ID](-1); store[SET_COMMENT_QUERY_PAGE](props.page); store[SET_COMMENT_QUERY_BLOG_ID](props.blogId); store[SET_COMMENT_QUERY_PAGE_NUM](1); store.getCommentList() }
+	onMounted(init); watch(() => route.path, init)
 </script>
 
 <style scoped>

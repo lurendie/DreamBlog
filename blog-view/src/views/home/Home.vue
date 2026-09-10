@@ -4,54 +4,23 @@
 	</div>
 </template>
 
-<script>
-	import BlogList from "@/components/blog/BlogList.vue";
-	import {getBlogList} from "@/api/home";
-	import {SET_IS_BLOG_TO_HOME} from "../../store/mutations-types";
+<script setup>
+	import {ref, onMounted} from 'vue'
+	import {useRoute, onBeforeRouteUpdate} from 'vue-router'
+	import BlogList from '@/components/blog/BlogList.vue'
+	import {getBlogList as fetchBlogList} from '@/api/home'
+	import {useStore} from '@/store'
+	import {SET_IS_BLOG_TO_HOME} from '@/store/mutations-types'
+	import {ElMessage} from 'element-plus'
 
-	export default {
-		name: "Home",
-		components: {BlogList},
-		data() {
-			return {
-				blogList: [],
-				totalPage: 0,
-				getBlogListFinish: false
-			}
-		},
-		beforeRouteEnter(to, from, next) {
-			next(vm => {
-				if (from.name !== 'blog') {
-					//其它页面跳转到首页时，重新请求数据
-					//设置一个flag，让首页的分页组件指向正确的页码
-					vm.$store.commit(SET_IS_BLOG_TO_HOME, false)
-					vm.getBlogList()
-				} else {
-					//如果文章页面是起始访问页，首页将是第一次进入，即缓存不存在，要请求数据
-					if (!vm.getBlogListFinish) {
-						vm.getBlogList()
-					}
-					//从文章页面跳转到首页时，使用首页缓存
-					vm.$store.commit(SET_IS_BLOG_TO_HOME, true)
-				}
-			})
-		},
-		methods: {
-			getBlogList(pageNum) {
-				getBlogList(pageNum).then(res => {
-					if (res.code === 200) {
-						this.blogList = res.data.list
-						this.totalPage = res.data.totalPage
-						this.getBlogListFinish = true
-					} else {
-						this.msgError(res.msg)
-					}
-				}).catch(() => {
-					this.msgError("请求失败")
-				})
-			}
-		}
+	defineOptions({name: 'Home'})
+	const store = useStore(); const route = useRoute(); const blogList = ref([]); const totalPage = ref(0); const getBlogListFinish = ref(false)
+	async function getBlogList(pageNum) {
+		try { const res = await fetchBlogList(pageNum); if (res.code === 200) { blogList.value = res.data.list; totalPage.value = res.data.totalPage; getBlogListFinish.value = true } else ElMessage.error(res.msg) } catch (_) { ElMessage.error('请求失败') }
 	}
+	function handleEnter(fromName) { if (fromName !== 'blog') { store[SET_IS_BLOG_TO_HOME](false); getBlogList() } else { if (!getBlogListFinish.value) getBlogList(); store[SET_IS_BLOG_TO_HOME](true) } }
+	onMounted(() => handleEnter(route.name === 'home' ? '' : route.name))
+	onBeforeRouteUpdate((to, from) => { if (to.name === 'home') handleEnter(from.name) })
 </script>
 
 <style scoped>

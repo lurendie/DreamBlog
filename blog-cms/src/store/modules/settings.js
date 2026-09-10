@@ -1,34 +1,18 @@
+import {reactive, toRefs} from 'vue'
+import {defineStore} from 'pinia'
 import defaultSettings from '@/settings'
 
-const {title, logo, fixedHeader, sidebarLogo, defaultOpeneds} = defaultSettings
-
-const state = {
-	title: title,
-	logo: logo,
-	fixedHeader: fixedHeader,
-	sidebarLogo: sidebarLogo,
-	defaultOpeneds: defaultOpeneds,
-}
-
-const mutations = {
-	CHANGE_SETTING: (state, {key, value}) => {
-		// eslint-disable-next-line no-prototype-builtins
-		if (state.hasOwnProperty(key)) {
-			state[key] = value
-		}
+export const useSettingsStore = defineStore('settings', () => {
+	const state = reactive({
+		title: defaultSettings.title,
+		logo: defaultSettings.logo,
+		fixedHeader: defaultSettings.fixedHeader,
+		sidebarLogo: defaultSettings.sidebarLogo,
+		defaultOpeneds: defaultSettings.defaultOpeneds,
+	})
+	function changeSetting({key, value} = {}) {
+		if (Object.prototype.hasOwnProperty.call(state, key)) state[key] = value
 	}
-}
-
-const actions = {
-	changeSetting({commit}, data) {
-		commit('CHANGE_SETTING', data)
-	}
-}
-
-export default {
-	namespaced: true,
-	state,
-	mutations,
-	actions
-}
+	return {...toRefs(state), changeSetting}
+})
 

@@ -46,7 +46,8 @@
 </template>
 
 <script>
-	import {mapState} from 'vuex'
+	import {mapState} from 'pinia'
+	import {useStore} from '@/store'
 	import CommentForm from "./CommentForm.vue";
 	import {SET_PARENT_COMMENT_ID} from "@/store/mutations-types";
 	import {safeExternalUrl} from "@/util/url";
@@ -55,7 +56,7 @@
 		name: "Comment",
 		components: {CommentForm},
 		computed: {
-			...mapState(['allComment', 'closeComment', 'comments', 'parentCommentId'])
+			...mapState(useStore, ['allComment', 'closeComment', 'comments', 'parentCommentId'])
 		},
 		methods: {
 			safeExternalUrl,

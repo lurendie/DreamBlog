@@ -75,7 +75,8 @@
 </template>
 
 <script>
-	import {mapState} from 'vuex'
+	import {mapState} from 'pinia'
+	import {useStore} from '@/store'
 	import {checkEmail} from "@/common/reg";
 	import {SET_PARENT_COMMENT_ID} from "@/store/mutations-types";
 	import {safeExternalUrl} from '@/util/url';
@@ -106,7 +107,7 @@
 			User,
 		},
 		computed: {
-			...mapState(['parentCommentId', 'commentForm', 'commentQuery'])
+			...mapState(useStore, ['parentCommentId', 'commentForm', 'commentQuery'])
 		},
 		data() {
 			return {

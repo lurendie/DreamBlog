@@ -29,54 +29,31 @@
 	</div>
 </template>
 
-<script>
-	import {mapGetters} from 'vuex'
+<script setup>
+	import {ref, onMounted} from 'vue'
+	import {useRouter} from 'vue-router'
+	import {storeToRefs} from 'pinia'
+	import {ElMessage} from 'element-plus'
 	import Breadcrumb from '@/components/Breadcrumb'
 	import Hamburger from '@/components/Hamburger'
 	import SvgIcon from '@/components/SvgIcon'
+	import {useAppStore} from '@/store'
 	import {clearLoginState, getStoredUser} from '@/util/storage'
 	import {logout as logoutApi} from '@/api/login'
 
-	export default {
-		components: {
-			Breadcrumb,
-			Hamburger,
-			SvgIcon
-		},
-		data() {
-			return {
-				user: null,
-			}
-		},
-		computed: {
-			...mapGetters([
-				'sidebar',
-			])
-		},
-		created() {
-			this.getUserInfo()
-		},
-		methods: {
-			toggleSideBar() {
-				this.$store.dispatch('app/toggleSideBar')
-			},
-			getUserInfo() {
-				this.user = getStoredUser()
-				if (!this.user) {
-					clearLoginState()
-					this.$router.push('/login')
-				}
-			},
-			logout() {
-				// 先调用后端注销接口吊销 Redis 会话，再清理本地登录态
-				logoutApi().catch(() => {}).finally(() => {
-					clearLoginState()
-					this.$router.push('/login')
-					this.msgSuccess('退出成功')
-				})
-			}
-		}
+	const router = useRouter()
+	const appStore = useAppStore()
+	const {sidebar} = storeToRefs(appStore)
+	const user = ref(null)
+	const toggleSideBar = () => appStore.toggleSideBar()
+	const getUserInfo = () => {
+		user.value = getStoredUser()
+		if (!user.value) { clearLoginState(); router.push('/login') }
 	}
+	const logout = () => logoutApi().catch(() => {}).finally(() => {
+		clearLoginState(); router.push('/login'); ElMessage.success('退出成功')
+	})
+	onMounted(getUserInfo)
 </script>
 
 <style lang="scss" scoped>

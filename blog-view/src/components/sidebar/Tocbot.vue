@@ -10,38 +10,22 @@
 	</div>
 </template>
 
-<script>
-	import {mapState} from 'vuex'
-	import { loadTocbot } from '@/util/loadExternalAsset'
+<script setup>
+	import {watch, onMounted, onBeforeUnmount} from 'vue'
+	import {storeToRefs} from 'pinia'
+	import {useStore} from '@/store'
+	import {loadTocbot} from '@/util/loadExternalAsset'
 
-	export default {
-		name: "Tocbot",
-		computed: {
-			...mapState(['isBlogRenderComplete'])
-		},
-		mounted() {
-			// 有可能组件创建比较慢，文章渲染已经完成，watch的时候，isBlogRenderComplete已经是true，监听不到 isBlogRenderComplete 的改变，也就不会执行watch中的方法
-			// 就需要在 mounted 中init
-			if (window.document.querySelector('.js-toc-content')) {
-				this.initTocbot()
-			}
-		},
-		watch: {
-			//文章渲染完成时，生成目录
-			isBlogRenderComplete() {
-				if (this.isBlogRenderComplete) {
-					this.initTocbot()
-				}
-			}
-		},
-		methods: {
-			async initTocbot() {
+	defineOptions({name: 'Tocbot'})
+	const {isBlogRenderComplete} = storeToRefs(useStore())
+	async function initTocbot() {
 				try {
 					await loadTocbot()
 				} catch (error) {
 					return
 				}
-				if (!this.$el || !this.$el.isConnected || !window.document.querySelector('.js-toc-content')) {
+				const root = window.document.querySelector('.m-toc')
+				if (!root || !root.isConnected || !window.document.querySelector('.js-toc-content')) {
 					return
 				}
 				//先销毁旧实例，避免文章内跳转文章时目录叠加、监听器泄漏
@@ -70,9 +54,10 @@
 					// Can also be used to account for scroll height discrepancies from the use of css scroll-padding-top
 					headingsOffset: -18
 				})
-			}
-		}
 	}
+	onMounted(() => { if (window.document.querySelector('.js-toc-content')) initTocbot() })
+	watch(isBlogRenderComplete, value => { if (value) initTocbot() })
+	onBeforeUnmount(() => { if (window.tocbot?.destroy) window.tocbot.destroy() })
 </script>
 
 <style>
